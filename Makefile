@@ -42,7 +42,7 @@ cflags = -std=c99
 objc_flags = -x objective-c -fobjc-arc
 
 template_sources = src/pwny/main.c
-pwny_sources = $(src)/base64.c $(src)/channel.c $(src)/console.o $(src)/json.c $(src)/utils.c
+pwny_sources = $(src)/base64.c $(src)/channel.c $(src)/console.c $(src)/json.c $(src)/utils.c
 
 pwny_objects = base64.o channel.o console.o json.o utils.o
 pwny_objects += commands.o handler.o
