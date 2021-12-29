@@ -17,7 +17,7 @@ class HatSploitCommand(Command):
         ],
         'Description': "Execute system command.",
         'Usage': "exec <command>",
-        'MinArgs': 0
+        'MinArgs': 1
     }
 
     def run(self, argc, argv):
