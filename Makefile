@@ -50,7 +50,7 @@ pwny_objects += commands.o handler.o
 pwny_cc_flags = $(cflags)
 pwny_cc_flags += -I$(includes) -I$(stdapi_includes)
 
-pwny_ld_flags = -L. -lpwny
+pwny_ld_flags = --whole-archive -L. -lpwny
 
 ifeq ($(platform), apple_ios)
 	ios_frameworks = -framework Foundation -framework Security -framework AudioToolbox
