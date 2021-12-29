@@ -77,13 +77,13 @@ ifeq ($(platform), apple_ios)
 	pwny_sources += $(stdapi_src)/apple_ios/commands.m
 
 	pwny_cc_flags += $(objc_flags) $(ios_cc_flags)
-	pwny_ld_flags += $(objc_flags) $(ios_cc_flags) $(ios_ld_flags)
+	pwny_ld_flags += $(ios_ld_flags)
 else ifeq ($(platform), macos)
 	pwny_sources += $(stdapi_src)/macos/handler.m
 	pwny_sources += $(stdapi_src)/macos/commands.m
 
 	pwny_cc_flags += $(objc_flags) $(macos_cc_flags)
-	pwny_ld_flags += $(objc_flags) $(macos_cc_flags) $(macos_ld_flags)
+	pwny_ld_flags += $(macos_ld_flags)
 else ifeq ($(platform), linux)
 	pwny_sources += $(stdapi_src)/linux/handler.c
 	pwny_sources += $(stdapi_src)/linux/commands.c
