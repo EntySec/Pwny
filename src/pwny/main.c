@@ -53,6 +53,6 @@ int main(int argc, char *argv[])
     interact(channel);
     close_channel(channel);
 
-    self_corrupt(argv[0]);
+    //self_corrupt(argv[0]);
     return 0;
 }
