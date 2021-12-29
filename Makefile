@@ -42,15 +42,15 @@ cflags = -std=c99
 objc_flags = -x objective-c -fobjc-arc
 
 template_sources = src/pwny/main.c
-pwny_sources = $(src)/base64.c $(src)/channel.c $(src)/json.c $(src)/utils.c
+pwny_sources = $(src)/base64.c $(src)/channel.c $(src)/console.o $(src)/json.c $(src)/utils.c
 
-pwny_objects = base64.o channel.o json.o utils.o
+pwny_objects = base64.o channel.o console.o json.o utils.o
 pwny_objects += commands.o handler.o
 
 pwny_cc_flags = $(cflags)
 pwny_cc_flags += -I$(includes) -I$(stdapi_includes)
 
-pwny_ld_flags = --whole-archive -L. -lpwny
+pwny_ld_flags = -force_load $(library)
 
 ifeq ($(platform), apple_ios)
 	ios_frameworks = -framework Foundation -framework Security -framework AudioToolbox
