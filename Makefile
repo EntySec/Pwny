@@ -56,7 +56,7 @@ ifeq ($(platform), apple_ios)
 	ios_frameworks = -framework Foundation -framework Security -framework AudioToolbox
 	ios_frameworks += -framework CoreFoundation -framework MediaPlayer -framework UIKit
 	ios_frameworks += -framework AVFoundation -framework CoreLocation
-	ios_frameworks += -framework SpringBoardServices IOSurface
+	ios_frameworks += -framework SpringBoardServices -framework IOSurface
 
 	ios_cc_flags = -arch arm64 -arch arm64e -isysroot $(sdk)
 
