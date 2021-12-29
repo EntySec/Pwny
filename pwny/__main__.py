@@ -34,7 +34,7 @@ class Pwny(StringTools):
     templates = f'{os.path.dirname(os.path.dirname(__file__))}/pwny/templates/'
 
     def get_template(self, platform, arch):
-        payload = self.templates + platform + '_' + arch + '.bin'
+        payload = self.templates + platform + '/' + arch + '.bin'
 
         if os.path.exists(payload):
             return open(payload, 'rb').read()
