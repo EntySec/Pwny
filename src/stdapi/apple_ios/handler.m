@@ -38,7 +38,7 @@ void handle_command(int channel, char *cmd, char *args)
         [commands cmd_sysinfo];
     else if ([command isEqualToString:@"getpid"])
         [commands cmd_getpid];
-    else if ([comman isEqualToString:@"getpaste"])
+    else if ([command isEqualToString:@"getpaste"])
         [commands cmd_getpaste];
     else if ([command isEqualToString:@"battery"])
         [commands cmd_battery];
