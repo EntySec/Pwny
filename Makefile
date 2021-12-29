@@ -24,7 +24,6 @@
 
 archive = ar
 compiler = clang
-strip = strip
 
 ldid = ldid
 codesign = echo
@@ -107,4 +106,3 @@ library:
 template: $(LIBRARY)
 	$(compiler) $(pwny_cc_flags) $(pwny_ld_flags) $(template_sources) -o $(template)
 	$(codesign) $(template)
-	$(strip) $(template)
