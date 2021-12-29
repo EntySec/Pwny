@@ -90,7 +90,7 @@ else ifeq ($(platform), linux)
 endif
 
 ifeq ($(platform), apple_ios)
-	codesign = $(ldid) -S $(ios_certificate)
+	codesign = $(ldid) -S$(ios_certificate)
 endif
 
 .PHONY: all library template clean
