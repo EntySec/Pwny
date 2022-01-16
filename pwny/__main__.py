@@ -55,10 +55,12 @@ class Pwny(StringTools):
 
         return self.base64_string(data)
 
-    def get_pwny(self, platform, arch, host=None, port=8888):
+    def get_pwny(self, platform, arch, host=None, port=None):
         template = self.get_template(platform, arch)
-        data = self.encode_data(host, port)
+        
+        if not host and not port:
+            return template
 
         return self.hatvenom.generate(platform, arch, template, {
-            'data': data
+            'data': self.encode_data(host, port)
         })
