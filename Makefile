@@ -25,9 +25,6 @@
 archive = ar
 compiler = clang
 
-ldid = ldid
-codesign = echo
-
 template = pwny.bin
 library = libpwny.a
 
@@ -96,7 +93,9 @@ else ifeq ($(platform), linux)
 endif
 
 ifeq ($(platform), apple_ios)
-	codesign = $(ldid) -S$(ios_certificate)
+	codesign = ldid -S$(ios_certificate)
+else
+	codesign = echo
 endif
 
 .PHONY: all library template clean
