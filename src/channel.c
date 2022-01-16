@@ -66,8 +66,10 @@ int listen_channel(int port)
     if (listen(channel, 5) != 0)
         return -1;
 
-    struct sockaddr_in cli;
-    int new_channel = accept(channel, (struct sockaddr*)&cli, &sizeof(cli));
+    struct sockaddr_in client;
+
+    int client_len = sizeof(client);
+    int new_channel = accept(channel, (struct sockaddr*)&client, &client_len);
 
     return new_channel;
 }
