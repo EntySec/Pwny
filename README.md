@@ -24,16 +24,11 @@ pip3 install git+https://github.com/EntySec/HatSploit
 
 ## Building Pwny
 
-There are two forms of Pwny.
+These are platforms which are supported by Pwny.
 
-* **`inmemory`** - Pwny holds encoded host and port in memory as `char data[64]`. In this form the only way to set encoded host and port is to patch Pwny executable and replace `:data:string:` with your encoded host and port.
-* **`inline`** - Pwny takes encoded host and port from command line argument. This form makes Pwny executable to show encoded host and port in utilities such as `ps` or `top`, because all data placed in command line argument.
-
-And these are platforms which are supported by Pwny.
-
-* **macOS** - `make all platform=macos sdk=<path> type=<type>`
-* **Apple iOS** - `make all platform=apple_ios sdk=<path> type=<type>`
-* **Linux** - `make all platform=linux type=<type>`
+* **macOS** - `make all platform=macos sdk=<path>`
+* **Apple iOS** - `make all platform=apple_ios sdk=<path>`
+* **Linux** - `make all platform=linux`
 
 **NOTE:** To compile for target `macos` you will need to download patched SDKs from [here](https://github.com/phracker/MacOSX-SDKs) and to compile for `apple_ios` target you will need to download patched SDKs from [here](https://github.com/theos/sdks).
 
@@ -55,7 +50,7 @@ To get Pwny template, you should call `get_template()`.
 from pwny import Pwny
 
 pwny = Pwny()
-template = pwny.get_template('linux', 'x64', form='inmemory')
+template = pwny.get_template('linux', 'x64')
 ```
 
 To encode Pwny data, you should call `encode_data()`.
@@ -64,7 +59,7 @@ To encode Pwny data, you should call `encode_data()`.
 from pwny import Pwny
 
 pwny = Pwny()
-args = pwny.encode_data(host='127.0.0.1', port=8888)
+args = pwny.encode_data('127.0.0.1', 8888)
 ```
 
 To get Pwny executable, you should call `get_pwny()`.
@@ -73,14 +68,10 @@ To get Pwny executable, you should call `get_pwny()`.
 from pwny import Pwny
 
 pwny = Pwny()
-executable = pwny.get_pwny('linux', 'x64',
-    host='127.0.0.1',
-    port=8888,
-    form='inmemory'
-)
+executable = pwny.get_pwny('linux', 'x64', '127.0.0.1', 8888)
 ```
 
-**NOTE:** `form` argument is optional for `get_template()` and `get_pwny()` and defaults to `inmemory`. `host` and `port` are optional for `get_pwny` in case if `form` is `inline` and also `host` is optional for `encode_data()` and `get_pwny()` in case you want Pwny to bind to port and listen for connections instead of connectig.
+**NOTE:** If you want Pwny to connect you should specify both `host` and `port`, but if you want Pwny to listen, you should specify only `port`.
 
 ## Adding Pwny payload
 
@@ -89,12 +80,13 @@ To add Pwny payload to HatSploit you should follow these steps.
 * Write a basic HatSploit payload template.
 * Import `Pwny` and `PwnySession` and put `Pwny` to `HatSploitPayload` class.
 * Set payload parameter `Session` to `PwnySession`.
-* Encode data `host` and/or `port` through `encode_data()` and create offset `{'data': encoded_data}`.
-* Return `get_template()` with these offset as a payload return value.
-
-In `get_template()` you should put your payload platform and architecture.
+* Return `get_pwny()` with platform, architecture and host and port specified.
 
 ```python3
-return self.get_template(self.details['Platform'], self.details['Architecture']),
-       {'data': encoded_data}
+return self.get_pwny(
+    self.details['Platform'],
+    self.details['Architecture']),
+    remote_host,
+    remote_port
+)
 ```
