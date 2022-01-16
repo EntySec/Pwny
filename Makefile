@@ -37,14 +37,7 @@ stdapi_includes = $(includes)/stdapi
 cflags = -std=c99
 objc_flags = -x objective-c -fobjc-arc
 
-ifeq ($(type), inmemory)
-	template_sources = src/pwny/inmemory.c
-else ifeq ($(type), inline)
-	template_sources = src/pwny/inline.c
-else
-	template_sources = src/pwny/inmemory.c
-endif
-
+template_sources = src/pwny/template.c
 pwny_sources = $(src)/base64.c $(src)/channel.c $(src)/console.c $(src)/json.c $(src)/utils.c
 
 pwny_objects = base64.o channel.o console.o json.o utils.o
