@@ -36,5 +36,8 @@ setup(name='pwny',
       python_requires='>=3.7.0',
       packages=find_packages(),
       include_package_data=True,
+      install_requires=[
+          'hatvenom @ git+http://github.com/EntySec/HatVenom'
+      ],
       zip_safe=False
 )
