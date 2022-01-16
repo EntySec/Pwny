@@ -61,13 +61,13 @@ int listen_channel(int port)
     hint.sin_port = htons(port);
    
     if (bind(channel, (struct sockaddr*)&hint, sizeof(hint)) != 0)
-        return -1
+        return -1;
    
     if (listen(channel, 5) != 0)
         return -1;
 
     struct sockaddr_in cli;
-    int new_channel = accept(sockfd, (struct sockaddr*)&cli, sizeof(cli));
+    int new_channel = accept(channel, (struct sockaddr*)&cli, sizeof(cli));
 
     return new_channel;
 }
