@@ -24,10 +24,10 @@ pip3 install git+https://github.com/EntySec/HatSploit
 
 ## Building Pwny
 
-There are two types of Pwny.
+There are two forms of Pwny.
 
-* **`inmemory`** - Pwny holds encoded host and port in memory as `char data[64]`. In this type the only way to set encoded host and port is to patch Pwny executable and replace `:data:string:` with your encoded host and port.
-* **`inline`** - Pwny takes encoded host and port from command line argument. This type makes Pwny executable to show encoded host and port in utilities such as `ps` or `top`, because all data placed in command line argument.
+* **`inmemory`** - Pwny holds encoded host and port in memory as `char data[64]`. In this form the only way to set encoded host and port is to patch Pwny executable and replace `:data:string:` with your encoded host and port.
+* **`inline`** - Pwny takes encoded host and port from command line argument. This form makes Pwny executable to show encoded host and port in utilities such as `ps` or `top`, because all data placed in command line argument.
 
 And these are platforms which are supported by Pwny.
 
@@ -55,10 +55,10 @@ To get Pwny template, you should call `get_template()`.
 from pwny import Pwny
 
 pwny = Pwny()
-template = pwny.get_template('linux', 'x64')
+template = pwny.get_template('linux', 'x64', form='inmemory')
 ```
 
-To encode Pwny data (`host` and/or `port`) use `encode_data()`.
+To encode Pwny data, you should call `encode_data()`.
 
 ```python3
 from pwny import Pwny
@@ -67,14 +67,20 @@ pwny = Pwny()
 args = pwny.encode_data(host='127.0.0.1', port=8888)
 ```
 
-There are two types of Pwny - `reverse_tcp` and `bind_tcp`. To use `bind_tcp` instead of `reverse_tcp`, you should encode only `port` in `encode_data()`.
+To get Pwny executable, you should call `get_pwny()`.
 
 ```python3
 from pwny import Pwny
 
 pwny = Pwny()
-args = pwny.encode_data(port=8888)
+executable = pwny.get_pwny('linux', 'x64',
+    host='127.0.0.1',
+    port=8888,
+    form='inmemory'
+)
 ```
+
+**NOTE:** `form` argument is optional for `get_template()` and `get_pwny()` and defaults to `inmemory`. `host` and `port` are optional for `get_pwny` in case if `form` is `inline` and also `host` is optional for `encode_data()` and `get_pwny()` in case you want Pwny to bind to port and listen for connections instead of connectig.
 
 ## Adding Pwny payload
 
