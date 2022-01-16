@@ -26,6 +26,12 @@ pip3 install git+https://github.com/EntySec/HatSploit
 
 ## Supported targets
 
+There are two types of Pwny. First - `inmemory`, which holds encoded host and port in memory, second - `inline`, which takes encoded host and port as a command line argument.
+
+To set them, use `type=<type>`.
+
+**NOTE:** It is recommended to use `inmemory` type to hide encoded string from target, for example if `ps` will be invoked. But also it is recommended to use `inline` type for Apple iOS, because there will be no need to resign Pwny executable, cause it will take data from command line argument.
+
 * **macOS**
 
 ```shell
