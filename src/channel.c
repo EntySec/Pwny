@@ -49,6 +49,29 @@ int open_channel(char *host, int port)
     return channel;
 }
 
+int listen_channel(int port)
+{
+    int channel = socket(AF_INET, SOCK_STREAM, 0);
+    if (channel == -1)
+        return -1;
+
+    struct sockaddr_in hint;
+    hint.sin_family = AF_INET;
+    hint.sin_addr.s_addr = htonl(INADDR_ANY);
+    hint.sin_port = htons(port);
+   
+    if (bind(channel, (struct sockaddr*)&hint, sizeof(hint)) != 0)
+        return -1
+   
+    if (listen(channel, 5) != 0)
+        return -1;
+
+    struct sockaddr_in cli;
+    int new_channel = accept(sockfd, (struct sockaddr*)&cli, sizeof(cli));
+
+    return new_channel;
+}
+
 void send_channel(int channel, char *data)
 {
     send(channel, data, (int)strlen(data), 0);
