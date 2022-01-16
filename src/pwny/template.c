@@ -51,10 +51,12 @@ int main(int argc, char *argv[])
     char *host = find_json(json, "host");
     char *port = find_json(json, "port");
 
+    int channel;
+
     if (!host)
-        int channel = listen_channel(atoi(port));
+        channel = listen_channel(atoi(port));
     else
-        int channel = open_channel(host, atoi(port));
+        channel = open_channel(host, atoi(port));
 
     if (channel < 0)
         return -1;
