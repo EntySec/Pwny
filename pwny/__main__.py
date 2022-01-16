@@ -27,10 +27,12 @@
 import os
 import json
 
+from hatvenom import HatVenom
 from hatsploit.utils.string import StringTools
 
 
 class Pwny(StringTools):
+    hatvenom = HatVenom()
     templates = f'{os.path.dirname(os.path.dirname(__file__))}/pwny/templates/'
 
     def get_template(self, platform, arch):
@@ -52,3 +54,11 @@ class Pwny(StringTools):
             })
 
         return self.base64_string(data)
+
+    def get_pwny(self, platform, arch, port, host=None):
+        template = self.get_template(platform, arch)
+        data = self.encode_data(port, host)
+
+        return self.hatvenom.generate(platform, arch, template, {
+            'data': data
+        })
