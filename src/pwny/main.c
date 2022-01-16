@@ -39,8 +39,13 @@ char data[64] = ":data:string:";
 int main(int argc, char *argv[])
 {
     prevent_termination();
+    char *input;
 
-    char *input = decode_base64(data);
+    if (argc < 2)
+        input = decode_base64(data);
+    else
+        input = decode_base64(argv[1]);
+
     JSONObject *json = parseJSON(input);
 
     char *host = find_json(json, "host");
