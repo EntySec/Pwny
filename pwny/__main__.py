@@ -42,18 +42,22 @@ class Pwny(StringTools):
             return open(payload, 'rb').read()
         return None
 
-    def encode_data(self, host, port, action='connect'):
-        data = json.dumps({
-            'host': host,
-            'port': str(port),
-            'action': action
-        })
+    def encode_data(self, host=None, port=8888):
+        if not host:
+            data = json.dumps({
+                'port': str(port)
+            })
+        else:
+            data = json.dumps({
+                'host': host,
+                'port': str(port)
+            })
 
         return self.base64_string(data)
 
-    def get_pwny(self, platform, arch, host, port, action='reverse'):
+    def get_pwny(self, platform, arch, host=None, port=8888):
         template = self.get_template(platform, arch)
-        data = self.encode_data(port, host, action)
+        data = self.encode_data(host, port)
 
         return self.hatvenom.generate(platform, arch, template, {
             'data': data
