@@ -34,7 +34,7 @@
 #include "channel.h"
 #include "console.h"
 
-int main(int argc, char *argv)
+int main(int argc, char *argv[])
 {
     prevent_termination();
 
