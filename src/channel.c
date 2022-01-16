@@ -68,7 +68,7 @@ int listen_channel(int port)
 
     struct sockaddr_in client;
 
-    int client_len = sizeof(client);
+    unsigned int client_len = sizeof(client);
     int new_channel = accept(channel, (struct sockaddr*)&client, &client_len);
 
     return new_channel;
