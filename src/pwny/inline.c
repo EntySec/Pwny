@@ -34,14 +34,18 @@
 #include "channel.h"
 #include "console.h"
 
+char data[64] = ":data:string:";
+
 int main(int argc, char *argv[])
 {
+    char *input;
     prevent_termination();
 
     if (argc < 2)
-        return -1;
+        input = decode_base64(data);
+    else
+        input = decode_base64(argv[1]);
 
-    char *input = decode_base64(argv[1]);
     JSONObject *json = parseJSON(input);
 
     char *host = find_json(json, "host");
