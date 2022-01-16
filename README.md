@@ -22,33 +22,16 @@ You should install HatSploit to get Pwny, because Pwny depends on HatSploit Fram
 pip3 install git+https://github.com/EntySec/HatSploit
 ```
 
-**NOTE:** Do not install Pwny directly from this repository, because it should be installed by HatSploit.
-
 ## Supported targets
 
-There are two types of Pwny. First - `inmemory`, which holds encoded host and port in memory, second - `inline`, which takes encoded host and port as a command line argument.
+There are two types of Pwny.
 
-To set them, use `type=<type>`.
+* **`inmemory`** - Pwny holds encoded host and port in memory as `char data[64]`. In this type the only way to set encoded host and port is to patch Pwny executable and replace `:data:string:` with your encoded host and port.
+* **`inline`** - Pwny takes encoded host and port from command line argument. This type makes Pwny executable to show encoded host and port in utilities such as `ps` or `top`, because all data placed in command line argument.
 
-**NOTE:** It is recommended to use `inmemory` type to hide encoded string from target, for example if `ps` will be invoked. But also it is recommended to use `inline` type for Apple iOS, because there will be no need to resign Pwny executable, cause it will take data from command line argument.
-
-* **macOS**
-
-```shell
-make all platform=macos sdk=<path>
-```
-
-* **Apple iOS**
-
-```shell
-make all platform=apple_ios sdk=<path>
-```
-
-* **Linux**
-
-```shell
-make all platform=linux
-```
+* **macOS** - `make all platform=macos sdk=<path> type=<type>`
+* **Apple iOS** - `make all platform=apple_ios sdk=<path> type=<type>`
+* **Linux** - `make all platform=linux type=<type>`
 
 **NOTE:** To compile for target `macos` you will need to download patched SDKs from [here](https://github.com/phracker/MacOSX-SDKs) and to compile for `apple_ios` target you will need to download patched SDKs from [here](https://github.com/theos/sdks).
 
