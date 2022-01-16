@@ -22,12 +22,14 @@ You should install HatSploit to get Pwny, because Pwny depends on HatSploit Fram
 pip3 install git+https://github.com/EntySec/HatSploit
 ```
 
-## Supported targets
+## Building Pwny
 
 There are two types of Pwny.
 
 * **`inmemory`** - Pwny holds encoded host and port in memory as `char data[64]`. In this type the only way to set encoded host and port is to patch Pwny executable and replace `:data:string:` with your encoded host and port.
 * **`inline`** - Pwny takes encoded host and port from command line argument. This type makes Pwny executable to show encoded host and port in utilities such as `ps` or `top`, because all data placed in command line argument.
+
+And these are platforms which are supported by Pwny.
 
 * **macOS** - `make all platform=macos sdk=<path> type=<type>`
 * **Apple iOS** - `make all platform=apple_ios sdk=<path> type=<type>`
