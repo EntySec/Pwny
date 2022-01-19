@@ -188,11 +188,11 @@
     kCFAllocatorDefault, [bundleID UTF8String], kCFStringEncodingUTF8);
     assert(identifier != NULL);
     int status = SBSLaunchApplicationWithIdentifier(identifier, NO);
-    if (status != 0) {
+    if (status != 0)
         send_channel(channelPipe, (char *)[[NSString stringWithFormat:@"%sFailed to open application!", error] UTF8String]);
-    }
+    else
+        send_channel(channelPipe, (char *)[[NSString stringWithFormat:@"%sApplication has been launched!", success] UTF8String]);
     CFRelease(identifier);
-    send_channel(channelPipe, (char *)[[NSString stringWithFormat:@"%sApplication has been launched!", success] UTF8String]);
 }
 
 -(void)cmd_openurl:(NSString *)url {
