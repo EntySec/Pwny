@@ -27,10 +27,27 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 #include "json.h"
 #include "channel.h"
 #include "handler.h"
+
+#ifndef _WIN32
+#include <sys/types.h>
+#include <sys/utsname.h>
+
+#include <unistd.h>
+#include <errno.h>
+
+#ifdef SYSCALL_REBOOT
+#include <linux/reboot.h>
+#define reboot(arg) reboot(0xfee1dead, 0x28121969, arg, NULL)
+#else
+#include <sys/reboot.h>
+#endif
+
+#endif
 
 void interact(int channel)
 {
@@ -40,13 +57,42 @@ void interact(int channel)
 
         char *cmd = find_json(json, "cmd");
         char *args = find_json(json, "args");
-
         char *token = find_json(json, "token");
 
         if (strcmp(cmd, "exit") == 0) {
             send_channel(channel, token);
             break;
+        } else if (strcmp(cmd, "time") == 0) {
+            send_channel(channel, "%s\n", get_time_str("%a %b %d %H:%M:%S %Z %Y"));
+            send_channel(channel, token);
+
+            continue;
         }
+
+        #ifndef _WIN32
+        if (strcmp(cmd, "reboot") == 0) {
+            sync();
+
+            if (reboot(0x01234567) != -1) {
+                send_channel(channel, token);
+		        break;
+            }
+        } else if (strcmp(cmd, "shutdown") == 0) {
+            sync();
+
+            if (reboot(0x4321fedc) != -1) {
+                send_channel(channel, token);
+                break;
+            }
+        } else if (strcmp(cmd, "halt") == 0) {
+            sync();
+
+            if (reboot(0xcdef0123) != -1) {
+                send_channel(channel, token);
+                break;
+            }
+        }
+        #endif
 
         handle_command(channel, cmd, args);
         send_channel(channel, token);
