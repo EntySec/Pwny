@@ -88,13 +88,20 @@ class PwnySession(Session, StringTools, ChannelClient):
             return
 
         self.print_process("Loading Pwny commands...")
-        commands = self.pwny + self.details['Platform'].lower()
 
+        commands = self.pwny + self.details['Platform'].lower()
         pwny = self.commands.load_commands(commands)
+
         for command in pwny:
             pwny[command].session = self
 
-        self.print_information(f"Loaded {len(pwny)} commands.")
+        commands = commands + 'generic'
+        generic = self.commands.load_commands()
+
+        for command in generic:
+            generic[command].session = self
+
+        self.print_information(f"Loaded {len(pwny) + len(generic)} commands.")
         self.print_empty()
 
         while True:
@@ -111,6 +118,7 @@ class PwnySession(Session, StringTools, ChannelClient):
                         ('quit', 'Stop interaction.')
                     ])
 
+                    self.commands.show_commands(generic)
                     self.commands.show_commands(pwny)
                     continue
 
@@ -124,4 +132,5 @@ class PwnySession(Session, StringTools, ChannelClient):
                 break
 
             if commands:
-                self.commands.execute_custom_command(commands, pwny)
+                if not self.commands.execute_custom_command(commands, generic, False):
+                    self.commands.execute_custom_command(commands, pwny)
