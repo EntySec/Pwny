@@ -37,7 +37,7 @@ from hatsploit.utils.channel import ChannelClient
 class PwnySession(Session, StringTools, ChannelClient):
     commands = Commands()
 
-    prompt = '%linepwny%end > '
+    prompt = '%linepwnypreter%end > '
     pwny = f'{os.path.dirname(os.path.dirname(__file__))}/pwny/commands/'
 
     channel = None
