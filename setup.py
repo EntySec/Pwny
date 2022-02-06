@@ -29,7 +29,7 @@ from setuptools import setup, find_packages
 setup(name='pwny',
       version='1.0.0',
       description='Pwny is an implementation of an advanced native-code HatSploit payload, designed for portability, embeddability, and low resource utilization.',
-      url='http://github.com/EntySec/Pwny',
+      url='https://github.com/EntySec/Pwny',
       author='EntySec',
       author_email='entysec@gmail.com',
       license='MIT',
@@ -37,7 +37,7 @@ setup(name='pwny',
       packages=find_packages(),
       include_package_data=True,
       install_requires=[
-          'hatvenom @ git+http://github.com/EntySec/HatVenom'
+          'hatvenom @ git+https://github.com/EntySec/HatVenom'
       ],
       zip_safe=False
 )
