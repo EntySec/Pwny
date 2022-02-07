@@ -96,7 +96,7 @@ endif
 all: library template
 
 clean:
-	rm -rf $(pwny_objects) $(pwny) $(libpwny)
+	rm -rf $(pwny_objects) $(template) $(library)
 
 library:
 	$(compiler) $(pwny_cc_flags) $(pwny_sources) -c
