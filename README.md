@@ -85,7 +85,7 @@ To add Pwny payload to HatSploit you should follow these steps.
 ```python3
 return self.get_pwny(
     self.details['Platform'],
-    self.details['Architecture']),
+    self.details['Architecture'],
     remote_host,
     remote_port
 )
