@@ -33,22 +33,6 @@
 #include "channel.h"
 #include "handler.h"
 
-#ifndef _WIN32
-#include <sys/types.h>
-#include <sys/utsname.h>
-
-#include <unistd.h>
-#include <errno.h>
-
-#ifdef SYSCALL_REBOOT
-#include <linux/reboot.h>
-#define reboot(arg) reboot(0xfee1dead, 0x28121969, arg, NULL)
-#else
-#include <sys/reboot.h>
-#endif
-
-#endif
-
 void interact(int channel)
 {
     while (1) {
@@ -68,31 +52,6 @@ void interact(int channel)
 
             continue;
         }
-
-        #ifndef _WIN32
-        if (strcmp(cmd, "reboot") == 0) {
-            sync();
-
-            if (reboot(0x01234567) != -1) {
-                send_channel(channel, token);
-		        break;
-            }
-        } else if (strcmp(cmd, "shutdown") == 0) {
-            sync();
-
-            if (reboot(0x4321fedc) != -1) {
-                send_channel(channel, token);
-                break;
-            }
-        } else if (strcmp(cmd, "halt") == 0) {
-            sync();
-
-            if (reboot(0xcdef0123) != -1) {
-                send_channel(channel, token);
-                break;
-            }
-        }
-        #endif
 
         handle_command(channel, cmd, args);
         send_channel(channel, token);
