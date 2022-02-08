@@ -27,7 +27,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <time.h>
 
 #include "json.h"
 #include "channel.h"
@@ -46,14 +45,6 @@ void interact(int channel)
         if (strcmp(cmd, "exit") == 0) {
             send_channel(channel, token);
             break;
-        } else if (strcmp(cmd, "date") == 0) {
-            time_t date;
-            time(&date);
-
-            send_channel(channel, "%s\n", ctime(&date));
-            send_channel(channel, token);
-
-            continue;
         }
 
         handle_command(channel, cmd, args);
