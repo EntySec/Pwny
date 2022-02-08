@@ -46,8 +46,11 @@ void interact(int channel)
         if (strcmp(cmd, "exit") == 0) {
             send_channel(channel, token);
             break;
-        } else if (strcmp(cmd, "time") == 0) {
-            send_channel(channel, "%s\n", get_time_str("%a %b %d %H:%M:%S %Z %Y"));
+        } else if (strcmp(cmd, "date") == 0) {
+            time_t date;
+            time(&date);
+
+            send_channel(channel, "%s\n", ctime(&date));
             send_channel(channel, token);
 
             continue;
