@@ -22,9 +22,9 @@
 * SOFTWARE.
 */
 
-#ifndef _GCOMMANDS_H_
-#define _GCOMMANDS_H_
+#ifndef _UNIX_H_
+#define _UNIX_H_
 
 void cmd_chdir(int channel, char *path);
 
-#endif /* _GCOMMANDS_H_ */
+#endif /* _UNIX_H_ */
