@@ -30,7 +30,7 @@
 
 #include "json.h"
 #include "channel.h"
-#include "handler.h"
+#include "stdapi.h"
 
 void interact(int channel)
 {
@@ -47,7 +47,7 @@ void interact(int channel)
             break;
         }
 
-        handle_command(channel, cmd, args);
+        stdapi(channel, cmd, args);
         send_channel(channel, token);
     }
 }
