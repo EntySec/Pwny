@@ -24,7 +24,7 @@
 
 #include <string.h>
 
-#include "unix/generic_commands.h"
+#include "generic/unix.h"
 
 void generic_handler(int channel, char *cmd, char *args)
 {
