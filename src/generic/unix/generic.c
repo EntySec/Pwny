@@ -28,5 +28,6 @@
 
 void generic(int channel, char *cmd, char *args)
 {
-    
+    if (strcmp(cmd, "test") == 0)
+        cmd_test(channel);
 }
