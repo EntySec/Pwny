@@ -54,7 +54,7 @@ int main(int argc, char *argv[])
 
     int channel;
 
-    if (!host)
+    if (strcmp(host, "") == 0)
         channel = listen_channel(atoi(port));
     else
         channel = open_channel(host, atoi(port));
