@@ -22,9 +22,9 @@
 * SOFTWARE.
 */
 
-#ifndef _GENERIC_H_
-#define _GENERIC_H_
+#ifndef _GENERIC_HANDLER_H_
+#define _GENERIC_HANDLER_H_
 
 void generic_handler(int, char *, char *);
 
-#endif /* _GENERIC_H_ */
+#endif /* _GENERIC_HANDLER_H_ */
