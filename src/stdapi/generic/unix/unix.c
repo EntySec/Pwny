@@ -22,9 +22,37 @@
 * SOFTWARE.
 */
 
+#include <unistd.h>
+#include <string.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+
+#include <sys/types.h>
+#include <sys/utsname.h>
+
+#ifdef SYSCALL_REBOOT
+#include <linux/reboot.h>
+#define reboot(arg) reboot(0xfee1dead, 0x28121969, arg, NULL)
+#else
+#include <sys/reboot.h>
+#endif
+
 #include "channel.h"
 
-void cmd_test(int channel)
+static char *get_time_str(char *format)
 {
-    send_channel(channel, "test...\n");
+    static char time_stamp[128];
+    time_t time_int;
+
+    time(&time_int);
+    strftime(time_stamp, sizeof(time_stamp), format, localtime(&time_int));
+    return time_stamp;
+}
+
+void cmd_time(int channel)
+{
+    char time[64];
+    sprintf(time, "%s\n", get_time_str("%a %b %d %H:%M:%S %Z %Y"));
+    send_channel(channel, time);
 }
