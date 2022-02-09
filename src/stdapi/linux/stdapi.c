@@ -27,10 +27,10 @@
 #include "generic.h"
 #include "linux/commands.h"
 
-void handle_command(int channel, char *cmd, char *args)
+void stdapi(int channel, char *cmd, char *args)
 {
     if (strcmp(cmd, "getpid") == 0)
         cmd_getpid(channel);
     else
-        generic_handler(channel, cmd, args);
+        generic(channel, cmd, args);
 }
