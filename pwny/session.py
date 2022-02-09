@@ -96,7 +96,7 @@ class PwnySession(Session, StringTools, ChannelClient):
             pwny[command].session = self
 
         commands = commands + 'generic'
-        generic = self.commands.load_commands()
+        generic = self.commands.load_commands(commands)
 
         for command in generic:
             generic[command].session = self
