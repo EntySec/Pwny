@@ -26,7 +26,7 @@
 
 #include "generic/unix.h"
 
-void generic_handler(int channel, char *cmd, char *args)
+void generic(int channel, char *cmd, char *args)
 {
     
 }
