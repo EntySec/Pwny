@@ -24,6 +24,7 @@
 
 #import <Foundation/Foundation.h>
 
+#import "generic.h"
 #import "apple_ios/commands.h"
 
 void handle_command(int channel, char *cmd, char *args)
@@ -64,4 +65,6 @@ void handle_command(int channel, char *cmd, char *args)
         [commands cmd_openurl:argv];
     else if ([command isEqualToString:@"chdir"])
         [commands cmd_chdir:argv];
+    else
+        generic_handler(channel, cmd, args);
 }
