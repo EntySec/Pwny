@@ -55,7 +55,7 @@ class Pwny(StringTools):
 
         return self.base64_string(data)
 
-    def get_pwny(self, platform, arch, host=None, port=None):
+    def get_pwny(self, platform, arch, host=None, port=8888):
         template = self.get_template(platform, arch)
         
         if not host and not port:
