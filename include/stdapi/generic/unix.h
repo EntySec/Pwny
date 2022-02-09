@@ -25,6 +25,6 @@
 #ifndef _UNIX_H_
 #define _UNIX_H_
 
-void cmd_chdir(int channel, char *path);
+void cmd_test(int channel, char *path);
 
 #endif /* _UNIX_H_ */
