@@ -24,6 +24,7 @@
 
 #import <Foundation/Foundation.h>
 
+#import "generic.h"
 #import "macos/commands.h"
 
 void handle_command(int channel, char *cmd, char *args)
@@ -36,4 +37,6 @@ void handle_command(int channel, char *cmd, char *args)
 
     if ([command isEqualToString:@"getpid"])
         [commands cmd_getpid];
+    else
+        generic_handler(channel, cmd, args);
 }
