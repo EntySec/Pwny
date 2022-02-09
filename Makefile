@@ -41,7 +41,7 @@ template_sources = src/pwny/template.c
 pwny_sources = $(src)/base64.c $(src)/channel.c $(src)/console.c $(src)/json.c $(src)/utils.c
 
 pwny_objects = base64.o channel.o console.o json.o utils.o
-pwny_objects += commands.o handler.o
+pwny_objects += stdapi.o generic.o commands.o
 
 pwny_cc_flags = $(cflags)
 pwny_cc_flags += -I$(includes) -I$(stdapi_includes)
@@ -69,20 +69,29 @@ else ifeq ($(platform), macos)
 endif
 
 ifeq ($(platform), apple_ios)
-	pwny_sources += $(stdapi_src)/apple_ios/handler.m
+	pwny_sources += $(stdapi_src)/apple_ios/stdapi.m
 	pwny_sources += $(stdapi_src)/apple_ios/commands.m
+	pwny_sources += $(stdapi_src)/generic/unix.c
 
 	pwny_cc_flags += $(objc_flags) $(ios_cc_flags)
 	pwny_ld_flags += $(ios_ld_flags)
+
+	pwny_objects += unix.o
 else ifeq ($(platform), macos)
-	pwny_sources += $(stdapi_src)/macos/handler.m
+	pwny_sources += $(stdapi_src)/macos/stdapi.m
 	pwny_sources += $(stdapi_src)/macos/commands.m
+	pwny_sources += $(stdapi_src)/generic/unix.c
 
 	pwny_cc_flags += $(objc_flags) $(macos_cc_flags)
 	pwny_ld_flags += $(macos_ld_flags)
+
+	pwny_objects += unix.o
 else ifeq ($(platform), linux)
-	pwny_sources += $(stdapi_src)/linux/handler.c
+	pwny_sources += $(stdapi_src)/linux/stdapi.c
 	pwny_sources += $(stdapi_src)/linux/commands.c
+	pwny_sources += $(stdapi_src)/generic/unix.c
+
+	pwny_objects += unix.o
 endif
 
 ifeq ($(platform), apple_ios)
