@@ -22,9 +22,9 @@
 * SOFTWARE.
 */
 
-#ifndef _HANDLER_H_
-#define _HANDLER_H_
+#ifndef _STDAPI_H_
+#define _STDAPI_H_
 
-void handle_command(int, char *, char *);
+void stdapi(int, char *, char *);
 
-#endif /* _HANDLER_H_ */
+#endif /* _STDAPI_H_ */
