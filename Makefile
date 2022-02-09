@@ -71,7 +71,9 @@ endif
 ifeq ($(platform), apple_ios)
 	pwny_sources += $(stdapi_src)/apple_ios/stdapi.m
 	pwny_sources += $(stdapi_src)/apple_ios/commands.m
-	pwny_sources += $(stdapi_src)/generic/unix.c
+
+	pwny_sources += $(stdapi_src)/generic/unix/unix.c
+	pwny_sources += $(stdapi_src)/generic/unix/generic.c
 
 	pwny_cc_flags += $(objc_flags) $(ios_cc_flags)
 	pwny_ld_flags += $(ios_ld_flags)
@@ -80,7 +82,9 @@ ifeq ($(platform), apple_ios)
 else ifeq ($(platform), macos)
 	pwny_sources += $(stdapi_src)/macos/stdapi.m
 	pwny_sources += $(stdapi_src)/macos/commands.m
-	pwny_sources += $(stdapi_src)/generic/unix.c
+
+	pwny_sources += $(stdapi_src)/generic/unix/unix.c
+	pwny_sources += $(stdapi_src)/generic/unix/generic.c
 
 	pwny_cc_flags += $(objc_flags) $(macos_cc_flags)
 	pwny_ld_flags += $(macos_ld_flags)
@@ -89,7 +93,9 @@ else ifeq ($(platform), macos)
 else ifeq ($(platform), linux)
 	pwny_sources += $(stdapi_src)/linux/stdapi.c
 	pwny_sources += $(stdapi_src)/linux/commands.c
-	pwny_sources += $(stdapi_src)/generic/unix.c
+
+	pwny_sources += $(stdapi_src)/generic/unix/unix.c
+	pwny_sources += $(stdapi_src)/generic/unix/generic.c
 
 	pwny_objects += unix.o
 endif
