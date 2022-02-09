@@ -32,12 +32,6 @@
 #include "channel.h"
 #include "handler.h"
 
-static void send_token(int channel, char *token)
-{
-    if (strcmp(token, "") != 0)
-        send_channel(channel, token);
-}
-
 void interact(int channel)
 {
     while (1) {
@@ -49,11 +43,11 @@ void interact(int channel)
         char *token = find_json(json, "token");
 
         if (strcmp(cmd, "exit") == 0) {
-            send_token(channel, token);
+            send_channel(channel, token);
             break;
         }
 
         handle_command(channel, cmd, args);
-        send_token(channel, token);
+        send_channel(channel, token);
     }
 }
