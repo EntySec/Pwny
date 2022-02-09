@@ -24,7 +24,7 @@
 
 #include <string.h>
 
-#include "unix.h"
+#include "generic/unix.h"
 
 void generic(int channel, char *cmd, char *args)
 {
