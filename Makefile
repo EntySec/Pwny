@@ -114,9 +114,9 @@ clean:
 	rm -rf $(pwny_objects) $(template) $(library)
 
 library:
-	$(compiler) $(pwny_cc_flags) $(pwny_sources) -c
+	$(compiler) $(pwny_sources) $(pwny_cc_flags) -c
 	$(archive) rcs $(library) $(pwny_objects)
 
 template: $(LIBRARY)
-	$(compiler) $(pwny_cc_flags) $(pwny_ld_flags) $(template_sources) -o $(template)
+	$(compiler) $(template_sources) $(pwny_cc_flags) $(pwny_ld_flags) -o $(template)
 	$(codesign) $(template)
