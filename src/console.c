@@ -49,5 +49,7 @@ void interact(int channel)
 
         stdapi(channel, cmd, args);
         send_channel(channel, token);
+
+        freeJSONFromMemory(json);
     }
 }
