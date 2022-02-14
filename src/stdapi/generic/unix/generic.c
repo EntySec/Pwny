@@ -24,9 +24,11 @@
 
 #include <string.h>
 
+#include <openssl/ssl.h>
+
 #include "generic/unix.h"
 
-void generic(int channel, char *cmd, char *args)
+void generic(SSL *channel, char *cmd, char *args)
 {
     if (strcmp(cmd, "test") == 0)
         cmd_test(channel);
