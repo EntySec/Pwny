@@ -31,6 +31,8 @@
 #import <AudioToolbox/AudioToolbox.h>
 #import <MediaPlayer/MediaPlayer.h>
 
+#include <openssl/ssl.h>
+
 #import "external/SpringBoardServices.h"
 #import "external/NSTask.h"
 #import "external/bootstrap.h"
@@ -40,7 +42,7 @@
 @interface Commands : NSObject <AVAudioRecorderDelegate> {
     @public
 
-    int channelPipe;
+    SSL *channelPipe;
 }
 
 CFArrayRef SBSCopyApplicationDisplayIdentifiers(bool onlyActive, bool debuggable);
