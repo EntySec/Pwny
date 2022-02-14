@@ -28,11 +28,13 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <openssl/ssl.h>
+
 #include "json.h"
 #include "channel.h"
 #include "stdapi.h"
 
-void interact(int channel)
+void interact(SSL *channel)
 {
     while (1) {
         char *input = read_channel(channel);
