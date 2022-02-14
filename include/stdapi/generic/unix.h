@@ -25,6 +25,8 @@
 #ifndef _UNIX_H_
 #define _UNIX_H_
 
-void cmd_test(int channel, char *path);
+#include <openssl/ssl.h>
+
+void cmd_test(SSL *);
 
 #endif /* _UNIX_H_ */
