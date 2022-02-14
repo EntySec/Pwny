@@ -24,10 +24,12 @@
 
 #include <string.h>
 
+#include <openssl/ssl.h>
+
 #include "generic.h"
 #include "linux/commands.h"
 
-void stdapi(int channel, char *cmd, char *args)
+void stdapi(SSL *channel, char *cmd, char *args)
 {
     if (strcmp(cmd, "getpid") == 0)
         cmd_getpid(channel);
