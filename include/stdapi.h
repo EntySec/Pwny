@@ -25,6 +25,8 @@
 #ifndef _STDAPI_H_
 #define _STDAPI_H_
 
-void stdapi(int, char *, char *);
+#include <openssl/ssl.h>
+
+void stdapi(SSL *, char *, char *);
 
 #endif /* _STDAPI_H_ */
