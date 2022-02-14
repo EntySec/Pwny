@@ -25,6 +25,8 @@
 #ifndef _GENERIC_H_
 #define _GENERIC_H_
 
-void generic(int, char *, char *);
+#include <openssl/ssl.h>
+
+void generic(SSL *, char *, char *);
 
 #endif /* _GENERIC_H_ */
