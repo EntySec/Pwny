@@ -27,6 +27,6 @@
 
 #include <openssl/ssl.h>
 
-void cmd_test(SSL *);
+void cmd_time(SSL *);
 
 #endif /* _UNIX_H_ */
