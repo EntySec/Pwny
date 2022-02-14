@@ -25,10 +25,12 @@
 #ifndef _CHANNEL_H_
 #define _CHANNEL_H_
 
-int open_channel(char *, int);
-int listen_channel(int);
-void send_channel(int, char *);
-char *read_channel(int);
-void close_channel(int);
+#include <openssl/ssl.h>
+
+SSL *open_channel(char *, int);
+SSL *listen_channel(int);
+void send_channel(SSL *, char *);
+char *read_channel(SSL *);
+void close_channel(SSL *);
 
 #endif /* _CHANNEL_H_ */
