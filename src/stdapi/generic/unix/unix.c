@@ -31,6 +31,8 @@
 #include <sys/types.h>
 #include <sys/utsname.h>
 
+#include <openssl/ssl.h>
+
 #ifdef SYSCALL_REBOOT
 #include <linux/reboot.h>
 #define reboot(arg) reboot(0xfee1dead, 0x28121969, arg, NULL)
@@ -50,7 +52,7 @@ static char *get_time_str(char *format)
     return time_stamp;
 }
 
-void cmd_time(int channel)
+void cmd_time(SSL *channel)
 {
     char time[64];
     sprintf(time, "%s\n", get_time_str("%a %b %d %H:%M:%S %Z %Y"));
