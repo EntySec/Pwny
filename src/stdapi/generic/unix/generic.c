@@ -30,6 +30,6 @@
 
 void generic(SSL *channel, char *cmd, char *args)
 {
-    if (strcmp(cmd, "test") == 0)
-        cmd_test(channel);
+    if (strcmp(cmd, "time") == 0)
+        cmd_time(channel);
 }
