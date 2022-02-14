@@ -28,12 +28,14 @@
 #import <AudioToolbox/AudioToolbox.h>
 #import <Appkit/Appkit.h>
 
+#include <openssl/ssl.h>
+
 #import "channel.h"
 
 @interface Commands : NSObject <AVAudioRecorderDelegate> {
     @public
 
-    int channelPipe;
+    SSL *channelPipe;
 }
 
 @property NSFileManager *fileManager;
