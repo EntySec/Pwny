@@ -25,6 +25,8 @@
 #ifndef _CONSOLE_H_
 #define _CONSOLE_H_
 
-void interact(int);
+#include <openssl/ssl.h>
+
+void interact(SSL *);
 
 #endif /* _CONSOLE_H_ */
