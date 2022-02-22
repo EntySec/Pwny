@@ -22,9 +22,11 @@
 * SOFTWARE.
 */
 
-#ifndef _HANDLER_H_
-#define _HANDLER_H_
+#ifndef _GENERIC_H_
+#define _GENERIC_H_
 
-void handle_command(int, char *, char *);
+#include <openssl/ssl.h>
 
-#endif /* _HANDLER_H_ */
+void generic(SSL *, char *, char *);
+
+#endif /* _GENERIC_H_ */

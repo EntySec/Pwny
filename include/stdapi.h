@@ -22,15 +22,11 @@
 * SOFTWARE.
 */
 
-#ifndef _CHANNEL_H_
-#define _CHANNEL_H_
+#ifndef _STDAPI_H_
+#define _STDAPI_H_
 
 #include <openssl/ssl.h>
 
-SSL *open_channel(char *, int);
-SSL *listen_channel(int);
-void send_channel(SSL *, char *);
-char *read_channel(SSL *);
-void close_channel(SSL *);
+void stdapi(SSL *, char *, char *);
 
-#endif /* _CHANNEL_H_ */
+#endif /* _STDAPI_H_ */

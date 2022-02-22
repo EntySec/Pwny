@@ -25,6 +25,8 @@
 #ifndef _COMMANDS_H_
 #define _COMMANDS_H_
 
-void cmd_getpid(int channel);
+#include <openssl/ssl.h>
+
+void cmd_getpid(SSL *);
 
 #endif /* _COMMANDS_H_ */

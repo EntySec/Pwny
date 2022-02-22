@@ -30,11 +30,12 @@ import json
 from hatsploit.lib.session import Session
 from hatsploit.lib.commands import Commands
 
+from hatsploit.utils.ssl import SSLTools
 from hatsploit.utils.string import StringTools
 from hatsploit.utils.channel import ChannelClient
 
 
-class PwnySession(Session, StringTools, ChannelClient):
+class PwnySession(Session, SSLTools, StringTools, ChannelClient):
     commands = Commands()
 
     prompt = '%linepwnypreter%end > '
@@ -50,6 +51,7 @@ class PwnySession(Session, StringTools, ChannelClient):
     }
 
     def open(self, client):
+        client = self.wrap_client(client)
         self.channel = self.open_channel(client)
 
     def close(self):

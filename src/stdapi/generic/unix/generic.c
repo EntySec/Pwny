@@ -24,10 +24,12 @@
 
 #include <string.h>
 
-#include "linux/commands.h"
+#include <openssl/ssl.h>
 
-void handle_command(int channel, char *cmd, char *args)
+#include "generic/unix.h"
+
+void generic(SSL *channel, char *cmd, char *args)
 {
-    if (strcmp(cmd, "getpid") == 0)
-        cmd_getpid(channel);
+    if (strcmp(cmd, "time") == 0)
+        cmd_time(channel);
 }

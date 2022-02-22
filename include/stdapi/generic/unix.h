@@ -22,15 +22,11 @@
 * SOFTWARE.
 */
 
-#ifndef _CHANNEL_H_
-#define _CHANNEL_H_
+#ifndef _UNIX_H_
+#define _UNIX_H_
 
 #include <openssl/ssl.h>
 
-SSL *open_channel(char *, int);
-SSL *listen_channel(int);
-void send_channel(SSL *, char *);
-char *read_channel(SSL *);
-void close_channel(SSL *);
+void cmd_time(SSL *);
 
-#endif /* _CHANNEL_H_ */
+#endif /* _UNIX_H_ */

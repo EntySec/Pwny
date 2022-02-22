@@ -27,10 +27,12 @@
 #include <string.h>
 #include <unistd.h>
 
+#include <openssl/ssl.h>
+
 #include "external/badges.h"
 #include "channel.h"
 
-void cmd_getpid(int channel)
+void cmd_getpid(SSL *channel)
 {
     int pid_number = getpid();
 

