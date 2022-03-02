@@ -30,12 +30,13 @@ import json
 from hatsploit.lib.session import Session
 from hatsploit.lib.commands import Commands
 
+from hatsploit.utils.fs import FSTools
 from hatsploit.utils.ssl import SSLTools
 from hatsploit.utils.string import StringTools
 from hatsploit.utils.channel import ChannelClient
 
 
-class PwnySession(Session, SSLTools, StringTools, ChannelClient):
+class PwnySession(Session, FSTools, SSLTools, StringTools, ChannelClient):
     commands = Commands()
 
     prompt = '%linepwnypreter%end > '
@@ -82,31 +83,49 @@ class PwnySession(Session, SSLTools, StringTools, ChannelClient):
         )
 
     def download(self, remote_file, local_path):
-        result = b""
+        request = json.dumps({
+            'cmd': "download",
+            'args': remote_file,
+            'token': ''
+        })
 
-        data = self.send_command(f"download '{remote_file}'", True)
-        data = json.loads(data)
+        data = self.channel.send_command(request, True)
 
-        if data['status'] == 1:
-            token = self.random_string(8)
-            self.channel.send_command(token, False)
+        if data == 'file':
+            exists, is_dir = self.exists(local_path)
+            if exists:
+                if is_dir:
+                    local_path = local_path + '/' + os.path.split(remote_file)[1]
 
-            while True:
-                chunk = self.channel.read(1024)
-                if token in chunk:
-                    token_index = chunk.index(token)
-                    token_size = len(token)
-                    
-                    result += chunk[:token_index]
-                    break
+                self.print_process(f"Downloading {remote_file}...")
 
-                result += chunk
+                token = self.random_string(8)
+                self.channel.send_command(token, False)
 
-        elif data['status'] == 0:
-            self.print_error(f"Remote file: {remote_file}: does not exist!")
-        elif data['status'] == 2:
+                while True:
+                    chunk = self.channel.read(1024)
+                    if token in chunk:
+                        token_index = chunk.index(token)
+                        token_size = len(token)
+
+                        self.print_process(f"Saving to {local_path}...")
+                        file.write(chunk[:token_index])
+
+                        break
+
+                    file.write(chunk)
+
+                self.print_success(f"Saved to {local_path}!")
+                file.close()
+
+                return True
+
+        elif data == 'directory':
             self.print_error(f"Remote file: {remote_file}: is a directory!")
-        return result
+        else:
+            self.print_error(f"Remote file: {remote_file}: does not exist!")
+
+        return False
 
     def upload(self, local_file, remote_path):
         return None
