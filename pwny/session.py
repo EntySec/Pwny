@@ -81,6 +81,36 @@ class PwnySession(Session, SSLTools, StringTools, ChannelClient):
             decode
         )
 
+    def download(self, remote_file, local_path):
+        result = b""
+
+        data = self.send_command(f"download '{remote_file}'", True)
+        data = json.loads(data)
+
+        if data['status'] == 1:
+            token = self.random_string(8)
+            self.channel.send_command(token, False)
+
+            while True:
+                chunk = self.channel.read(1024)
+                if token in chunk:
+                    token_index = chunk.index(token)
+                    token_size = len(token)
+                    
+                    result += chunk[:token_index]
+                    break
+
+                result += chunk
+
+        elif data['status'] == 0:
+            self.print_error(f"Remote file: {remote_file}: does not exist!")
+        elif data['status'] == 2:
+            self.print_error(f"Remote file: {remote_file}: is a directory!")
+        return result
+
+    def upload(self, local_file, remote_path):
+        return None
+
     def interact(self):
         self.print_empty()
 
