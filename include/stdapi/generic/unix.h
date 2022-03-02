@@ -28,6 +28,6 @@
 #include <openssl/ssl.h>
 
 void cmd_time(SSL *);
-void cmd_download(SSL *);
+void cmd_download(SSL *, char *);
 
 #endif /* _UNIX_H_ */
