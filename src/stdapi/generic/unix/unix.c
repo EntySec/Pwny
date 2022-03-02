@@ -70,14 +70,14 @@ void cmd_download(SSL *channel, char *args)
     char *token = read_channel(channel);
 
     FILE *file;
-    char temp[64];
+    char temp[1024];
 
     file = fopen(args, "rb");
 
     if (file == NULL)
         send_channel(channel, token);
 
-    while (fgets(temp, 64, file) != NULL)
+    while (fgets(temp, 1024, file) != NULL)
         send_channel(channel, temp);
 
     send_channel(channel, token);
