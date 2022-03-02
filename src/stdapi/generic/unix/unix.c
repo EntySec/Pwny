@@ -33,13 +33,6 @@
 
 #include <openssl/ssl.h>
 
-#ifdef SYSCALL_REBOOT
-#include <linux/reboot.h>
-#define reboot(arg) reboot(0xfee1dead, 0x28121969, arg, NULL)
-#else
-#include <sys/reboot.h>
-#endif
-
 #include "channel.h"
 
 static char *get_time_str(char *format)
