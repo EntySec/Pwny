@@ -122,8 +122,10 @@ class PwnySession(Session, FSTools, SSLTools, StringTools, ChannelClient):
 
         elif data == 'directory':
             self.print_error(f"Remote file: {remote_file}: is a directory!")
-        else:
+        elif data == 'incorrect':
             self.print_error(f"Remote file: {remote_file}: does not exist!")
+        else:
+            self.print_error("Implementation error: download: not implemented!")
 
         return False
 
