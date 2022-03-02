@@ -103,7 +103,7 @@ class PwnySession(Session, FSTools, SSLTools, StringTools, ChannelClient):
                 self.channel.send_command(token, False)
 
                 while True:
-                    chunk = self.channel.read()
+                    chunk = self.channel.read(1024)
                     if token in chunk:
                         token_index = chunk.index(token)
                         token_size = len(token)
