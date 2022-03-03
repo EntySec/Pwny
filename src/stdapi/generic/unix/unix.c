@@ -78,7 +78,7 @@ void cmd_download(SSL *channel, char *args)
     if (file == NULL)
         send_channel(channel, token);
 
-    while (fread(temp, sizeof(temp), 1, file) != NULL)
+    while (fread(temp, sizeof(temp), 1, file))
         send_channel(channel, temp);
 
     send_channel(channel, token);
