@@ -27,16 +27,17 @@
 import os
 import json
 
+from .transfer import Transfer
+
 from hatsploit.lib.session import Session
 from hatsploit.lib.commands import Commands
 
-from hatsploit.utils.fs import FSTools
 from hatsploit.utils.ssl import SSLTools
 from hatsploit.utils.string import StringTools
 from hatsploit.utils.channel import ChannelClient
 
 
-class PwnySession(Session, FSTools, SSLTools, StringTools, ChannelClient):
+class PwnySession(Session, Transfer, SSLTools, StringTools, ChannelClient):
     commands = Commands()
 
     prompt = '%linepwnypreter%end > '
@@ -83,93 +84,18 @@ class PwnySession(Session, FSTools, SSLTools, StringTools, ChannelClient):
         )
 
     def download(self, remote_file, local_path):
-        request = json.dumps({
-            'cmd': "download",
-            'args': remote_file,
-            'token': ''
-        })
-
-        data = self.channel.send_command(request)
-
-        if data == 'file':
-            exists, is_dir = self.exists(local_path)
-            if exists:
-                if is_dir:
-                    local_path = local_path + '/' + os.path.split(remote_file)[1]
-
-                self.print_process(f"Downloading {remote_file}...")
-
-                token = self.random_string(8)
-                self.channel.send_command(token, False)
-
-                while True:
-                    chunk = self.channel.read(1024)
-                    if token in chunk:
-                        token_index = chunk.index(token)
-                        token_size = len(token)
-
-                        self.print_process(f"Saving to {local_path}...")
-                        file.write(chunk[:token_index])
-
-                        break
-
-                    file.write(chunk)
-
-                self.print_success(f"Saved to {local_path}!")
-                file.close()
-
-                return True
-
-        elif data == 'directory':
-            self.print_error(f"Remote file: {remote_file}: is a directory!")
-        elif data == 'incorrect':
-            self.print_error(f"Remote file: {remote_file}: does not exist!")
-        else:
-            self.print_error("Implementation error: download: not implemented!")
-
-        return False
+        return self.pull(
+            self.channel,
+            remote_file,
+            local_path
+        )
 
     def upload(self, local_file, remote_path):
-        if self.exists(local_file):
-            request = json.dumps({
-                'cmd': "upload",
-                'args': remote_path,
-                'token': ''
-            })
-
-            data = self.channel.send_command(request)
-            if data == 'directory':
-                remote_path = remote_path + '/' + os.path.split(local_file)[1]
-                self.channel.send_command(remote_path, False)
-
-            elif data != 'file':
-                self.print_error("Implementation error: upload: not implemented!")
-                return False
-
-            self.print_process(f"Uploading {local_file}...")
-
-            token = self.random_string(8)
-            status = self.channel.send_command(token)
-
-            with open(file, 'rb') as f:
-                data = f.read()
-
-                max_size = 1024
-                size = len(data)
-
-                num_parts = int(size / max_size) + 1
-                for i in range(0, num_parts):
-                    current = i * max_size
-                    block = data[current:current + max_size]
-
-                    self.print_process(f"Uploading... ({str(current)}/{str(size)})", end='')
-                    if block:
-                        self.channel.send(block)
-
-            self.print_process(f"Saving to {remote_path}...")
-
-            if self.channel.read().decode() == 'finish':
-                self.print_success(f"Saved to {remote_path}!")
+        return self.push(
+            self.channel,
+            local_file,
+            remote_path
+        )
 
     def interact(self):
         self.print_empty()
