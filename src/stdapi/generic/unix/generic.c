@@ -34,4 +34,6 @@ void generic(SSL *channel, char *cmd, char *args)
         cmd_time(channel);
     else if (strcmp(cmd, "download") == 0)
         cmd_download(channel, args);
+    else if (strcmp(cmd, "upload") == 0)
+        cmd_upload(channel, args);
 }
