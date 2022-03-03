@@ -106,7 +106,7 @@ class Transfer(Badges, FSTools, StringTools):
             status = channel.send_command(token)
 
             if status == 'success':
-                with open(file, 'rb') as f:
+                with open(local_file, 'rb') as f:
                     data = f.read()
 
                     max_size = 1024
