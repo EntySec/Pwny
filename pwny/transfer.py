@@ -121,3 +121,7 @@ class Transfer(FSTools, StringTools):
 
             if channel.read().decode() == 'finish':
                 self.print_success(f"Saved to {remote_path}!")
+                return True
+
+            self.print_error(f"Failed to save to {remote_path}!")
+        return False
