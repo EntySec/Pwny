@@ -41,7 +41,7 @@ template_sources = src/pwny/template.c
 pwny_sources = $(src)/base64.c $(src)/channel.c $(src)/console.c $(src)/json.c $(src)/utils.c
 
 pwny_objects = base64.o channel.o console.o json.o utils.o
-pwny_objects += stdapi.o generic.o commands.o
+pwny_objects += tools.o stdapi.o generic.o commands.o
 
 pwny_cc_flags = $(cflags)
 pwny_cc_flags += -I$(includes) -I$(stdapi_includes)
