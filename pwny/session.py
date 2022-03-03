@@ -130,7 +130,26 @@ class PwnySession(Session, FSTools, SSLTools, StringTools, ChannelClient):
         return False
 
     def upload(self, local_file, remote_path):
-        return None
+        if self.exists(local_file):
+            self.print_process(f"Uploading {local_file}...")
+            
+            with open(file, 'rb') as f:
+                data = f.read()
+
+                max_size = 1024
+                size = len(data)
+
+                num_parts = int(size / max_size) + 1
+                for i in range(0, num_parts):
+                    current = i * max_size
+                    block = data[current:current + max_size]
+
+                    self.print_process(f"Uploading... ({str(current)}/{str(size)})", end='')
+                    if block:
+                        self.channel.send(block)
+
+            self.print_process(f"Saving to {remote_path}...")
+            self.print_success(f"Saved to {remote_path}!")
 
     def interact(self):
         self.print_empty()
