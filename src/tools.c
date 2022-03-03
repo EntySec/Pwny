@@ -22,10 +22,13 @@
 * SOFTWARE.
 */
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <fcntl.h>
 #include <string.h>
+
 #include <sys/stat.h>
+
 #include <unistd.h>
 
 char *link_string(char *s1, char *s2, int ispath)
