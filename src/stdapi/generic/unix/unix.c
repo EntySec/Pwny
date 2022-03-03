@@ -34,6 +34,7 @@
 
 #include <openssl/ssl.h>
 
+#include "tools.h"
 #include "channel.h"
 
 static char *get_time_str(char *format)
@@ -82,4 +83,41 @@ void cmd_download(SSL *channel, char *args)
 
     send_channel(channel, token);
     fclose(file);
+}
+
+void cmd_upload(SSL *channel, char *args)
+{
+    struct stat path_s;
+    if (stat(args, &path_s) != 0) {
+        send_channel(channel, "file");
+    } else {
+        send_channel(channel, "directory");
+        args = read_channel(channel);
+    }
+
+    char *token = read_channel(channel);
+    char *ret, *data;
+
+    FILE *file;
+    file = fopen(args, "wb");
+
+    if (file == NULL)
+        send_channel(channel, "error");
+    else
+        send_channel(channel, "success");
+
+    while (1) {
+        data = read_channel(channel);
+        ret = strstr(data, token);
+
+        if (ret) {
+            data = remove_last(data, strlen(token));
+            fputs(data, file);
+            break;
+        }
+
+        fputs(data, file);
+    }
+
+    send_channel(channel, "finish");
 }
