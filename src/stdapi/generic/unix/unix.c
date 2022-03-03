@@ -49,7 +49,7 @@ static char *get_time_str(char *format)
 
 void cmd_time(SSL *channel)
 {
-    char time[64];
+    char time[2048];
     sprintf(time, "%s\n", get_time_str("%a %b %d %H:%M:%S %Z %Y"));
     send_channel(channel, time);
 }
