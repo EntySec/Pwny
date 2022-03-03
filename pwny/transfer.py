@@ -104,26 +104,30 @@ class Transfer(Badges, FSTools, StringTools):
             token = self.random_string(8)
             status = channel.send_command(token)
 
-            with open(file, 'rb') as f:
-                data = f.read()
+            if status == 'success':
+                with open(file, 'rb') as f:
+                    data = f.read()
 
-                max_size = 1024
-                size = len(data)
+                    max_size = 1024
+                    size = len(data)
 
-                num_parts = int(size / max_size) + 1
-                for i in range(0, num_parts):
-                    current = i * max_size
-                    block = data[current:current + max_size]
+                    num_parts = int(size / max_size) + 1
+                    for i in range(0, num_parts):
+                        current = i * max_size
+                        block = data[current:current + max_size]
 
-                    self.print_process(f"Uploading... ({str(current)}/{str(size)})", end='')
-                    if block:
-                        channel.send(block)
+                        self.print_process(f"Uploading... ({str(current)}/{str(size)})", end='')
+                        if block:
+                            channel.send(block)
 
-            self.print_process(f"Saving to {remote_path}...")
+                self.print_process(f"Saving to {remote_path}...")
+                status = channel.send_command(token)
 
-            if channel.read().decode() == 'finish':
-                self.print_success(f"Saved to {remote_path}!")
-                return True
+                if status == 'success':
+                    self.print_success(f"Saved to {remote_path}!")
+                    return True
 
-            self.print_error(f"Failed to save to {remote_path}!")
+                self.print_error(f"Failed to save to {remote_path}!")
+            else:
+                self.print_error(f"Remote directory: {os.path.split(remote_path)[0]}: does not exist!")
         return False
