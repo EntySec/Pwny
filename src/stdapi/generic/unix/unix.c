@@ -101,9 +101,10 @@ void cmd_upload(SSL *channel, char *args)
     FILE *file;
     file = fopen(args, "wb");
 
-    if (file == NULL)
+    if (file == NULL) {
         send_channel(channel, "error");
-    else
+        return;
+    } else
         send_channel(channel, "success");
 
     while (1) {
@@ -119,5 +120,5 @@ void cmd_upload(SSL *channel, char *args)
         fputs(data, file);
     }
 
-    send_channel(channel, "finish");
+    send_channel(channel, "success");
 }
