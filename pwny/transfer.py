@@ -55,23 +55,22 @@ class Transfer(Badges, FSTools, StringTools):
                 token = self.random_string(8)
                 channel.send_command(token, False)
 
-                while True:
-                    chunk = channel.read(1024)
+                with open(local_path, 'wb') as f:
+                    while True:
+                        chunk = channel.read(1024)
 
-                    if token.encode() in chunk:
-                        token_index = chunk.index(token.encode())
-                        token_size = len(token)
+                        if token.encode() in chunk:
+                            token_index = chunk.index(token.encode())
+                            token_size = len(token)
 
-                        self.print_process(f"Saving to {local_path}...")
-                        file.write(chunk[:token_index])
+                            self.print_process(f"Saving to {local_path}...")
+                            f.write(chunk[:token_index])
 
-                        break
+                            break
 
-                    file.write(chunk)
+                        f.write(chunk)
 
                 self.print_success(f"Saved to {local_path}!")
-                file.close()
-
                 return True
 
         elif data == 'directory':
