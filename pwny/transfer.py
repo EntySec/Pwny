@@ -33,7 +33,7 @@ from hatsploit.utils.string import StringTools
 
 
 class Transfer(FSTools, StringTools):
-    def download(self, channel, remote_file, local_path):
+    def pull(self, channel, remote_file, local_path):
         request = json.dumps({
             'cmd': "download",
             'args': remote_file,
@@ -80,7 +80,7 @@ class Transfer(FSTools, StringTools):
 
         return False
 
-    def upload(self, channel, local_file, remote_path):
+    def push(self, channel, local_file, remote_path):
         if self.exists(local_file):
             request = json.dumps({
                 'cmd': "upload",
