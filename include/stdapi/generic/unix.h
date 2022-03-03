@@ -29,5 +29,6 @@
 
 void cmd_time(SSL *);
 void cmd_download(SSL *, char *);
+void cmd_upload(SSL *, char *);
 
 #endif /* _UNIX_H_ */
