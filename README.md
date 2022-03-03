@@ -40,7 +40,7 @@ To use Pwny and build payloads you should import it to your source.
 
 ```python3
 from pwny import Pwny
-from pwny import PwnySession
+from pwny.session import PwnySession
 ```
 
 * `Pwny` - Pwny utilities, mostly for generating payloads and encoding arguments.
