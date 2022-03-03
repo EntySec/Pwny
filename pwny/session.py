@@ -89,7 +89,7 @@ class PwnySession(Session, FSTools, SSLTools, StringTools, ChannelClient):
             'token': ''
         })
 
-        data = self.channel.send_command(request, True)
+        data = self.channel.send_command(request)
 
         if data == 'file':
             exists, is_dir = self.exists(local_path)
@@ -131,8 +131,26 @@ class PwnySession(Session, FSTools, SSLTools, StringTools, ChannelClient):
 
     def upload(self, local_file, remote_path):
         if self.exists(local_file):
+            request = json.dumps({
+                'cmd': "upload",
+                'args': remote_path,
+                'token': ''
+            })
+
+            data = self.channel.send_command(request)
+            if data == 'directory':
+                remote_path = remote_path + '/' + os.path.split(local_file)[1]
+                self.channel.send_command(remote_path, False)
+
+            elif data != 'file':
+                self.print_error("Implementation error: upload: not implemented!")
+                return False
+
             self.print_process(f"Uploading {local_file}...")
-            
+
+            token = self.random_string(8)
+            status = self.channel.send_command(token)
+
             with open(file, 'rb') as f:
                 data = f.read()
 
@@ -149,7 +167,9 @@ class PwnySession(Session, FSTools, SSLTools, StringTools, ChannelClient):
                         self.channel.send(block)
 
             self.print_process(f"Saving to {remote_path}...")
-            self.print_success(f"Saved to {remote_path}!")
+
+            if self.channel.read().decode() == 'finish':
+                self.print_success(f"Saved to {remote_path}!")
 
     def interact(self):
         self.print_empty()
