@@ -57,8 +57,9 @@ class Transfer(Badges, FSTools, StringTools):
 
                 while True:
                     chunk = channel.read(1024)
-                    if token in chunk:
-                        token_index = chunk.index(token)
+
+                    if token.encode() in chunk:
+                        token_index = chunk.index(token.encode())
                         token_size = len(token)
 
                         self.print_process(f"Saving to {local_path}...")
@@ -91,6 +92,7 @@ class Transfer(Badges, FSTools, StringTools):
             })
 
             data = channel.send_command(request)
+
             if data == 'directory':
                 remote_path = remote_path + '/' + os.path.split(local_file)[1]
                 channel.send_command(remote_path, False)
