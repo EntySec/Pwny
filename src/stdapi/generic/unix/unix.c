@@ -71,7 +71,7 @@ void cmd_download(SSL *channel, char *args)
     char *token = read_channel(channel);
 
     FILE *file;
-    unsigned char buffer[1024];
+    char buffer[1024];
 
     file = fopen(args, "rb");
 
@@ -79,7 +79,7 @@ void cmd_download(SSL *channel, char *args)
         send_channel(channel, token);
 
     while (!feof(file)) {
-        fread(buffer, sizeof(buffer), 1, file)
+        fread(buffer, sizeof(buffer), 1, file);
         send_channel(channel, buffer);
     }
 
