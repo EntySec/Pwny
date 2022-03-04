@@ -37,6 +37,8 @@
 #include "tools.h"
 #include "channel.h"
 
+#define BUFFER_SIZE 1024
+
 static char *get_time_str(char *format)
 {
     static char time_stamp[128];
@@ -71,15 +73,18 @@ void cmd_download(SSL *channel, char *args)
     char *token = read_channel(channel);
 
     FILE *file;
-    char buffer[4096];
+    int length;
+    char buffer[BUFFER_SIZE];
 
     file = fopen(args, "rb");
 
     if (file == NULL)
         send_channel(channel, token);
 
-    while (fread(buffer, sizeof(char), sizeof(buffer), file) > 0)
+    while ((length = fread(buffer, sizeof(char), BUFFER_SIZE, file)) > 0) {
         send_channel(channel, buffer);
+        memset(buffer, 0, BUFFER_SIZE);
+    }
 
     send_channel(channel, token);
     fclose(file);
@@ -112,11 +117,11 @@ void cmd_upload(SSL *channel, char *args)
 
         if (strstr(data, token)) {
             data = remove_last(data, strlen(token));
-            fwrite(data, sizeof(char), sizeof(data), file);
+            fwrite(data, sizeof(char), strlen(data), file);
             break;
         }
 
-        fwrite(data, sizeof(char), sizeof(data), file);
+        fwrite(data, sizeof(char), strlen(data), file);
     }
 
     fclose(file);
