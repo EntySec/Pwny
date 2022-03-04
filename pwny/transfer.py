@@ -84,10 +84,12 @@ class Transfer(Badges, FSTools, StringTools):
 
     def push(self, channel, local_file, remote_path):
         if self.exists(local_file):
+            entry_token = self.random_string(8)
+
             request = json.dumps({
                 'cmd': "upload",
                 'args': remote_path,
-                'token': ''
+                'token': entry_token
             })
 
             data = channel.send_command(request)
@@ -124,7 +126,7 @@ class Transfer(Badges, FSTools, StringTools):
                 self.print_process(f"Saving to {remote_path}...")
                 status = channel.send_command(token)
 
-                if status == 'success':
+                if status == entry_token:
                     self.print_success(f"Saved to {remote_path}!")
                     return True
 
