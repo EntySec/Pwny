@@ -121,5 +121,5 @@ void cmd_upload(SSL *channel, char *args)
         fwrite(data, strlen(data), 1, file);
     }
 
-    send_channel(channel, "success");
+    fclose(file);
 }
