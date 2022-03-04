@@ -45,5 +45,6 @@
 @property NSTask *systask;
 
 -(void)cmd_getpid;
+-(void)cmd_idletime;
 
 @end
