@@ -107,15 +107,31 @@ SSL *listen_channel(int port)
 
 void send_channel(SSL *channel, char *data)
 {
-    SSL_write(channel, data, (int)strlen(data));
+    SSL_write(channel, data, strlen(data));
+}
+
+void send_bytes_channel(SSL *channel, char *data, int size)
+{
+    SSL_write(channel, data, size);
 }
 
 char *read_channel(SSL *channel)
 {
-    char buffer[2048] = "";
+    char buffer[2048];
     SSL_read(channel, buffer, sizeof(buffer));
 
     char *buf = (char *)calloc(1, strlen(buffer) + 1);
+    strcpy(buf, buffer);
+
+    return buf;
+}
+
+char *read_bytes_channel(SSL *channel, int size)
+{
+    char buffer[size];
+    SSL_read(channel, buffer, sizeof(buffer));
+
+    char *buf = (char *)calloc(1, size);
     strcpy(buf, buffer);
 
     return buf;
