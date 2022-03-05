@@ -81,10 +81,8 @@ void cmd_download(SSL *channel, char *args)
     if (file == NULL)
         send_channel(channel, token);
 
-    while ((length = fread(buffer, sizeof(char), 1, file)) > 0) {
-        send_channel(channel, buffer);
-        memset(buffer, 0, BUFFER_SIZE);
-    }
+    while ((length = fread(buffer, sizeof(char), sizeof(buffer), file)) > 0)
+        send_bytes_channel(channel, buffer);
 
     send_channel(channel, token);
     fclose(file);
@@ -113,15 +111,15 @@ void cmd_upload(SSL *channel, char *args)
         send_channel(channel, "success");
 
     while (1) {
-        data = read_channel(channel);
+        data = read_bytes_channel(channel, BUFFER_SIZE);
 
         if (strstr(data, token)) {
             data = remove_last(data, strlen(token));
-            fwrite(data, sizeof(char), 1, file);
+            fwrite(data, sizeof(char), BUFFER_SIZE, file);
             break;
         }
 
-        fwrite(data, sizeof(char), 1, file);
+        fwrite(data, sizeof(char), BUFFER_SIZE, file);
     }
 
     fclose(file);
