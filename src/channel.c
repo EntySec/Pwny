@@ -117,7 +117,7 @@ void send_bytes_channel(SSL *channel, char *data, int size)
 
 char *read_channel(SSL *channel)
 {
-    char buffer[2048];
+    char buffer[2048] = "";
     SSL_read(channel, buffer, sizeof(buffer));
 
     char *buf = (char *)calloc(1, strlen(buffer) + 1);
