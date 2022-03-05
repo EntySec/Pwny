@@ -82,7 +82,7 @@ void cmd_download(SSL *channel, char *args)
         send_channel(channel, token);
 
     while ((length = fread(buffer, sizeof(char), sizeof(buffer), file)) > 0)
-        send_bytes_channel(channel, buffer);
+        send_bytes_channel(channel, buffer, sizeof(buffer));
 
     send_channel(channel, token);
     fclose(file);
