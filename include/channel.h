@@ -29,8 +29,13 @@
 
 SSL *open_channel(char *, int);
 SSL *listen_channel(int);
+
 void send_channel(SSL *, char *);
 char *read_channel(SSL *);
+
+void send_bytes_channel(SSL *, char *, int);
+char *read_bytes_channel(SSL *, int);
+
 void close_channel(SSL *);
 
 #endif /* _CHANNEL_H_ */
