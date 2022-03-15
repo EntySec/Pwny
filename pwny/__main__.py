@@ -30,7 +30,7 @@ import json
 from hatvenom import HatVenom
 
 from hatsploit.core.base.types import Types
-from hatsploit.utils.string import StringTools
+from pex.tools.string import StringTools
 
 
 class Pwny(StringTools):
