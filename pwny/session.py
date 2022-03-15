@@ -29,15 +29,17 @@ import json
 
 from .transfer import Transfer
 
+from hatsploit.lib.loot import Loot
 from hatsploit.lib.session import Session
 from hatsploit.lib.commands import Commands
 
-from hatsploit.utils.ssl import SSLTools
-from hatsploit.utils.string import StringTools
-from hatsploit.utils.channel import ChannelClient
+from pex.tools.ssl import SSLTools
+from pex.tools.string import StringTools
+from pex.client.channel import ChannelClient
 
 
 class PwnySession(Session, Transfer, SSLTools, StringTools, ChannelClient):
+    loot = Loot()
     commands = Commands()
 
     prompt = '%linepwny%end > '
@@ -53,7 +55,12 @@ class PwnySession(Session, Transfer, SSLTools, StringTools, ChannelClient):
     }
 
     def open(self, client):
-        client = self.wrap_client(client)
+        client = self.wrap_client(
+            client,
+            self.loot.random_loot('key'),
+            self.loot.random_loot('crt')
+        )
+
         self.channel = self.open_channel(client)
 
     def close(self):
