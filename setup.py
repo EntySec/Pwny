@@ -37,6 +37,7 @@ setup(name='pwny',
       packages=find_packages(),
       include_package_data=True,
       install_requires=[
+          'pex @ git+https://github.com/EntySec/Pex',
           'hatvenom @ git+https://github.com/EntySec/HatVenom'
       ],
       zip_safe=False
