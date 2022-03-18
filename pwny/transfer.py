@@ -62,8 +62,6 @@ class Transfer(Badges, FSTools, StringTools):
                         if token.encode() in chunk:
                             token_index = chunk.index(token.encode())
                             token_size = len(token)
-
-                            self.print_process(f"Saving to {local_path}...")
                             f.write(chunk[:token_index])
 
                             break
@@ -119,13 +117,10 @@ class Transfer(Badges, FSTools, StringTools):
                         current = i * max_size
                         block = data[current:current + max_size]
 
-                        self.print_process(f"Uploading... ({str(current)}/{str(size)})", end='')
                         if block:
                             channel.send(block)
 
-                self.print_process(f"Saving to {remote_path}...")
                 status = channel.send_command(token)
-
                 if status == entry_token:
                     self.print_success(f"Saved to {remote_path}!")
                     return True
