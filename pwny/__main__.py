@@ -29,13 +29,13 @@ import json
 
 from hatvenom import HatVenom
 
-from hatsploit.core.base.types import Types
+from pex.tools.type import TypeTools
 from pex.tools.string import StringTools
 
 
 class Pwny(StringTools):
     hatvenom = HatVenom()
-    types = Types()
+    type_tools = TypeTools()
 
     templates = f'{os.path.dirname(os.path.dirname(__file__))}/pwny/templates/'
 
@@ -65,8 +65,8 @@ class Pwny(StringTools):
         if not host and not port:
             return template
 
-        for executable in self.types.formats:
-            if platform in self.types.formats[executable]:
+        for executable in self.type_tools.formats:
+            if platform in self.type_tools.formats[executable]:
                 return self.hatvenom.generate(executable, arch, template, {
                     'data': self.encode_data(host, port)
                 })
