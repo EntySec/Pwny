@@ -29,8 +29,8 @@ import json
 
 from hatvenom import HatVenom
 
-from pex.tools.type import TypeTools
-from pex.tools.string import StringTools
+from pex.type import TypeTools
+from pex.string import StringTools
 
 
 class Pwny(StringTools):
