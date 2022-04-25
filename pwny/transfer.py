@@ -31,7 +31,7 @@ import json
 from hatsploit.core.cli.badges import Badges
 from hatsploit.core.utils.fs import FSTools
 
-from pex.tools.string import StringTools
+from pex.string import StringTools
 
 
 class Transfer(Badges, FSTools, StringTools):
