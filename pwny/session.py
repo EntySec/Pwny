@@ -33,9 +33,10 @@ from hatsploit.lib.loot import Loot
 from hatsploit.lib.session import Session
 from hatsploit.lib.commands import Commands
 
-from pex.tools.ssl import SSLTools
-from pex.tools.string import StringTools
-from pex.client.channel import ChannelClient
+from pex.ssl import SSLTools
+from pex.string import StringTools
+
+from pex.proto.channel import ChannelClient
 
 
 class PwnySession(Session, Transfer, SSLTools, StringTools, ChannelClient):
