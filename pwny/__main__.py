@@ -29,13 +29,13 @@ import json
 
 from hatvenom import HatVenom
 
-from pex.type import TypeTools
-from pex.string import StringTools
+from pex.type import Type
+from pex.string import String
 
 
-class Pwny(StringTools):
+class Pwny(String):
     hatvenom = HatVenom()
-    type_tools = TypeTools()
+    type_tools = Type()
 
     templates = f'{os.path.dirname(os.path.dirname(__file__))}/pwny/templates/'
 
