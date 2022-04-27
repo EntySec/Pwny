@@ -29,8 +29,8 @@ import os
 import json
 
 from hatsploit.core.cli.badges import Badges
-from hatsploit.core.utils.fs import FS
 
+from pex.fs import FS
 from pex.string import String
 
 
