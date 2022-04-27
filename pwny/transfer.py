@@ -29,12 +29,12 @@ import os
 import json
 
 from hatsploit.core.cli.badges import Badges
-from hatsploit.core.utils.fs import FSTools
+from hatsploit.core.utils.fs import FS
 
-from pex.string import StringTools
+from pex.string import String
 
 
-class Transfer(Badges, FSTools, StringTools):
+class Transfer(Badges, FS, String):
     def pull(self, channel, remote_file, local_path):
         request = json.dumps({
             'cmd': "download",
