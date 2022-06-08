@@ -28,9 +28,13 @@
 #include <stdlib.h>
 #include <string.h>
 
+#ifndef _WIN32
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#else
+#include <winsock2.h>
+#endif
 
 #include <openssl/ssl.h>
 
@@ -42,6 +46,7 @@ SSL *open_channel(char *host, int port)
     SSL *channel;
     SSL_CTX *channel_ctx = SSL_CTX_new(TLS_method());
 
+    #ifndef _WIN32
     int sock = socket(AF_INET, SOCK_STREAM, 0);
     if (sock == -1)
         return channel;
@@ -51,8 +56,30 @@ SSL *open_channel(char *host, int port)
     hint.sin_port = htons(port);
     inet_pton(AF_INET, host, &hint.sin_addr);
 
-    if (connect(sock, (struct sockaddr*)&hint, sizeof(hint)) == -1)
+    if (connect(sock, (struct sockaddr*)&hint, sizeof(hint)) != -1)
         return channel;
+    #else
+    WSADATA wsadata;
+    if (WSAStartup(MAKEWORD(2, 2), &wsadata) != 0)
+        return channel;
+
+    SOCKET sock = socket(AF_INET, SOCK_STREAM, 0);
+    if (sock == INVALID_SOCKET) {
+        WSACleanup();
+        return channel;
+    }
+
+    SOCKADDR_IN hint;
+    hint.sin_family = AF_INET;
+    hint.sin_port = htons(port);
+    hint.sin_addr.s_addr = inet_addr(host);
+
+    if (connect(sock, (SOCKADDR*)&hint, sizeof(hint)) != 0) {
+        closesocket(sock);
+        WSACleanup();
+        return channel;
+    }
+    #endif
 
     channel = SSL_new(channel_ctx);
     if (!channel)
@@ -74,6 +101,7 @@ SSL *listen_channel(int port)
     SSL *channel;
     SSL_CTX *channel_ctx = SSL_CTX_new(TLS_method());
 
+    #ifndef _WIN32
     int sock = socket(AF_INET, SOCK_STREAM, 0);
     if (sock == -1)
         return channel;
@@ -93,6 +121,30 @@ SSL *listen_channel(int port)
 
     unsigned int client_len = sizeof(client);
     int new_sock = accept(sock, (struct sockaddr*)&client, &client_len);
+    #else
+    WSADATA wsadata;
+    if (WSAStartup(MAKEWORD(2, 2), &wsadata) != 0)
+        return channel;
+
+    SOCKET socket = socket(AF_INET, SOCK_STREAM, 0);
+    if (socket == INVALID_SOCKET) {
+        WSACleanup();
+        return channel;
+    }
+
+    SOCKADDR_IN hint;
+    hint.sin_family = AF_INET;
+    hint.sin_port = htons(port);
+    hint.sin_addr.s_addr = htonl(INADDR_ANY);
+
+    if (bind(sock, (SOCKADDR*)&hint, sizeof(hint)) == SOCKET_ERROR) {
+        closesocket(sock);
+        WSACleanup();
+        return channel;
+    }
+
+    // todo
+    #endif
 
     channel = SSL_new(channel_ctx);
     if (!channel)
