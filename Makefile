@@ -22,11 +22,11 @@
 # SOFTWARE.
 #
 
-archive = ar
-
 ifeq ($(platform), windows)
+	archive = x86_64-w64-mingw32-gcc-ar
 	compiler = x86_64-w64-mingw32-gcc
 else
+	archive = ar
 	compiler = clang
 endif
 
