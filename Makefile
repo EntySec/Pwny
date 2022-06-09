@@ -23,7 +23,12 @@
 #
 
 archive = ar
-compiler = clang
+
+ifeq ($(platform), windows)
+	compiler = x86_64-w64-mingw32-gcc
+else
+	compiler = clang
+endif
 
 template = pwny.bin
 library = libpwny.a
@@ -100,6 +105,9 @@ else ifeq ($(platform), linux)
 	pwny_sources += $(stdapi_src)/generic/unix/generic.c
 
 	pwny_objects += unix.o
+else ifeq ($(platform), windows)
+	pwny_sources += $(stdapi_src)/windows/stdapi.c
+	pwny_sources += $(stdapi_src)/windows/commands.c
 endif
 
 ifeq ($(platform), apple_ios)
