@@ -26,7 +26,7 @@
 
 #include <openssl/ssl.h>
 
-#include "generic/unix.h"
+#include "generic/multi.h"
 
 void generic(SSL *channel, char *cmd, char *args)
 {
