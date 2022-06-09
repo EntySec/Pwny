@@ -1,9 +1,7 @@
-#!/usr/bin/env python3
-
-#
-# This command requires HatSploit: https://hatsploit.netlify.app
-# Current source: https://github.com/EntySec/HatSploit
-#
+"""
+This command requires HatSploit: https://hatsploit.com
+Current source: https://github.com/EntySec/HatSploit
+"""
 
 from hatsploit.lib.command import Command
 
@@ -26,8 +24,6 @@ class HatSploitCommand(Command):
 
             if level in range(0, 10):
                 command = f"{argv[0]} {str(level / 10)}"
-
                 self.session.send_command(command)
-                return
 
          self.print_usage(self.details['Usage'])
