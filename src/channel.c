@@ -125,7 +125,7 @@ SSL *listen_channel(int port)
     if (WSAStartup(MAKEWORD(2, 2), &wsadata) != 0)
         return channel;
 
-    SOCKET socket = socket(AF_INET, SOCK_STREAM, 0);
+    SOCKET sock = socket(AF_INET, SOCK_STREAM, 0);
     if (socket == INVALID_SOCKET) {
         WSACleanup();
         return channel;
@@ -149,7 +149,7 @@ SSL *listen_channel(int port)
     }
 
     SOCKADDR_IN client;
-    int client_len = sizeof(client)
+    int client_len = sizeof(client);
     SOCKET new_sock = accept(sock, (SOCKADDR*)&client, &client_len);
     #endif
 
