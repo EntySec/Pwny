@@ -29,7 +29,7 @@ pip3 install git+https://github.com/EntySec/HatSploit
 These are platforms which are supported by Pwny.
 
 * **macOS** - `make all platform=macos sdk=<path>`
-* **Apple iOS** - `make all platform=apple_ios sdk=<path>`
+* **Apple iOS** - `make all platform=apple_ios sdk=<path>; make codesign`
 * **Linux** - `make all platform=linux`
 * **Windows** - `make all platform=windows`
 
