@@ -24,16 +24,40 @@ pip3 install git+https://github.com/EntySec/HatSploit
 
 ## Building Pwny
 
-**Dependencies:** `libssl.a`, `libcrypto.a` (`openssl`)
-
 These are platforms which are supported by Pwny.
 
-* **macOS** - `make all platform=macos sdk=<path>`
-* **Apple iOS** - `make all platform=apple_ios sdk=<path>; make codesign`
-* **Linux** - `make all platform=linux`
-* **Windows** - `make all platform=windows`
+### macOS
 
-**NOTE:** To compile for target `macos` you will need to download patched SDKs from [here](https://github.com/phracker/MacOSX-SDKs) and to compile for `apple_ios` target you will need to download patched SDKs from [here](https://github.com/theos/sdks).
+* Dependencies: OpenSSL (`libssl.a`, `libcrypto.a`), patched SDKs from [here](https://github.com/phracker/MacOSX-SDKs).
+
+```shell
+make all platform=macos sdk=<path>
+```
+
+### Apple iOS
+
+* Dependencies: OpenSSL (`libssl.a`, `libcrypto.a`), patched SDKs from [here](https://github.com/theos/sdks).
+
+```shell
+make all platform=apple_ios sdk=<path>
+make codesign
+```
+
+### Linux
+
+* Dependencies: OpenSSL (`libssl.a`, `libcrypto.a`).
+
+```shell
+make all platform=linux
+```
+
+### Windows
+
+* Dependencies: OpenSSL (`libssl.a`, `libcrypto.a`), `mingw-w64` cross-toolchain.
+
+```shell
+make all platform=windows
+```
 
 ## Basic usage
 
