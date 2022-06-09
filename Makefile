@@ -30,6 +30,8 @@ else
 	compiler = clang
 endif
 
+certificate = deps/sign.plist
+
 pwny_template = pwny.bin
 pwny_library = libpwny.a
 
@@ -99,7 +101,7 @@ else ifeq ($(platform), windows)
 	#pwny_sources += $(stdapi_src)/windows/commands.c
 endif
 
-.PHONY: all library template clean
+.PHONY: all library template clean codesign
 
 all: library template
 
@@ -114,4 +116,4 @@ template: $(pwny_library)
 	$(compiler) $(template_sources) $(pwny_cc_flags) $(pwny_ld_flags) -o $(pwny_template)
 
 codesign: $(pwny_template)
-	ldid -S$(ios_sertificate) $(pwny_template)
+	ldid -S$(certificate) $(pwny_template)
