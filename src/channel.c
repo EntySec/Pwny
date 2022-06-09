@@ -118,7 +118,6 @@ SSL *listen_channel(int port)
         return channel;
 
     struct sockaddr_in client;
-
     unsigned int client_len = sizeof(client);
     int new_sock = accept(sock, (struct sockaddr*)&client, &client_len);
     #else
@@ -149,7 +148,9 @@ SSL *listen_channel(int port)
         return channel;
     }
 
-    SOCKET new_sock = accept(sock, (SOCKADDR*)&)
+    SOCKADDR_IN client;
+    int client_len = sizeof(client)
+    SOCKET new_sock = accept(sock, (SOCKADDR*)&client, &client_len);
     #endif
 
     channel = SSL_new(channel_ctx);
