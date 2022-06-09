@@ -137,13 +137,19 @@ SSL *listen_channel(int port)
     hint.sin_port = htons(port);
     hint.sin_addr.s_addr = htonl(INADDR_ANY);
 
-    if (bind(sock, (SOCKADDR*)&hint, sizeof(hint)) == SOCKET_ERROR) {
+    if (bind(sock, (SOCKADDR*)&hint, sizeof(hint)) != 0) {
         closesocket(sock);
         WSACleanup();
         return channel;
     }
 
-    // todo
+    if (listen(sock, 5) != 0) {
+        closesocket(sock);
+        WSACleanup();
+        return channel;
+    }
+
+    SOCKET new_sock = accept(sock, (SOCKADDR*)&)
     #endif
 
     channel = SSL_new(channel_ctx);
