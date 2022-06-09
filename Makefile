@@ -95,8 +95,8 @@ else ifeq ($(platform), linux)
 	pwny_sources += $(stdapi_src)/linux/commands.c
 
 else ifeq ($(platform), windows)
-	pwny_sources += $(stdapi_src)/windows/stdapi.c
-	pwny_sources += $(stdapi_src)/windows/commands.c
+	#pwny_sources += $(stdapi_src)/windows/stdapi.c
+	#pwny_sources += $(stdapi_src)/windows/commands.c
 endif
 
 .PHONY: all library template clean
