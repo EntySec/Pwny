@@ -24,12 +24,12 @@
 
 #define _GNU_SOURCE
 
+#include <unistd.h>
+
 #ifndef _WIN32
 #include <signal.h>
 #include <fcntl.h>
 #include <sys/ioctl.h>
-#else
-#include <unistd.h>
 #endif
 
 void prevent_termination()
