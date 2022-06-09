@@ -126,7 +126,7 @@ SSL *listen_channel(int port)
         return channel;
 
     SOCKET sock = socket(AF_INET, SOCK_STREAM, 0);
-    if (socket == INVALID_SOCKET) {
+    if (sock == INVALID_SOCKET) {
         WSACleanup();
         return channel;
     }
