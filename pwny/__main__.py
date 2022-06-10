@@ -25,19 +25,27 @@ SOFTWARE.
 import os
 import json
 
-from hatvenom import HatVenom
-
-from pex.type import Type
+from pex.exe import EXE
 from pex.string import String
 
 
-class Pwny(String):
-    hatvenom = HatVenom()
-    type_tools = Type()
+class Pwny(EXE, String):
+    """ Main class of pwny module.
+
+    This main class of pwny module is intended for providing
+    an implementation of Pwny manipulation methods.
+    """
 
     templates = f'{os.path.dirname(os.path.dirname(__file__))}/pwny/templates/'
 
-    def get_template(self, platform, arch):
+    def get_template(self, platform: str, arch: str) -> bytes:
+        """ Get Pwny template.
+
+        :param str platform: platform to get Pwny template for
+        :param str arch: architecture to get Pwny template for
+        :return bytes: Pwny template
+        """
+
         payload = self.templates + platform + '/' + arch + '.bin'
 
         if os.path.exists(payload):
@@ -57,16 +65,21 @@ class Pwny(String):
 
         return self.base64_string(data)
 
-    def get_pwny(self, platform, arch, host=None, port=8888):
+    def get_pwny(self, platform: str, arch: str, host: str = '', port: int = 8888) -> bytes:
+        """ Get Pwny.
+
+        :param str platform: platform to get Pwny for
+        :param str arch: arhcitecture to get Pwny for
+        :param str host: host to get Pwny with
+        :param int port: port to get Pwny with
+        :return bytes: Pwny
+        """
+
         template = self.get_template(platform, arch)
-        
+
         if not host and not port:
             return template
 
-        for executable in self.type_tools.formats:
-            if platform in self.type_tools.formats[executable]:
-                return self.hatvenom.generate(executable, arch, template, {
-                    'data': self.encode_data(host, port)
-                })
-
-        return template
+        return self.executable_replace(
+            template, '::data::', self.encode_data(host, port)
+        )
