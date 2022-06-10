@@ -36,7 +36,7 @@
 #include "channel.h"
 #include "console.h"
 
-char data[64] = ":data:string:";
+char data[64] = "::data::";
 
 int main(int argc, char *argv[])
 {
