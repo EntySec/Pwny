@@ -48,7 +48,7 @@ class PwnySession(Session, Transfer, OpenSSL, String, ChannelClient):
     commands = Commands()
 
     prompt = '%linepwnypreter%end > '
-    pwny = f'{os.path.dirname(os.path.dirname(__file__))}/pwny/commands/'
+    pwny = f'{os.path.dirname(os.path.dirname(__file__))}/pwny/'
 
     channel = None
 
@@ -160,7 +160,7 @@ class PwnySession(Session, Transfer, OpenSSL, String, ChannelClient):
 
         self.print_process("Loading Pwny commands...")
 
-        commands = self.pwny + self.details['Platform'].lower()
+        commands = self.pwny + 'commands/' + self.details['Platform'].lower()
         pwny = self.commands.load_commands(commands)
 
         for command in pwny:
