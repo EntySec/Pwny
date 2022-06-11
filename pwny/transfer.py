@@ -29,10 +29,24 @@ from hatsploit.core.cli.badges import Badges
 
 from pex.fs import FS
 from pex.string import String
+from pex.proto.channel import ChannelSocket
 
 
 class Transfer(Badges, FS, String):
-    def pull(self, channel, remote_file, local_path):
+    """ Subclass of pwny module.
+
+    This subclass of pwny module is intended for providing
+    implementations of file transfer methods for the Pwny session.
+    """
+
+    def pull(self, channel: ChannelSocket, remote_file: str, local_path: str) -> bool:
+        """ Pull file from the channel.
+
+        :param ChannelSocket channel: channel to pull file from
+        :param str remote_file: file to pull
+        :param str local_path: path to save pulled file to
+        """
+
         request = json.dumps({
             'cmd': "download",
             'args': remote_file,
@@ -77,7 +91,14 @@ class Transfer(Badges, FS, String):
 
         return False
 
-    def push(self, channel, local_file, remote_path):
+    def push(self, channel: ChannelSocket, local_file: str, remote_path: str) -> bool:
+        """ Push file to the channel.
+
+        :param ChannelSocket channel: channel to push file to
+        :param str local_file: file to push
+        :param str remote_path: path to save pushed file to
+        """
+
         if self.exists(local_file):
             entry_token = self.random_string(8)
 
