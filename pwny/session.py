@@ -24,6 +24,7 @@ SOFTWARE.
 
 import os
 import json
+import socket
 
 from .transfer import Transfer
 
@@ -33,15 +34,20 @@ from hatsploit.lib.commands import Commands
 
 from pex.ssl import OpenSSL
 from pex.string import String
-
 from pex.proto.channel import ChannelClient
 
 
 class PwnySession(Session, Transfer, OpenSSL, String, ChannelClient):
+    """ Subclass of pwny module.
+
+    This subclass of pwny module represents an implementation
+    of the Pwny session for HatSploit Framework.
+    """
+
     loot = Loot()
     commands = Commands()
 
-    prompt = '%linepwny%end > '
+    prompt = '%linepwnypreter%end > '
     pwny = f'{os.path.dirname(os.path.dirname(__file__))}/pwny/commands/'
 
     channel = None
@@ -53,7 +59,13 @@ class PwnySession(Session, Transfer, OpenSSL, String, ChannelClient):
         'Type': "pwny"
     }
 
-    def open(self, client):
+    def open(self, client: socket.socket) -> None:
+        """ Open the Pwny session.
+
+        :param socket.socket client: client to open session with
+        :return None: None
+        """
+
         client = self.wrap_client(
             client,
             self.loot.random_loot('key'),
@@ -62,13 +74,30 @@ class PwnySession(Session, Transfer, OpenSSL, String, ChannelClient):
 
         self.channel = self.open_channel(client)
 
-    def close(self):
+    def close(self) -> None:
+        """ Close the Pwny session.
+
+        :return None: None
+        """
+
         self.channel.disconnect()
 
-    def heartbeat(self):
+    def heartbeat(self) -> bool:
+        """ Check the Pwny session heartbeat.
+
+        :return bool: True if the Pwny session is alive
+        """
+
         return not self.channel.terminated
 
-    def send_command(self, command, output=False, decode=True):
+    def send_command(self, command: str, output: bool = False) -> str:
+        """ Send command to the Pwny session.
+
+        :param str command: command to send
+        :param bool output: wait for the output or not
+        :return str: command output
+        """
+
         args = ''
         token = self.random_string(8)
         commands = self.format_commands(command)
@@ -85,25 +114,43 @@ class PwnySession(Session, Transfer, OpenSSL, String, ChannelClient):
         return self.channel.send_token_command(
             command_data,
             token,
-            output,
-            decode
+            output
         )
 
-    def download(self, remote_file, local_path):
+    def download(self, remote_file: str, local_path: str) -> bool:
+        """ Download file from the Pwny session.
+
+        :param str remote_file: file to download
+        :param str local_path: path to save downloaded file to
+        :return bool: True if download succeed
+        """
+
         return self.pull(
             self.channel,
             remote_file,
             local_path
         )
 
-    def upload(self, local_file, remote_path):
+    def upload(self, local_file: str, remote_path: str) -> bool:
+        """ Upload file to the Pwny session.
+
+        :param str local_file: file to upload
+        :param str remote_path: path to save uploaded file to
+        :return bool: True if upload succeed
+        """
+
         return self.push(
             self.channel,
             local_file,
             remote_path
         )
 
-    def interact(self):
+    def interact(self) -> None:
+        """ Interact with the Monhorn session.
+
+        :return None: None
+        """
+
         self.print_empty()
 
         if self.channel.terminated:
