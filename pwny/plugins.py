@@ -22,11 +22,10 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-from hatsploit.core.cli.badges import Badges
 from hatsploit.lib.plugins import Plugins
 
 
-class Plugins(Badges):
+class Plugins:
     """ Subclass of pwny module.
 
     This subclass of pwny module is intended for providing
@@ -42,13 +41,16 @@ class Plugins(Badges):
         self.imported_plugins = self.plugins.import_plugins(path)
 
     def load_plugin(self, plugin):
-        if plugin in self.imported_plugins:
-            loaded_plugins.update({plugin: self.imported_plugins[plugin]})
+        if plugin not in self.loaded_plugins:
+            if plugin in self.imported_plugins:
+                loaded_plugins.update({plugin: self.imported_plugins[plugin]})
+            else:
+                raise RuntimeError(f"Invalid plugin: {plugin}!")
         else:
-            pass
+            raise RuntimeWarning(f"Plugin is already loaded: {plugin}.")
 
     def unload_plugin(self, plugin):
         if plugin in self.imported_plugins:
             loaded_plugins.pop(plugin)
         else:
-            self.print_error(f"Plugin is not loaded: {plugin}!")
+            raise RuntimeError(f"Plugin is not loaded: {plugin}!")
