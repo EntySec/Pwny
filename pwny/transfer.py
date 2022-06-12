@@ -106,11 +106,11 @@ class Transfer(Badges, FS, String):
 
                 request = json.dumps({
                     'cmd': 'upload',
-                    'args': json.dumps({
+                    'args': f"'{str({
                         'size': size,
                         'path': remote_path,
                         'name': name
-                    }),
+                    })}'",
                     'token': ''
                 })
 
