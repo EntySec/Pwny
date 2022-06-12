@@ -169,12 +169,12 @@ class PwnySession(Session, Plugins, Transfer, OpenSSL, String, ChannelClient):
             )
         )
 
-        plugins = self.import_plugins(
-            self.pwny + 'plugins/' + self.details['Platform'].lower()
-        )
-
         for command in commands:
             commands[command].session = self
+
+        self.import_plugins(
+            self.pwny + 'plugins/' + self.details['Platform'].lower()
+        )
 
         while True:
             command = self.input_empty(self.prompt)
@@ -187,7 +187,10 @@ class PwnySession(Session, Plugins, Transfer, OpenSSL, String, ChannelClient):
                     self.print_table("Core Commands", ('Command', 'Description'), *[
                         ('exit', 'Terminate Pwny session.'),
                         ('help', 'Show available commands.'),
-                        ('quit', 'Stop interaction.')
+                        ('load', 'Load Pwny plugin.'),
+                        ('plugins', 'List Pwny plugins.'),
+                        ('quit', 'Stop interaction.'),
+                        ('unload', 'Unload Pwny plugin.')
                     ])
 
                     self.commands.show_commands(commands)
@@ -204,4 +207,4 @@ class PwnySession(Session, Plugins, Transfer, OpenSSL, String, ChannelClient):
 
             if command:
                 if not self.commands.execute_custom_command(cmd, commands, False):
-                    self.commands.execute_custom_plugin_command(cmd, plugins)
+                    self.commands.execute_custom_plugin_command(cmd, self.loaded_plugins)
