@@ -22,32 +22,33 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-from hatsploit.core.db.importer import Importer
+from hatsploit.core.cli.badges import Badges
+from hatsploit.lib.plugins import Plugins
 
 
-class Plugins:
+class Plugins(Badges):
     """ Subclass of pwny module.
 
     This subclass of pwny module is intended for providing
     Pwny plugins handler implementation.
     """
 
-    importer = Importer()
+    plugins = Plugins()
 
-    def load_plugins(self, path):
-        if not path.endswith('/'):
-            path += '/'
+    imported_plugins = {}
+    loaded_plugins = {}
 
-        plugins = {}
-        plugin_path = os.path.split(path)[0]
+    def import_plugins(self, path):
+        self.imported_plugins = self.plugins.import_plugins(path)
 
-        for file in os.listdir(plugin_path):
-            if file.endswith('py'):
-                try:
-                    plugin_object = self.plugins.import_plugin(plugin_path + '/' + file[:-3])
-                    plugin_name = plugin_object.details['Name']
-                    plugins[plugin_name] = plugin_object
-                except Exception:
-                    self.badges.print_error(f"Failed to load {file[:-3]} plugin!")
+    def load_plugin(self, plugin):
+        if plugin in self.imported_plugins:
+            loaded_plugins.update({plugin: self.imported_plugins[plugin]})
+        else:
+            pass
 
-        return plugins
+    def unload_plugin(self, plugin):
+        if plugin in self.imported_plugins:
+            loaded_plugins.pop(plugin)
+        else:
+            self.print_error(f"Plugin is not loaded: {plugin}!")
