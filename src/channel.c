@@ -56,7 +56,7 @@ SSL *open_channel(char *host, int port)
     hint.sin_port = htons(port);
     inet_pton(AF_INET, host, &hint.sin_addr);
 
-    if (connect(sock, (struct sockaddr*)&hint, sizeof(hint)) != -1)
+    if (connect(sock, (struct sockaddr*)&hint, sizeof(hint)) != 0)
         return channel;
     #else
     WSADATA wsadata;
