@@ -37,13 +37,17 @@ class Plugins:
     imported_plugins = {}
     loaded_plugins = {}
 
-    def import_plugins(self, path):
+    def import_plugins(self, path, session):
         self.imported_plugins = self.plugins.import_plugins(path)
+
+        for plugin in self.imported_plugins:
+            self.imported_plugins[plugin].session = session
 
     def load_plugin(self, plugin):
         if plugin not in self.loaded_plugins:
             if plugin in self.imported_plugins:
                 loaded_plugins.update({plugin: self.imported_plugins[plugin]})
+                self.imported_plugins[plugin].load()
             else:
                 raise RuntimeError(f"Invalid plugin: {plugin}!")
         else:
