@@ -53,40 +53,41 @@ class Transfer(Badges, FS, String):
             'token': ''
         })
 
-        response = json.loads(channel.send_command(request))
-        status = int(response['status'])
+        data = channel.send_command(request)
 
-        if status == 1:
-            if 'size' in response:
-                exists, is_dir = self.exists(local_path)
-                if exists:
-                    if is_dir:
-                        local_path = local_path + '/' + os.path.split(remote_file)[1]
+        if data == 'file':
+            exists, is_dir = self.exists(local_path)
+            if exists:
+                if is_dir:
+                    local_path = local_path + '/' + os.path.split(remote_file)[1]
 
-                    self.print_process(f"Downloading {remote_file}...")
+                self.print_process(f"Downloading {remote_file}...")
 
-                    size = int(result['size'])
-                    token = self.random_string(8).encode()
+                token = self.random_string(8)
+                channel.send_command(token, False)
 
-                    channel.send(token)
+                with open(local_path, 'wb') as f:
+                    while True:
+                        chunk = channel.read(1024)
 
-                    with open(local_path, 'wb') as f:
-                        while True:
-                            chunk = channel.read(1024)
+                        if token.encode() in chunk:
+                            token_index = chunk.index(token.encode())
+                            token_size = len(token)
+                            f.write(chunk[:token_index])
 
-                            if token in chunk:
-                                f.write(chunk.replace(token, b''))
-                                break
+                            break
 
-                            f.write(chunk)
-                    return True
+                        f.write(chunk)
 
-        elif status == 0:
+                self.print_success(f"Saved to {local_path}!")
+                return True
+
+        elif data == 'directory':
+            self.print_error(f"Remote file: {remote_file}: is a directory!")
+        elif data == 'incorrect':
             self.print_error(f"Remote file: {remote_file}: does not exist!")
-        elif status == 2:
-            self.print_error(f"Remote path: {remote_file}: is a directory!")
         else:
-            self.print_error("Implementation error: download: is not implemented!")
+            self.print_error("Implementation error: download: not implemented!")
 
         return False
 
@@ -99,31 +100,50 @@ class Transfer(Badges, FS, String):
         """
 
         if self.exists(local_file):
-            with open(local_file, 'rb') as f:
-                data = f.read()
-                size = len(data)
-                name = os.path.split(local_file)[1]
+            entry_token = self.random_string(8)
 
-                request = json.dumps({
-                    'cmd': 'upload',
-                    'args': f"'{str({
-                        'size': size,
-                        'path': remote_path,
-                        'name': name
-                    })}'",
-                    'token': ''
-                })
+            request = json.dumps({
+                'cmd': "upload",
+                'args': remote_path,
+                'token': entry_token
+            })
 
-                channel.send_command(request, False)
+            data = channel.send_command(request)
 
-            token = self.random_string(8).encode()
+            if data == 'directory':
+                remote_path = remote_path + '/' + os.path.split(local_file)[1]
+                channel.send_command(remote_path, False)
 
-            for i in range((size // 1024) + 1):
-                deltax = i * 1024
-                chunk = data[deltax:deltax + 1024]
-                channel.send(chunk)
+            elif data != 'file':
+                self.print_error("Implementation error: upload: not implemented!")
+                return False
 
-            channel.send(token)
-            return True
+            self.print_process(f"Uploading {local_file}...")
 
+            token = self.random_string(8)
+            status = channel.send_command(token)
+
+            if status == 'success':
+                with open(local_file, 'rb') as f:
+                    data = f.read()
+
+                    max_size = 1024
+                    size = len(data)
+
+                    num_parts = int(size / max_size) + 1
+                    for i in range(0, num_parts):
+                        current = i * max_size
+                        block = data[current:current + max_size]
+
+                        if block:
+                            channel.send(block)
+
+                status = channel.send_command(token)
+                if status == entry_token:
+                    self.print_success(f"Saved to {remote_path}!")
+                    return True
+
+                self.print_error(f"Failed to save to {remote_path}!")
+            else:
+                self.print_error(f"Remote directory: {os.path.split(remote_path)[0]}: does not exist!")
         return False
