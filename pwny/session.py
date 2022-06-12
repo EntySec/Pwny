@@ -26,6 +26,7 @@ import os
 import json
 import socket
 
+from .plugins import Plugins
 from .transfer import Transfer
 
 from hatsploit.lib.loot import Loot
@@ -37,7 +38,7 @@ from pex.string import String
 from pex.proto.channel import ChannelClient
 
 
-class PwnySession(Session, Transfer, OpenSSL, String, ChannelClient):
+class PwnySession(Session, Plugins, Transfer, OpenSSL, String, ChannelClient):
     """ Subclass of pwny module.
 
     This subclass of pwny module represents an implementation
@@ -158,42 +159,41 @@ class PwnySession(Session, Transfer, OpenSSL, String, ChannelClient):
             self.close()
             return
 
-        self.print_process("Loading Pwny commands...")
+        commands = self.commands.load_commands(
+            self.pwny + 'commands/' + self.details['Platform'].lower()
+        )
 
-        commands = self.pwny + 'commands/' + self.details['Platform'].lower()
-        pwny = self.commands.load_commands(commands)
+        commands.update(
+            self.commands.load_commands(
+                self.pwny + 'commands/generic'
+            )
+        )
 
-        for command in pwny:
-            pwny[command].session = self
+        plugins = self.import_plugins(
+            self.pwny + 'plugins/' + self.details['Platform'].lower()
+        )
 
-        commands = commands + 'generic'
-        generic = self.commands.load_commands(commands)
-
-        for command in generic:
-            generic[command].session = self
-
-        self.print_information(f"Loaded {len(pwny) + len(generic)} commands.")
-        self.print_empty()
+        for command in commands:
+            commands[command].session = self
 
         while True:
-            commands = self.input_empty(self.prompt)
+            command = self.input_empty(self.prompt)
 
-            if commands:
-                if commands[0] == 'quit':
+            if command:
+                if command[0] == 'quit':
                     break
 
-                elif commands[0] == 'help':
+                elif command[0] == 'help':
                     self.print_table("Core Commands", ('Command', 'Description'), *[
                         ('exit', 'Terminate Pwny session.'),
                         ('help', 'Show available commands.'),
                         ('quit', 'Stop interaction.')
                     ])
 
-                    self.commands.show_commands(generic)
-                    self.commands.show_commands(pwny)
+                    self.commands.show_commands(commands)
                     continue
 
-                if commands[0] == 'exit':
+                if command[0] == 'exit':
                     self.send_command("exit")
                     self.channel.terminated = True
 
@@ -202,6 +202,6 @@ class PwnySession(Session, Transfer, OpenSSL, String, ChannelClient):
                 self.close()
                 break
 
-            if commands:
-                if not self.commands.execute_custom_command(commands, generic, False):
-                    self.commands.execute_custom_command(commands, pwny)
+            if command:
+                if not self.commands.execute_custom_command(cmd, commands, False):
+                    self.commands.execute_custom_plugin_command(cmd, plugins)
