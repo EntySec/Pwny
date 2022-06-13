@@ -83,7 +83,7 @@ class Console(Plugins, Badges, Commands):
             commands[command].session = session
 
         self.import_plugins(
-            session.pwny + 'plugins/' + session.details['Platform'].lower()
+            session.pwny + 'plugins/' + session.details['Platform'].lower(), session
         )
 
     def pwny_console(self, session: Session) -> None:
