@@ -40,7 +40,7 @@ class Console(Plugins, Badges, Runtime, Commands):
 
     prompt = '%linepwny%end > '
 
-    commands = [
+    core_commands = [
         ('exit', 'Terminate Pwny session.'),
         ('help', 'Show available commands.'),
         ('load', 'Load Pwny plugin.'),
@@ -48,6 +48,8 @@ class Console(Plugins, Badges, Runtime, Commands):
         ('quit', 'Stop interaction.'),
         ('unload', 'Unload Pwny plugin.')
     ]
+
+    commands = {}
 
     def check_session(self, session: Session) -> bool:
         """ Check is session alive.
@@ -70,18 +72,18 @@ class Console(Plugins, Badges, Runtime, Commands):
         :return None: None
         """
 
-        commands = self.load_commands(
+        self.commands = self.load_commands(
             session.pwny + 'commands/' + session.details['Platform'].lower()
         )
 
-        commands.update(
+        self.commands.update(
             self.load_commands(
                 session.pwny + 'commands/generic'
             )
         )
 
-        for command in commands:
-            commands[command].session = session
+        for command in self.commands:
+            self.commands[command].session = session
 
         self.import_plugins(
             session.pwny + 'plugins/' + session.details['Platform'].lower(), session
@@ -124,7 +126,7 @@ class Console(Plugins, Badges, Runtime, Commands):
                     ('unload', 'Unload Pwny plugin.')
                 ])
 
-                self.show_commands(commands)
+                self.show_commands(self.commands)
 
             elif command[0] == 'exit':
                 session.send_command("exit")
@@ -133,7 +135,7 @@ class Console(Plugins, Badges, Runtime, Commands):
             else:
                 self.check(session)
 
-                if not self.execute_custom_command(command, commands, False):
+                if not self.execute_custom_command(command, self.commands, False):
                     self.execute_custom_plugin_command(command, self.loaded_plugins)
 
         return False
