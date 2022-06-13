@@ -97,20 +97,21 @@ class Console(Plugins, Badges, Commands):
 
         if self.check_session(session):
             while True:
-                self.catch(self.pwny_shell, [session])
+                if self.catch(self.pwny_shell, [session]):
+                    break
 
-    def pwny_shell(self, session: Session) -> None:
+    def pwny_shell(self, session: Session) -> bool:
         """ Start Pwny shell.
 
         :param Session session: session to start Pwny shell for
-        :return None: None
+        :return bool: True if Pwny shell completed
         """
 
         command = self.input_empty(self.prompt)
 
         if command:
             if command[0] == 'quit':
-                break
+                return True
 
             elif command[0] == 'help':
                 self.print_table("Core Commands", ('Command', 'Description'), *[
@@ -123,13 +124,15 @@ class Console(Plugins, Badges, Commands):
                 ])
 
                 self.show_commands(commands)
-                continue
 
-            if command[0] == 'exit':
+            elif command[0] == 'exit':
                 session.send_command("exit")
                 session.channel.terminated = True
 
-            self.check(session)
+            else:
+                self.check(session)
 
-            if not self.execute_custom_command(command, commands, False):
-                self.execute_custom_plugin_command(command, self.loaded_plugins)
+                if not self.execute_custom_command(command, commands, False):
+                    self.execute_custom_plugin_command(command, self.loaded_plugins)
+
+        return False
