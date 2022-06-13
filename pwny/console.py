@@ -37,7 +37,7 @@ class Console(Plugins, Badges, Commands):
     Pwny main console.
     """
 
-    prompt = '%linepwnypreter%end > '
+    prompt = '%linepwny%end > '
 
     commands = [
         ('exit', 'Terminate Pwny session.'),
