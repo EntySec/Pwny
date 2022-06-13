@@ -60,7 +60,7 @@ class Console(Plugins, Badges, Commands):
             session.close()
 
             return False
-         return True
+        return True
 
     def start_pwny(self, session: Session) -> None:
         """ Start Pwny.
