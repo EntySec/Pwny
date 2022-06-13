@@ -26,11 +26,12 @@ from .plugins import Plugins
 
 from hatsploit.core.cli.badges import Badges
 
+from hatsploit.lib.runtime import Runtime
 from hatsploit.lib.session import Session
 from hatsploit.lib.commands import Commands
 
 
-class Console(Plugins, Badges, Commands):
+class Console(Plugins, Badges, Runtime, Commands):
     """ Subclass of pwny module.
 
     This subclass of pwny module is intended for providing
