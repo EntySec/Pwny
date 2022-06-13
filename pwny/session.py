@@ -148,5 +148,4 @@ class PwnySession(Session, Transfer, Console, OpenSSL, String, ChannelClient):
         :return None: None
         """
 
-        self.print_empty()
         self.pwny_console(self)
