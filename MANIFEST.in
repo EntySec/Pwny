@@ -1,2 +1,3 @@
 recursive-include pwny/commands *
+recursive-include pwny/plugins *
 recursive-include pwny/templates *
