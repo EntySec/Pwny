@@ -63,7 +63,7 @@ class Pwny(EXE, String):
                 'port': str(port)
             })
 
-        return self.base64_string(data)
+        return self.base64_string(data, False)
 
     def get_pwny(self, platform: str, arch: str, host: str = '', port: int = 8888) -> bytes:
         """ Get Pwny.
