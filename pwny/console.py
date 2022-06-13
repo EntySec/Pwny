@@ -100,31 +100,36 @@ class Console(Plugins, Badges, Runtime, Commands):
 
         if self.check_session(session):
             while True:
-                if self.catch(self.pwny_shell, [session]):
-                    break
+                self.catch(self.pwny_shell, [session])
 
-    def pwny_shell(self, session: Session) -> bool:
+    def pwny_shell(self, session: Session) -> None:
         """ Start Pwny shell.
 
         :param Session session: session to start Pwny shell for
-        :return bool: True if Pwny shell completed
+        :return None: None
         """
 
         command = self.input_empty(self.prompt)
 
         if command:
             if command[0] == 'quit':
-                return True
+                pass
+
+            elif command[0] == 'load':
+                if len(command) < 2:
+                    self.print_usage("load <plugin>")
+                else:
+                    self.load_plugin(command[1])
+
+            elif command[0] == 'unload':
+                if len(command) < 2:
+                    self.print_usage("unload <plugin>")
+                else:
+                    self.unload_plugin(command[1])
 
             elif command[0] == 'help':
-                self.print_table("Core Commands", ('Command', 'Description'), *[
-                    ('exit', 'Terminate Pwny session.'),
-                    ('help', 'Show available commands.'),
-                    ('load', 'Load Pwny plugin.'),
-                    ('plugins', 'List Pwny plugins.'),
-                    ('quit', 'Stop interaction.'),
-                    ('unload', 'Unload Pwny plugin.')
-                ])
+                self.print_table("Core Commands", ('Command', 'Description'),
+                                 *self.core_commands)
 
                 self.show_commands(self.commands)
 
@@ -137,5 +142,3 @@ class Console(Plugins, Badges, Runtime, Commands):
 
                 if not self.execute_custom_command(command, self.commands, False):
                     self.execute_custom_plugin_command(command, self.loaded_plugins)
-
-        return False
