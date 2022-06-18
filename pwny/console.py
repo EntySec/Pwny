@@ -140,7 +140,7 @@ class Console(Plugins, Badges, Runtime, Commands):
                 return True
 
             else:
-                self.check(session)
+                self.check_session(session)
 
                 if not self.execute_custom_command(command, self.commands, False):
                     self.execute_custom_plugin_command(command, self.loaded_plugins)
