@@ -100,7 +100,8 @@ class Console(Plugins, Badges, Runtime, Commands):
 
         if self.check_session(session):
             while True:
-                if self.catch(self.pwny_shell, [session]):
+                result = self.catch(self.pwny_shell, [session])
+                if result is not Exception and not result:
                     break
 
     def pwny_shell(self, session: Session) -> bool:
