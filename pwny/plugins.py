@@ -38,7 +38,9 @@ class Plugins:
     loaded_plugins = {}
 
     def import_plugins(self, path, session):
-        self.imported_plugins = self.plugins.import_plugins(path)
+        self.imported_plugins.update(
+            self.plugins.import_plugins(path)
+        )
 
         for plugin in self.imported_plugins:
             self.imported_plugins[plugin].session = session
