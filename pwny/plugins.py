@@ -46,7 +46,7 @@ class Plugins:
     def load_plugin(self, plugin):
         if plugin not in self.loaded_plugins:
             if plugin in self.imported_plugins:
-                loaded_plugins.update({plugin: self.imported_plugins[plugin]})
+                self.loaded_plugins.update({plugin: self.imported_plugins[plugin]})
                 self.imported_plugins[plugin].load()
             else:
                 raise RuntimeError(f"Invalid plugin: {plugin}!")
@@ -55,6 +55,6 @@ class Plugins:
 
     def unload_plugin(self, plugin):
         if plugin in self.imported_plugins:
-            loaded_plugins.pop(plugin)
+            self.loaded_plugins.pop(plugin)
         else:
             raise RuntimeError(f"Plugin is not loaded: {plugin}!")
