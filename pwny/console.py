@@ -72,22 +72,36 @@ class Console(Plugins, Badges, Runtime, Commands):
         :return None: None
         """
 
-        self.commands = self.load_commands(
-            session.pwny + 'commands/' + session.details['Platform'].lower()
-        )
+        commands = session.pwny + 'commands/' + session.details['Platform'].lower()
+        exists, is_dir = self.exists(commands)
 
-        self.commands.update(
-            self.load_commands(
-                session.pwny + 'commands/generic'
+        if exists and not is_dir:
+            self.commands.update(
+                self.load_commands(commands)
             )
-        )
+
+        commands = session.pwny + 'commands/generic'
+        exists, is_dir = self.exists(commands)
+
+        if exists and not is_dir:
+            self.commands.update(
+                self.load_commands(commands)
+            )
 
         for command in self.commands:
             self.commands[command].session = session
 
-        self.import_plugins(
-            session.pwny + 'plugins/' + session.details['Platform'].lower(), session
-        )
+        plugins = session.pwny + 'plugins/' + session.details['Platform'].lower()
+        exists, is_dir = self.exists(plugins)
+
+        if exists and not is_dir:
+            self.import_plugins(plugins, session)
+
+        plugins = session.pwny + 'plugins/generic'
+        exists, is_dir = self.exists(plugins)
+
+        if exists and not is_dir:
+            self.import_plugins(plugins, session)
 
     def pwny_console(self, session: Session) -> None:
         """ Start Pwny console.
