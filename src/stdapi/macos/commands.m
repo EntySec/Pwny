@@ -22,7 +22,6 @@
  * SOFTWARE.
  */
 
-#import "external/badges.h"
 #import "macos/commands.h"
 
 @implementation Commands
@@ -39,7 +38,7 @@
 -(void)cmd_getpid {
     NSProcessInfo* processInfo = [NSProcessInfo processInfo];
     int processID = [processInfo processIdentifier];
-    send_channel(channelPipe, (char *)[[NSString stringWithFormat:@"%sPID: %d", information, processID] UTF8String]);
+    send_channel(channelPipe, (char *)[[NSString stringWithFormat:@"%d", processID] UTF8String]);
 }
 
 -(void)cmd_idletime {
@@ -63,8 +62,8 @@
         }
         IOObjectRelease(iter);
     }
-    send_channel(channelPipe, (char *)[[NSString stringWithFormat:@"%sUser has been idle for %lld seconds.",
-                                        information, idlesecs] UTF8String]);
+    send_channel(channelPipe, (char *)[[NSString stringWithFormat:@"%lld",
+                                        idlesecs] UTF8String]);
 }
 
 @end
