@@ -33,4 +33,4 @@ class HatSploitPlugin(Plugin):
         self.print_empty(argv)
 
     def load(self):
-        self.print_empty(self.session)
+        self.print_empty('Loaded')
