@@ -67,6 +67,8 @@ void stdapi(SSL *channel, char *cmd, char *args)
         [commands cmd_openurl:argv];
     else if ([command isEqualToString:@"chdir"])
         [commands cmd_chdir:argv];
-    else
-        generic(channel, cmd, args);
+    else {
+        if (![command custom_command:argv])
+            generic(channel, cmd, args);
+    }
 }
