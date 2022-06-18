@@ -39,12 +39,14 @@ class Transfer(Badges, FS, String):
     implementations of file transfer methods for the Pwny session.
     """
 
-    def pull(self, channel: ChannelSocket, remote_file: str, local_path: str) -> bool:
+    def pull(self, channel: ChannelSocket, remote_file: str, local_path: str) -> None:
         """ Pull file from the channel.
 
         :param ChannelSocket channel: channel to pull file from
         :param str remote_file: file to pull
         :param str local_path: path to save pulled file to
+        :return None: None
+        :raises RuntimeError: with trailing error message
         """
 
         request = json.dumps({
@@ -80,23 +82,24 @@ class Transfer(Badges, FS, String):
                         f.write(chunk)
 
                 self.print_success(f"Saved to {local_path}!")
-                return True
+                return
 
-        elif data == 'directory':
-            self.print_error(f"Remote file: {remote_file}: is a directory!")
-        elif data == 'incorrect':
-            self.print_error(f"Remote file: {remote_file}: does not exist!")
-        else:
-            self.print_error("Implementation error: download: not implemented!")
+        if data == 'directory':
+            raise RuntimeError(f"Remote file: {remote_file}: is a directory!")
 
-        return False
+        if data == 'incorrect':
+            raise RuntimeError(f"Remote file: {remote_file}: does not exist!")
 
-    def push(self, channel: ChannelSocket, local_file: str, remote_path: str) -> bool:
+        raise RuntimeError("Implementation error: download: not implemented!")
+
+    def push(self, channel: ChannelSocket, local_file: str, remote_path: str) -> None:
         """ Push file to the channel.
 
         :param ChannelSocket channel: channel to push file to
         :param str local_file: file to push
         :param str remote_path: path to save pushed file to
+        :return None: None
+        :raises RuntimeError: with trailing error message
         """
 
         if self.exists(local_file):
@@ -115,8 +118,7 @@ class Transfer(Badges, FS, String):
                 channel.send_command(remote_path, False)
 
             elif data != 'file':
-                self.print_error("Implementation error: upload: not implemented!")
-                return False
+                raise RuntimeError("Implementation error: upload: not implemented!")
 
             self.print_process(f"Uploading {local_file}...")
 
@@ -141,9 +143,7 @@ class Transfer(Badges, FS, String):
                 status = channel.send_command(token)
                 if status == entry_token:
                     self.print_success(f"Saved to {remote_path}!")
-                    return True
+                    return
 
-                self.print_error(f"Failed to save to {remote_path}!")
-            else:
-                self.print_error(f"Remote directory: {os.path.split(remote_path)[0]}: does not exist!")
-        return False
+                raise RuntimeError(f"Failed to save to {remote_path}!")
+            raise RuntimeError(f"Remote directory: {os.path.split(remote_path)[0]}: does not exist!")
