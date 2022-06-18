@@ -23,6 +23,7 @@ SOFTWARE.
 """
 
 from hatsploit.lib.plugins import Plugins
+from hatsploit.lib.session import Session
 
 
 class Plugins:
@@ -37,7 +38,14 @@ class Plugins:
     imported_plugins = {}
     loaded_plugins = {}
 
-    def import_plugins(self, path, session):
+    def import_plugins(self, path: str, session: Session) -> None:
+        """ Import plugins for the specified session.
+
+        :param str path: path to import plugins from
+        :param Session session: session to import plugins for
+        :return None: None
+        """
+
         self.imported_plugins.update(
             self.plugins.import_plugins(path)
         )
@@ -45,7 +53,14 @@ class Plugins:
         for plugin in self.imported_plugins:
             self.imported_plugins[plugin].session = session
 
-    def load_plugin(self, plugin):
+    def load_plugin(self, plugin: str) -> None:
+        """ Load specified plugin.
+
+        :param str plugin: plugin to load
+        :return None: None
+        :raises RuntimeError: with trailing error message
+        """
+
         if plugin not in self.loaded_plugins:
             if plugin in self.imported_plugins:
                 self.loaded_plugins.update({plugin: self.imported_plugins[plugin]})
@@ -55,7 +70,14 @@ class Plugins:
         else:
             raise RuntimeWarning(f"Plugin is already loaded: {plugin}.")
 
-    def unload_plugin(self, plugin):
+    def unload_plugin(self, plugin: str) -> None:
+        """ Unload specified plugin.
+
+        :param str plugin: plugin to unload
+        :return None: None
+        :raises RuntimeError: with trailing error message
+        """
+
         if plugin in self.imported_plugins:
             self.loaded_plugins.pop(plugin)
         else:
