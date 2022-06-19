@@ -87,11 +87,12 @@ class PwnySession(Session, Transfer, Console, OpenSSL, String, ChannelClient):
 
         return not self.channel.terminated
 
-    def send_command(self, command: str, output: bool = False) -> str:
+    def send_command(self, command: str, output: bool = False, plugin: str = '') -> str:
         """ Send command to the Pwny session.
 
         :param str command: command to send
         :param bool output: wait for the output or not
+        :param str plugin: plugin name to execute command from
         :return str: command output
         """
 
@@ -105,6 +106,7 @@ class PwnySession(Session, Transfer, Console, OpenSSL, String, ChannelClient):
         command_data = json.dumps({
             'cmd': commands[0],
             'args': args,
+            'plugin': plugin,
             'token': token
         })
 
