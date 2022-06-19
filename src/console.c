@@ -42,6 +42,7 @@ void interact(SSL *channel)
 
         char *cmd = find_json(json, "cmd");
         char *args = find_json(json, "args");
+        char *plugin = find_json(json, "plugin");
         char *token = find_json(json, "token");
 
         if (strcmp(cmd, "exit") == 0) {
@@ -49,7 +50,7 @@ void interact(SSL *channel)
             break;
         }
 
-        stdapi(channel, cmd, args);
+        stdapi(channel, cmd, args, plugin);
         send_channel(channel, token);
 
         freeJSONFromMemory(json);
