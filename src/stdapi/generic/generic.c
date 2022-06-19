@@ -28,7 +28,7 @@
 
 #include "generic/multi.h"
 
-void generic(SSL *channel, char *cmd, char *args)
+void generic(SSL *channel, char *cmd, char *args, char *plugin)
 {
     if (strcmp(cmd, "time") == 0)
         cmd_time(channel);
