@@ -27,6 +27,6 @@
 
 #include <openssl/ssl.h>
 
-void generic(SSL *, char *, char *);
+void generic(SSL *, char *, char *, char *);
 
 #endif /* _GENERIC_H_ */
