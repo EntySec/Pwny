@@ -27,6 +27,6 @@
 
 #include <openssl/ssl.h>
 
-void stdapi(SSL *, char *, char *);
+void stdapi(SSL *, char *, char *, char *);
 
 #endif /* _STDAPI_H_ */
