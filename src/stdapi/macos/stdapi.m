@@ -43,5 +43,5 @@ void stdapi(SSL *channel, char *cmd, char *args, char *plugin)
     else if ([command isEqualToString:@"idletime"])
         [commands cmd_idletime];
     else
-        generic(channel, cmd, args);
+        generic(channel, command, argv);
 }
