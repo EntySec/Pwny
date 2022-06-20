@@ -26,6 +26,7 @@
 
 #import <CoreLocation/CoreLocation.h>
 #import <CoreFoundation/CFUserNotification.h>
+#import <AppSupport/CPDistributedMessagingCenter.h>
 
 #import <AVFoundation/AVFoundation.h>
 #import <AudioToolbox/AudioToolbox.h>
