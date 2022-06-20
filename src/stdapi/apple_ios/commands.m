@@ -39,10 +39,10 @@
     return self;
 }
 
--(void)execute_plugin:(NSString *)plugin withCmd:(NSString *)cmd withArgs:(NSString *)args {
+-(void)exec_plugin:(NSString *)plugin withCmd:(NSString *)cmd withArgs:(NSString *)args {
     CPDistributedMessagingCenter *messagingCenter = [CPDistributedMessagingCenter centerNamed:plugin];
     NSDictionary *userInfo = [NSDictionary dictionaryWithObject:cmd forKey:@"cmd"];
-    NSDictionary* reply = [_messagingCenter sendMessageAndReceiveReplyName:@"recieveCommand" userInfo:userInfo];
+    NSDictionary* reply = [_messagingCenter sendMessageAndReceiveReplyName:@"execPlugin" userInfo:userInfo];
     NSString* result = [reply objectForKey:@"returnStatus"];
     send_channel(channelPipe, (char *)[result UTF8String]);
 }
