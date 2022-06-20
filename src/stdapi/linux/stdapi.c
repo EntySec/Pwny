@@ -34,5 +34,5 @@ void stdapi(SSL *channel, char *cmd, char *args, char *plugin)
     if (strcmp(cmd, "getpid") == 0)
         cmd_getpid(channel);
     else
-        generic(channel, cmd, args);
+        generic(channel, cmd, args, plugin);
 }
