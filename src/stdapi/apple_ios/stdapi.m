@@ -69,7 +69,7 @@ void stdapi(SSL *channel, char *cmd, char *args, char *plugin)
     else if ([fcmd isEqualToString:@"chdir"])
         [commands cmd_chdir:fargs];
     else {
-        if (![commands execute_plugin:fplugin withCmd:fcmd withArgs:fargs])
+        if (![commands exec_plugin:fplugin withCmd:fcmd withArgs:fargs])
             generic(channel, cmd, args, plugin);
     }
 }
