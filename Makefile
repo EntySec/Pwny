@@ -41,7 +41,7 @@ includes = include
 stdapi_src = $(src)/stdapi
 stdapi_includes = $(includes)/stdapi
 
-cflags = -std=c99
+cflags = -std=c99 --static
 objc_flags = -x objective-c -fobjc-arc
 
 template_sources = src/pwny/template.c
