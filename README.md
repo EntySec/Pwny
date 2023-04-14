@@ -63,7 +63,7 @@ make all platform=linux
 
 ```shell
 make cross
-make all platform=linux arch=i586
+make all platform=linux arch=aarch64
 ```
 
 ### Windows
@@ -84,40 +84,14 @@ from pwny.session import PwnySession
 * `Pwny` - Pwny utilities, mostly for generating payloads and encoding arguments.
 * `PwnySession` - Wrapper for `HatSploitSession` for Pwny, HatSploit should use it with Pwny payload.
 
-To get Pwny template, you should call `get_template()`.
+To get Pwny payload, you should call `get_pwny()`.
 
 ```python3
 from pwny import Pwny
 
 pwny = Pwny()
-template = pwny.get_template('linux', 'x64')
+executable = pwny.get_pwny('linux', 'x64')
 ```
-
-To serialize Pwny config, you should call `serialize_config()`.
-
-```python3
-from pwny import Pwny
-
-pwny = Pwny()
-args = pwny.serialize_config({})
-```
-
-Here is a short list of Pwny config options:
-
-* `host` - Pwny back connect host
-* `port` - Pwny back connect (or bind) port
-* `type` - Pwny connection type (bind_tcp, reverse_tcp)
-
-To get Pwny executable, you should call `get_pwny()`.
-
-```python3
-from pwny import Pwny
-
-pwny = Pwny()
-executable = pwny.get_pwny('linux', 'x64', config)
-```
-
-**NOTE:** If you want Pwny to connect you should specify both `host` and `port`, but if you want Pwny to listen, you should specify only `port`.
 
 ## Adding Pwny payload
 
@@ -126,17 +100,12 @@ To add Pwny payload to HatSploit you should follow these steps.
 * Write a basic HatSploit payload template.
 * Import `Pwny` and `PwnySession` and put `Pwny` to `HatSploitPayload` class.
 * Set payload parameter `Session` to `PwnySession`.
-* Return `get_pwny()` with platform, architecture and config specified.
+* Return `get_pwny()` with platform and architecture.
 
 ```python3
 return self.get_pwny(
     self.details['Platform'],
     self.details['Architecture'],
-    {
-        'host': remote_host,
-        'port': remote_port,
-        'type': connection_type,
-    }
 )
 ```
 
