@@ -79,6 +79,8 @@ else ifeq ($(platform), apple_ios)
 	ldflags += -framework CoreFoundation -framework MediaPlayer -framework UIKit
 	ldflags += -framework AVFoundation -framework CoreLocation
 	ldflags += -framework SpringBoardServices -framework IOSurface
+else ifeq ($(platform), linux)
+	cflags += -static
 endif
 
 .PHONY: all setup deps cross build template template-library clean
