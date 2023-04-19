@@ -72,7 +72,7 @@ c2_api_call_t *c2_make_api_call(c2_api_calls_t **, tlv_transport_pkt_t);
 void c2_register_api_calls(c2_api_calls_t **);
 void c2_register_api_call(c2_api_calls_t **, int, c2_api_t, int);
 
-tlv_transport_pkt_t c2_add_str(tlv_transport_pkt_t, char *)
+c2_api_call_t c2_add_str(c2_api_call_t, char *);
 
 int c2_unload_api_calls(c2_api_calls_t **, int);
 int c2_load_api_calls(c2_api_calls_t **, char *);

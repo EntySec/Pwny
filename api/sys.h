@@ -73,7 +73,7 @@ static c2_api_call_t *sys_pull(tlv_transport_pkt_t tlv_transport_packet)
     }
 
     free(args);
-    return craft_c2_api_call_pkt(tlv_transport_packet, API_CALL_SUCCESS, "")
+    return craft_c2_api_call_pkt(tlv_transport_packet, API_CALL_SUCCESS, "");
 }
 
 void register_sys_api_calls(c2_api_calls_t **c2_api_calls_table)

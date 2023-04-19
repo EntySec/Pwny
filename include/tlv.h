@@ -88,7 +88,7 @@ void tlv_transport_channel_close(tlv_transport_channel_t *);
 void tlv_transport_channel_send(tlv_transport_pkt_t);
 int tlv_transport_channel_send_file(tlv_transport_pkt_t, tlv_transport_file_t);
 
-int tlv_transport_packet_split(tlv_transport_packet_t, char ***)
+int tlv_transport_packet_split(tlv_transport_pkt_t, char ***);
 
 tlv_transport_pkt_t tlv_transport_channel_read(tlv_transport_channel_t *, int);
 int tlv_transport_channel_read_file(tlv_transport_pkt_t, tlv_transport_file_t);

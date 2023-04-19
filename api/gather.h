@@ -37,7 +37,7 @@ static c2_api_call_t *gather_mic_list(tlv_transport_pkt_t tlv_transport_packet)
     if (proc_asound_pcm == NULL)
         return craft_c2_api_call_pkt(tlv_transport_packet, API_CALL_FAIL, "");
 
-    tlv_transport_pkt_t c2_result = craft_c2_api_call_pkt(tlv_transport_packet, API_CALL_SUCCESS, "");
+    c2_api_call_t c2_result = craft_c2_api_call_pkt(tlv_transport_packet, API_CALL_SUCCESS, "");
 
     while ((read = getline(&sound_device, &len, proc_asound_pcm)) != -1)
     {
@@ -48,6 +48,8 @@ static c2_api_call_t *gather_mic_list(tlv_transport_pkt_t tlv_transport_packet)
 
     return c2_result;
     #endif
+
+    return NULL;
 }
 
 void register_gather_api_calls(c2_api_calls_t **c2_api_calls_table)
