@@ -31,7 +31,6 @@
 #include <winsock2.h>
 #endif
 
-#include "json.h"
 #include "uthash/uthash.h"
 
 #define MAX_HOSTNAME_BUF 1024
