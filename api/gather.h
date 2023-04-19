@@ -30,7 +30,7 @@ static c2_api_call_t *gather_mic_list(tlv_transport_pkt_t tlv_transport_packet)
     #ifdef LINUX
     char *sound_device = NULL;
 
-    ssize_t len = 0;
+    size_t len = 0;
     ssize_t read = 0;
 
     FILE *proc_asound_pcm = fopen("/proc/asound/pcm", "r");
