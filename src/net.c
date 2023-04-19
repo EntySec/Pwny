@@ -74,7 +74,7 @@ void net_c2_add(net_c2_t **net_c2_data, int net_c2_id, int net_c2_fd, char *net_
     }
 }
 
-void net_c2_init(net_c2_t **net_c2_data)
+void net_c2_init(net_c2_t *net_c2_data)
 {
     net_c2_t *c2;
 
@@ -86,12 +86,12 @@ void net_c2_init(net_c2_t **net_c2_data)
         tlv_console_loop(&tlv_transport_channel_new);
         tlv_transport_channel_close(&tlv_transport_channel_new);
 
-        HASH_DEL(net_c2_data);
+        HASH_DEL(net_c2_data, c2);
         free(c2);
     }
 }
 
-void net_c2_free(net_c2_t **net_c2_data)
+void net_c2_free(net_c2_t *net_c2_data)
 {
     free(net_c2_data);
 }
