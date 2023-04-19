@@ -78,7 +78,6 @@ void c2_add_str(c2_api_call_t *c2_api_call_new, char *c2_str)
     snprintf(result, sizeof(result), "%s%s", c2_api_call_new->c2_api_call_result, c2_str);
 
     c2_api_call_new->c2_api_call_result = result;
-    return c2_api_call_new;
 }
 
 void c2_register_api_calls(c2_api_calls_t **c2_api_calls_table)
