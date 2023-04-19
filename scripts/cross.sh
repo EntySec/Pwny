@@ -48,18 +48,3 @@ mv mips64-linux-musl-cross mips64
 mv s390x-linux-musl-cross s390x
 
 echo "[Done processing compilers]"
-
-echo "[Exporting compilers]"
-
-export PATH=$PATH:./aarch64/bin
-export PATH=$PATH:./armv5l/bin
-export PATH=$PATH:./i486/bin
-export PATH=$PATH:./x86_64/bin
-export PATH=$PATH:./powerpc/bin
-export PATH=$PATH:./powerpc64le/bin
-export PATH=$PATH:./mips/bin
-export PATH=$PATH:./mipsel/bin
-export PATH=$PATH:./mips64/bin
-export PATH=$PATH:./s390x/bin
-
-echo "[Done exporting compilers]"
