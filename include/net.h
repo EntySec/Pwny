@@ -71,7 +71,7 @@ char *net_local_hostname();
 int net_traffic_forward(net_forwarder_t *);
 
 void net_c2_add(net_c2_t **, int, int, char *);
-void net_c2_init(net_c2_t **);
-void net_c2_free(net_c2_t **);
+void net_c2_init(net_c2_t *);
+void net_c2_free(net_c2_t *);
 
 #endif /* _NET_H_ */
