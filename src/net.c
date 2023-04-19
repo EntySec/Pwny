@@ -76,13 +76,18 @@ void net_c2_add(net_c2_t **net_c2_data, int net_c2_id, int net_c2_fd, char *net_
 
 void net_c2_init(net_c2_t **net_c2_data)
 {
-    for (net_c2_t *c2 = net_c2_data; c2 != NULL; c2 = c2.hh->next)
+    net_c2_t *c2;
+
+    for (c2 = net_c2_data; c2 != NULL; c2 = c2->hh.next)
     {
         tlv_transport_channel_t tlv_transport_channel_new;
         tlv_transport_channel_new.tlv_transport_channel_pipe = c2->net_c2_fd;
 
         tlv_console_loop(&tlv_transport_channel_new);
         tlv_transport_channel_close(&tlv_transport_channel_new);
+
+        HASH_DEL(net_c2_data);
+        free(c2);
     }
 }
 
