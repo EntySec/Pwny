@@ -27,8 +27,8 @@ ifeq ($(platform), windows)
 	cc = x86_64-w64-mingw32-gcc
 else
 	ifdef arch
-		ar = $(arch)-linux-musl-ar
-		cc = $(arch)-linux-musl-gcc
+		ar = cross/$(arch)/bin/$(arch)-linux-musl-ar
+		cc = cross/$(arch)/bin/$(arch)-linux-musl-gcc
 	else
 		ar = ar
 		cc = gcc
