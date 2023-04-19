@@ -44,7 +44,6 @@ static c2_api_call_t *gather_mic_list(tlv_transport_pkt_t tlv_transport_packet)
     {
         if (strstr(sound_device, "capture") != NULL)
             c2_add_str(c2_result, sound_device);
-        }
     }
 
     return c2_result;
