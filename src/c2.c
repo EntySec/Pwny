@@ -69,15 +69,15 @@ c2_api_call_t *craft_c2_api_call_pkt(tlv_transport_pkt_t tlv_transport_packet, i
     return c2_api_call_new;
 }
 
-c2_api_call_t c2_add_str(c2_api_call_t c2_api_call_new, char *c2_str)
+void c2_add_str(c2_api_call_t *c2_api_call_new, char *c2_str)
 {
     size_t str_len = strlen(c2_str) + 1;
-    size_t result_len = strlen(c2_api_call_new.c2_api_call_result) + 1;
+    size_t result_len = strlen(c2_api_call_new->c2_api_call_result) + 1;
 
     char result[str_len + result_len];
-    snprintf(result, sizeof(result), "%s%s", c2_api_call_new.c2_api_call_result, c2_str);
+    snprintf(result, sizeof(result), "%s%s", c2_api_call_new->c2_api_call_result, c2_str);
 
-    c2_api_call_new.c2_api_call_result = result;
+    c2_api_call_new->c2_api_call_result = result;
     return c2_api_call_new;
 }
 

