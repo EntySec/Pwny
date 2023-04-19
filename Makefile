@@ -79,6 +79,8 @@ else ifeq ($(platform), apple_ios)
 	ldflags += -framework CoreFoundation -framework MediaPlayer -framework UIKit
 	ldflags += -framework AVFoundation -framework CoreLocation
 	ldflags += -framework SpringBoardServices -framework IOSurface
+else ifeq ($(platform), linux)
+    custom_flags = -static
 endif
 
 .PHONY: all setup deps cross build template template-library clean
@@ -117,10 +119,5 @@ $(build)/%.o: $(source)/%.c
 
 template: $(target)
 	@ echo [Compiling template]
-	@ $(cc) $(template) $(cflags) $(ldflags) -o pwny.$(platform)
+	@ $(cc) $(template) $(cflags) $(custom_flags) $(ldflags) -o pwny.$(platform)
 	@ echo [Done compiling template]
-
-template-library: $(target)
-	@ echo [Compiling template library]
-	@ $(cc) $(template_library) $(cflags) -shared $(ldflags) -o pwny.so
-	@ echo [Done compiling template library]

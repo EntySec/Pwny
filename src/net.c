@@ -40,43 +40,11 @@
 #endif
 
 #include "log.h"
+#include "tlv.h"
+#include "console.h"
 #include "net.h"
-#include "json.h"
 
 #include "uthash/uthash.h"
-
-int net_json_parse_host(json_object_t *json_object_new)
-{
-    char *o1 = find_json(json_object_new, "o1");
-    char *o2 = find_json(json_object_new, "o2");
-    char *o3 = find_json(json_object_new, "o3");
-    char *o4 = find_json(json_object_new, "o4");
-
-    if (o1 == NULL || o2 == NULL || o3 == NULL || o4 == NULL)
-        return -1;
-
-    return PACK_IPV4(atoi(o1), atoi(o2), atoi(o3), atoi(o4));
-}
-
-int net_json_parse_type(json_object_t *json_object_new)
-{
-    char *t = find_json(json_object_new, "t");
-
-    if (t == NULL)
-        return -1;
-
-    return atoi(t);
-}
-
-int net_json_parse_port(json_object_t *json_object_new)
-{
-    char *p = find_json(json_object_new, "p");
-
-    if (p == NULL)
-        return -1;
-
-    return atoi(p);
-}
 
 char *net_local_hostname()
 {
@@ -85,18 +53,15 @@ char *net_local_hostname()
     return buffer;
 }
 
-void net_c2_add(net_c2_t **net_c2_data, int net_c2_id, int net_c2_host,
-                int net_c2_port, char *net_c2_name, int net_c2_bind)
+void net_c2_add(net_c2_t **net_c2_data, int net_c2_id, int net_c2_fd, char *net_c2_name)
 {
     net_c2_t *net_c2_new = calloc(1, sizeof(*net_c2_new));
 
     if (net_c2_new != NULL)
     {
         net_c2_new->net_c2_id = net_c2_id;
-        net_c2_new->net_c2_host = net_c2_host;
-        net_c2_new->net_c2_port = net_c2_port;
+        net_c2_new->net_c2_fd = net_c2_fd;
         net_c2_new->net_c2_name = net_c2_name;
-        net_c2_new->net_c2_bind = net_c2_bind;
 
         net_c2_t *net_c2_data_new;
         HASH_FIND_INT(*net_c2_data, &net_c2_id, net_c2_data_new);
@@ -107,6 +72,23 @@ void net_c2_add(net_c2_t **net_c2_data, int net_c2_id, int net_c2_host,
             log_debug("* Added net C2 entry (%d) - (%s)\n", net_c2_id, net_c2_name);
         }
     }
+}
+
+void net_c2_init(net_c2_t **net_c2_data)
+{
+    for (net_c2_t *c2 = net_c2_data; c2 != NULL; c2 = c2.hh->next)
+    {
+        tlv_transport_channel_t tlv_transport_channel_new;
+        tlv_transport_channel_new.tlv_transport_channel_pipe = c2->net_c2_fd;
+
+        tlv_console_loop(&tlv_transport_channel_new);
+        tlv_transport_channel_close(&tlv_transport_channel_new);
+    }
+}
+
+void net_c2_free(net_c2_t **net_c2_data)
+{
+    free(net_c2_data);
 }
 
 static void com(net_data_t net_data_new)

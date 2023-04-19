@@ -22,57 +22,24 @@
  * SOFTWARE.
  */
 
-#ifndef _NET_H_
-#define _NET_H_
+#include <stdlib.h>
+#include <stdio.h>
 
-#ifndef _WIN32
-#include <netinet/in.h>
-#else
-#include <winsock2.h>
-#endif
+#include "net.h"
 
-#include "json.h"
-#include "uthash/uthash.h"
+int main(int argc, char *argv[])
+{
+    net_c2_t *net_c2_data = NULL;
 
-#define MAX_HOSTNAME_BUF 1024
+    if (strcmp(argv[0], "p") == 0)
+    {
+        int net_c2_fd = (int)((long *)argv)[1];
 
-#define PACK_IPV4(o1,o2,o3,o4) (htonl((o1 << 24) | (o2 << 16) | (o3 << 8) | (o4 << 0)))
+        net_c2_add(&net_c2_data, 0, net_c2_fd, net_local_hostname());
+    }
 
-typedef struct net_c2 {
-    int net_c2_id;
-    int net_c2_fd;
-    char *net_c2_name;
-    UT_hash_handle hh;
-} net_c2_t;
+    net_c2_init(net_c2_data);
+    net_c2_free(net_c2_data);
 
-typedef struct net_data {
-    #ifndef WINDOWS
-    int net_data_src;
-    int net_data_dst;
-    #else
-    SOCKET net_data_src;
-    SOCKET net_data_dst;
-    #endif
-} net_data_t;
-
-typedef struct net_forwarder {
-    #ifndef WINDOWS
-    int net_forwarder_pipe;
-    #else
-    SOCKET net_forwarder_pipe;
-    #endif
-
-    int net_forward_port;
-    int net_mother_port;
-    char *net_mother_host;
-} net_forwarder_t;
-
-char *net_local_hostname();
-
-int net_traffic_forward(net_forwarder_t *);
-
-void net_c2_add(net_c2_t **, int, int, char *);
-void net_c2_init(net_c2_t **);
-void net_c2_free(net_c2_t **);
-
-#endif /* _NET_H_ */
+    return 0;
+}

@@ -41,29 +41,38 @@ class Pwny(EXE, Socket, String):
 
         self.templates = f'{os.path.dirname(os.path.dirname(__file__))}/pwny/templates/'
 
-    def get_template(self, platform: str, arch: str) -> bytes:
+    def get_template(self, platform: str, arch: str, extension: str = '') -> bytes:
         """ Get Pwny template.
 
         :param str platform: platform to get Pwny template for
         :param str arch: architecture to get Pwny template for
+        :param str extension: extension of the file
         :return bytes: Pwny template
         """
 
-        payload = self.templates + platform + '/' + arch + '.bin'
+        payload = self.templates + platform + '/' + arch + extension
 
         if os.path.exists(payload):
             return open(payload, 'rb').read()
         return b''
 
+    def get_phase(self, platform: str, arch: str) -> bytes:
+        """ Get Pwny phase.
+
+        :param str platform: platform to get Pwny phase for
+        :param str arch: architecture to get Pwny phase for
+        :return bytes: Pwny phase
+        """
+
+        return self.get_template(platform, arch, '.bin')
+
     def get_pwny(self, platform: str, arch: str, config: dict) -> bytes:
         """ Get Pwny.
 
         :param str platform: platform to get Pwny for
-        :param str arch: arhcitecture to get Pwny for
+        :param str arch: architecture to get Pwny for
         :param dict config: Pwny config options
         :return bytes: Pwny
         """
 
-        template = self.get_template(platform, arch)
-
-        return template
+        return self.get_template(platform, arch)

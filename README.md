@@ -119,6 +119,15 @@ executable = pwny.get_pwny('linux', 'x64', config)
 
 **NOTE:** If you want Pwny to connect you should specify both `host` and `port`, but if you want Pwny to listen, you should specify only `port`.
 
+To get Pwny phase, you should call `get_phase()`.
+
+```python3
+from pwny import Pwny
+
+pwny = Pwny()
+phase = pwny.get_phase('linux', 'x64')
+```
+
 ## Adding Pwny payload
 
 To add Pwny payload to HatSploit you should follow these steps.
@@ -126,7 +135,7 @@ To add Pwny payload to HatSploit you should follow these steps.
 * Write a basic HatSploit payload template.
 * Import `Pwny` and `PwnySession` and put `Pwny` to `HatSploitPayload` class.
 * Set payload parameter `Session` to `PwnySession`.
-* Return `get_pwny()` with platform, architecture and config specified.
+* Add `get_pwny()` with platform, architecture and config specified to the `run()`.
 
 ```python3
 return self.get_pwny(
@@ -139,6 +148,9 @@ return self.get_pwny(
     }
 )
 ```
+
+* Add method `phase()` that will return shellcode that loads Pwny phase into the memory (see [Pwny Phase Stack](https://github.com/EntySec/Pwny/tree/main/docs/phase_stack.md)).
+* Add method `phase1()` and return `get_phase()` with platform and architecture from it.
 
 ## Caveats
 
