@@ -149,7 +149,7 @@ int tlv_transport_channel_listen(tlv_transport_channel_t *tlv_transport_channel_
     return 0;
 }
 
-int tlv_transport_packet_split(tlv_transport_packet_t tlv_transport_packet, char *** pool)
+int tlv_transport_packet_split(tlv_transport_pkt_t tlv_transport_packet, char *** pool)
 {
     int size = 1;
     char *data = strdup(tlv_transport_packet.tlv_transport_pkt_data);
