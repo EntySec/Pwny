@@ -35,6 +35,8 @@ else
 	endif
 endif
 
+elf2bin = ./elf2bin
+
 objc_flags = -x objective-c -fobjc-arc
 
 source = src
@@ -83,7 +85,7 @@ else ifeq ($(platform), linux)
     custom_flags = -static
 endif
 
-.PHONY: all setup deps cross build template template-library clean
+.PHONY: all setup deps cross build template implant clean
 
 all: deps build template
 
@@ -121,3 +123,8 @@ template: $(target)
 	@ echo [Compiling template]
 	@ $(cc) $(template) $(cflags) $(custom_flags) $(ldflags) -o pwny.$(platform)
 	@ echo [Done compiling template]
+
+implant: $(template)
+	@ echo [Processing implant]
+	@ $(elf2bin) pwny.$(platform) pwny.$(platform).bin
+	@ echo [Done processing implant]
