@@ -56,12 +56,12 @@ class Pwny(EXE, Socket, String):
             return open(payload, 'rb').read()
         return b''
 
-    def get_phase(self, platform: str, arch: str) -> bytes:
-        """ Get Pwny phase.
+    def get_implant(self, platform: str, arch: str) -> bytes:
+        """ Get Pwny implant.
 
-        :param str platform: platform to get Pwny phase for
-        :param str arch: architecture to get Pwny phase for
-        :return bytes: Pwny phase
+        :param str platform: platform to get Pwny implant for
+        :param str arch: architecture to get Pwny implant for
+        :return bytes: Pwny implant
         """
 
         return self.get_template(platform, arch, '.bin')
