@@ -150,7 +150,7 @@ return self.get_pwny(
 ```
 
 * Add method `phase()` that will return shellcode that loads Pwny phase into the memory (see [Pwny Phase Stack](https://github.com/EntySec/Pwny/tree/main/docs/phase_stack.md)).
-* Add method `phase1()` and return `get_phase()` with platform and architecture from it.
+* Add method `implant()` and return `get_implant()` with platform and architecture from it.
 
 ## Caveats
 
