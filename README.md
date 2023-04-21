@@ -152,6 +152,8 @@ return self.get_pwny(
 * Add method `phase()` that will return shellcode that loads Pwny phase into the memory (see [Pwny Phase Stack](https://github.com/EntySec/Pwny/tree/main/docs/phase_stack.md)).
 * Add method `implant()` and return `get_implant()` with platform and architecture from it.
 
+You can find an example of implementing Pwny in the HatSploit Framework here - [Linux x64 Pwny Reverse TCP](https://github.com/EntySec/Pwny/blob/main/payload/linux/x64/pwny_reverse_tcp.py).
+
 ## Caveats
 
 The code provided in this repository has not yet been prepared for use in a production environment. It can be improved anyways, so any contribution is welcome. Unfortunately, most part of the codebase is unstable due to the lack of testing. You can even experience memory leaks, so we'll be glad to accept every single PR which is fixing a potential issue.
