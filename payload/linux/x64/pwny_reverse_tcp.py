@@ -82,8 +82,8 @@ class HatSploitPayload(Payload, Pwny, Assembler, ELF):
             """
         )
 
-    def phase1(self):
-        return self.get_phase(
+    def implant(self):
+        return self.get_implant(
             self.details['Platform'],
             self.details['Architecture']
         )
