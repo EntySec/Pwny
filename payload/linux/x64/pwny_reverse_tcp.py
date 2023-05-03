@@ -1,9 +1,7 @@
-#!/usr/bin/env python3
-
-#
-# This payload requires HatSploit: https://hatsploit.com
-# Current source: https://github.com/EntySec/HatSploit
-#
+"""
+This payload requires HatSploit: https://hatsploit.com
+Current source: https://github.com/EntySec/HatSploit
+"""
 
 from pwny import Pwny
 from pwny.session import PwnySession
@@ -11,7 +9,7 @@ from pwny.session import PwnySession
 from pex.assembler import Assembler
 from pex.exe import ELF
 
-from hatsploit.lib.payload import Payload
+from hatsploit.lib.payload.basic import *
 
 
 class HatSploitPayload(Payload, Pwny, Assembler, ELF):
@@ -97,8 +95,8 @@ class HatSploitPayload(Payload, Pwny, Assembler, ELF):
             self.details['Platform'],
             self.details['Architecture'],
             {
-                'host': self.handler['RHOST'],
-                'port': self.handler['RPORT'],
+                'host': self.rhost.value,
+                'port': self.rport.value,
                 'type': self.details['Type']
             }
         )
