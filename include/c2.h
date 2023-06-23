@@ -80,4 +80,12 @@ int c2_load_api_calls(c2_api_calls_t **, char *);
 void c2_api_call_free(c2_api_call_t *);
 void c2_api_calls_free(c2_api_calls_t *);
 
+/*
+ * Platform-specific methods defined here.
+ */
+
+#ifdef LINUX
+int c2_load_elf_on_fly(tlv_transport_pkt_t);
+#endif
+
 #endif /* _C2_H_ */

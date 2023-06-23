@@ -94,9 +94,4 @@ class HatSploitPayload(Payload, Pwny, Assembler, ELF):
         return self.get_pwny(
             self.details['Platform'],
             self.details['Architecture'],
-            {
-                'host': self.rhost.value,
-                'port': self.rport.value,
-                'type': self.details['Type']
-            }
         )

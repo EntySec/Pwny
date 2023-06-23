@@ -38,6 +38,10 @@
 #include "c2.h"
 #include "tlv.h"
 
+/*
+ * Open TLV channel with the specification provided in the tlv_transport_channel_new structure.
+ */
+
 int tlv_transport_channel_open(tlv_transport_channel_t *tlv_transport_channel_new)
 {
     #ifndef WINDOWS
@@ -82,6 +86,10 @@ int tlv_transport_channel_open(tlv_transport_channel_t *tlv_transport_channel_ne
 
     return 0;
 }
+
+/*
+ * Listen TLV channel with the specification provided in the tlv_transport_channel_new structure.
+ */
 
 int tlv_transport_channel_listen(tlv_transport_channel_t *tlv_transport_channel_new)
 {
@@ -149,41 +157,9 @@ int tlv_transport_channel_listen(tlv_transport_channel_t *tlv_transport_channel_
     return 0;
 }
 
-int tlv_transport_packet_split(tlv_transport_pkt_t tlv_transport_packet, char *** pool)
-{
-    int size = 1;
-    char *data = strdup(tlv_transport_packet.tlv_transport_pkt_data);
-    int len = strlen(data);
-
-    char del = TLV_TRANSPORT_DEL;
-
-    for (int i = 0; i < len; i++)
-    {
-        if (data[i] == del)
-        {
-            size++;
-        }
-    }
-
-    char ** new_pool = malloc(size * sizeof(char *));
-
-    int i = 0;
-    int k = 0;
-
-    new_pool[k++] = data;
-
-    while (k < size)
-    {
-        if (data[i++] == del)
-        {
-            data[i-1] = '\0';
-            new_pool[k++] = (data + i);
-        }
-    }
-
-    *pool = new_pool;
-    return size;
-}
+/*
+ * Send data from TLV transport packet to the TLV transport channel.
+ */
 
 void tlv_transport_channel_send(tlv_transport_pkt_t tlv_transport_packet)
 {
@@ -202,6 +178,10 @@ void tlv_transport_channel_send(tlv_transport_pkt_t tlv_transport_packet)
         send(tlv_transport_packet.tlv_transport_pkt_channel->tlv_transport_channel_pipe,
              tlv_transport_pkt_new.tlv_transport_pkt_data, tlv_transport_packet.tlv_transport_pkt_size, 0);
 }
+
+/*
+ * Send file from TLV transport file to the TLV transport channel.
+ */
 
 int tlv_transport_channel_send_file(tlv_transport_pkt_t tlv_transport_packet, tlv_transport_file_t tlv_transport_file_new)
 {
@@ -244,6 +224,10 @@ int tlv_transport_channel_send_file(tlv_transport_pkt_t tlv_transport_packet, tl
 
     return -1;
 }
+
+/*
+ * Read from TLV transport channel.
+ */
 
 tlv_transport_pkt_t tlv_transport_channel_read(tlv_transport_channel_t *tlv_transport_channel_new,
                                                int append_zero_byte)
@@ -290,6 +274,42 @@ tlv_transport_pkt_t tlv_transport_channel_read(tlv_transport_channel_t *tlv_tran
     return tlv_transport_pkt_make(tlv_transport_pkt_new);
 }
 
+/*
+ * Read file from TLV transport channel to the file descriptor.
+ */
+
+void tlv_transport_channel_read_file_fd(tlv_transport_pkt_t tlv_transport_packet,
+                                       int fd)
+{
+    tlv_transport_pkt_t tlv_transport_pkt_new = {
+        .tlv_transport_pkt_channel = tlv_transport_packet.tlv_transport_pkt_channel,
+        .tlv_transport_pkt_scope = tlv_transport_packet.tlv_transport_pkt_scope,
+        .tlv_transport_pkt_tag = tlv_transport_packet.tlv_transport_pkt_tag,
+        .tlv_transport_pkt_status = API_CALL_SUCCESS,
+        .tlv_transport_pkt_size = 0,
+    };
+
+    tlv_transport_channel_send(tlv_transport_pkt_new);
+    tlv_transport_pkt_t tlv_transport_pkt_file = tlv_transport_channel_read(
+        tlv_transport_pkt_new.tlv_transport_pkt_channel, 0);
+
+    while (tlv_transport_pkt_file.tlv_transport_pkt_status == API_CALL_WAIT)
+    {
+        write(fd, tlv_transport_pkt_file.tlv_transport_pkt_data,
+            tlv_transport_pkt_file.tlv_transport_pkt_size);
+        memset(tlv_transport_pkt_file.tlv_transport_pkt_data, 0,
+               tlv_transport_pkt_file.tlv_transport_pkt_size);
+        tlv_transport_pkt_file = tlv_transport_channel_read(
+            tlv_transport_pkt_new.tlv_transport_pkt_channel, 0);
+    }
+
+    tlv_transport_pkt_free(tlv_transport_pkt_file);
+}
+
+/*
+ * Read file from TLV transport channel.
+ */
+
 int tlv_transport_channel_read_file(tlv_transport_pkt_t tlv_transport_packet,
                                      tlv_transport_file_t tlv_transport_file_new)
 {
@@ -328,6 +348,10 @@ int tlv_transport_channel_read_file(tlv_transport_pkt_t tlv_transport_packet,
     return -1;
 }
 
+/*
+ * Make readable TLV transport packet from raw TLV transport packet.
+ */
+
 tlv_transport_pkt_t tlv_transport_pkt_make(tlv_transport_pkt_raw_t tlv_transport_packet)
 {
     tlv_transport_pkt_t tlv_transport_pkt_new = {
@@ -341,6 +365,10 @@ tlv_transport_pkt_t tlv_transport_pkt_make(tlv_transport_pkt_raw_t tlv_transport
 
     return tlv_transport_pkt_new;
 }
+
+/*
+ * Make raw TLV transport packet from readable TLV transport packet.
+ */
 
 tlv_transport_pkt_raw_t tlv_transport_pkt_make_raw(tlv_transport_pkt_t tlv_transport_packet)
 {
@@ -357,10 +385,18 @@ tlv_transport_pkt_raw_t tlv_transport_pkt_make_raw(tlv_transport_pkt_t tlv_trans
     return tlv_transport_pkt_new;
 }
 
+/*
+ * Free single TLV transport packet.
+ */
+
 void tlv_transport_pkt_free(tlv_transport_pkt_t tlv_transport_packet)
 {
     free(tlv_transport_packet.tlv_transport_pkt_data);
 }
+
+/*
+ * Close TLV transport channel.
+ */
 
 void tlv_transport_channel_close(tlv_transport_channel_t *tlv_transport_channel_new)
 {

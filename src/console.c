@@ -28,6 +28,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+/*
+ * Craft TLV transport packet from C2 API call packet and send
+ * it to the C2 server.
+ */
+
 static void tlv_send_reply(tlv_transport_pkt_t tlv_transport_packet, c2_api_call_t *c2_api_call_new)
 {
     tlv_transport_pkt_t c2_tlv_transport_packet = craft_c2_tlv_pkt(tlv_transport_packet, c2_api_call_new);
@@ -35,6 +40,10 @@ static void tlv_send_reply(tlv_transport_pkt_t tlv_transport_packet, c2_api_call
     tlv_transport_channel_send(c2_tlv_transport_packet);
     tlv_transport_pkt_free(c2_tlv_transport_packet);
 }
+
+/*
+ * Run TLV console loop which reads commands repeatedly.
+ */
 
 int tlv_console_loop(tlv_transport_channel_t *tlv_transport_channel_new)
 {

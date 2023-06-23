@@ -46,12 +46,21 @@
 
 #include "uthash/uthash.h"
 
+/*
+ * Obtain local hostname, can be used as an identificator of the machine
+ * which can be sent to the C2 instead of an UUID.
+ */
+
 char *net_local_hostname()
 {
     char *buffer = (char *)malloc(MAX_HOSTNAME_BUF + 1);
     gethostname(buffer, MAX_HOSTNAME_BUF + 1);
     return buffer;
 }
+
+/*
+ * Add C2 server. Solves the problem of multiple C2 servers.
+ */
 
 void net_c2_add(net_c2_t **net_c2_data, int net_c2_id, int net_c2_fd, char *net_c2_name)
 {
@@ -74,6 +83,12 @@ void net_c2_add(net_c2_t **net_c2_data, int net_c2_id, int net_c2_fd, char *net_
     }
 }
 
+/*
+ * Initialize C2 servers one by one. Initialization is a process, when
+ * client takes C2 server socket fd and executes TLV console loop with it.
+ * Final step is a clean up, when we delete C2 server from our records.
+ */
+
 void net_c2_init(net_c2_t *net_c2_data)
 {
     net_c2_t *c2;
@@ -91,10 +106,18 @@ void net_c2_init(net_c2_t *net_c2_data)
     }
 }
 
+/*
+ * Free single C2 server.
+ */
+
 void net_c2_free(net_c2_t *net_c2_data)
 {
     free(net_c2_data);
 }
+
+/*
+ * Don't know, don't care.
+ */
 
 static void com(net_data_t net_data_new)
 {

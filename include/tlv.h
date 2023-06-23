@@ -31,8 +31,11 @@
 #include <winsock2.h>
 #endif
 
+/*
+ * Pre-defined macros here
+ */
+
 #define TLV_TRANSPORT_CHUNK_SIZE 1024
-#define TLV_TRANSPORT_DEL ':'
 
 #define PACK_SHORT(val, val_pkt) val_pkt[1] = (val >> 8) & 0xff; \
         val_pkt[0] = val & 0xff
@@ -43,6 +46,10 @@
         val_pkt[1] = (val >> 8) & 0xff; \
         val_pkt[0] = val & 0xff
 #define UNPACK_INT(val_pkt) val_pkt[0] | val_pkt[1] << 8 | val_pkt[2] << 16 | val_pkt[3] << 24
+
+/*
+ * Primary channel structure here
+ */
 
 typedef struct tlv_transport_channel {
     #ifndef WINDOWS
@@ -81,17 +88,33 @@ typedef struct tlv_transport_file {
 tlv_transport_pkt_t tlv_transport_pkt_make(tlv_transport_pkt_raw_t);
 tlv_transport_pkt_raw_t tlv_transport_pkt_make_raw(tlv_transport_pkt_t);
 
+/*
+ * Channel control methods here
+ */
+
 int tlv_transport_channel_open(tlv_transport_channel_t *);
 int tlv_transport_channel_listen(tlv_transport_channel_t *);
 void tlv_transport_channel_close(tlv_transport_channel_t *);
 
+/*
+ * Channel I/O methods here
+ */
+
 void tlv_transport_channel_send(tlv_transport_pkt_t);
-int tlv_transport_channel_send_file(tlv_transport_pkt_t, tlv_transport_file_t);
-
-int tlv_transport_packet_split(tlv_transport_pkt_t, char ***);
-
 tlv_transport_pkt_t tlv_transport_channel_read(tlv_transport_channel_t *, int);
+
+/*
+ * Channel FI/FO methods here
+ */
+
+int tlv_transport_channel_send_file(tlv_transport_pkt_t, tlv_transport_file_t);
 int tlv_transport_channel_read_file(tlv_transport_pkt_t, tlv_transport_file_t);
+
+void tlv_transport_channel_read_file_fd(tlv_transport_pkt_t, int);
+
+/*
+ * Clean up methods here
+ */
 
 void tlv_transport_pkt_free(tlv_transport_pkt_t);
 

@@ -26,23 +26,12 @@
 #define _CALLS_H_
 
 #include "c2.h"
-
 #include "sys.h"
-#include "gather.h"
-
-#ifdef APPLE_IOS
-#include "iphone.h"
-#endif
 
 
 void register_api_calls(c2_api_calls_t **c2_api_calls_table)
 {
     register_sys_api_calls(c2_api_calls_table);
-    register_gather_api_calls(c2_api_calls_table);
-
-    #ifdef APPLE_IOS
-    register_iphone_api_calls(c2_api_calls_table);
-    #endif
 }
 
 #endif /* _CALLS_H_ */
