@@ -1,11 +1,14 @@
 # Pwny
 
 <p>
-    <a href="https://entysec.netlify.app">
-        <img src="https://img.shields.io/badge/developer-EntySec-3572a5.svg">
+    <a href="https://entysec.com">
+        <img src="https://img.shields.io/badge/developer-EntySec-blue.svg">
     </a>
     <a href="https://github.com/EntySec/Pwny">
         <img src="https://img.shields.io/badge/language-C-grey.svg">
+    </a>
+    <a href="https://github.com/EntySec/Pwny/forks">
+        <img src="https://img.shields.io/github/forks/EntySec/Pwny?color=green">
     </a>
     <a href="https://github.com/EntySec/Pwny/stargazers">
         <img src="https://img.shields.io/github/stars/EntySec/Pwny?color=yellow">
