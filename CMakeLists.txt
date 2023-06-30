@@ -37,7 +37,7 @@ endif()
 include_directories(include api deps/injector/include)
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Windows" OR CMAKE_GENERATOR STREQUAL "MinGW Makefiles")
-    add_definitions(-DWINDOWS=1)
+    add_compile_definitions(WINDOWS=1)
     add_link_options(-s -lws2_32 -limagehlp)
 
 elseif(CMAKE_SYSTEM_NAME STREQUAL Darwin)
@@ -47,10 +47,10 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL Darwin)
         add_compile_options(-isysroot ${SDK})
     endif()
 
-    add_definitions(-DMACOS=1)
+    add_compile_definitions(MACOS=1)
 
     if(IPHONE)
-        add_definitions(-DIPHONE=1)
+        add_compile_definitions(IPHONE=1)
         add_compile_options(-arch arm64 -arch arm64e)
 
         add_link_options(-framework Foundation -framework Security -framework AudioToolbox)
