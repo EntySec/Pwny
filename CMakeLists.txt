@@ -25,18 +25,18 @@
 cmake_minimum_required(VERSION 3.0.0)
 project(libpwny VERSION 1.0.0)
 
-option(USE_DEBUG "Build in debug mode" OFF)
+option(DEBUG "Build in debug mode" OFF)
 option(IPHONE "Is iPhone iOS" OFF)
 option(SDK "SDK to build with" "")
 
-if (USE_DEBUG)
-    add_definitions(-DDEBUG=1)
+if (DEBUG)
+    add_compile_definitions(DEBUG=1)
 endif()
 
 include_directories(include)
 include_directories(api)
 
-if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+if(CMAKE_SYSTEM_NAME STREQUAL Darwin)
     add_compile_options(-x objective-c -fobjc-arc)
 
     if(SDK)
@@ -59,12 +59,12 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
         add_link_options(-framework Foundation -framework AVFoundation -framework AudioToolbox -framework AppKit)
     endif()
 
-elseif(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+elseif(CMAKE_SYSTEM_NAME STREQUAL Windows)
     add_definitions(-DWINDOWS=1)
-    target_link_libraries(pwny ws2_32 imagehlp)
+    add_link_options(-s -lws2_32 -limagehlp)
 
 else()
-    add_definitions(-DLINUX=1)
+    add_compile_definitions(LINUX=1)
 endif()
 
 add_compile_options(-Ideps/injector/include)
@@ -76,7 +76,7 @@ add_library(pwny STATIC ${PWNY_SOURCES})
 set_property(TARGET pwny PROPERTY C_STANDART 99)
 set_property(TARGET pwny PROPERTY POSITION_INDEPENDENT_CODE ON)
 
-set_target_properties(pwny PROPERTIES OUTPUT_NAME "pwny")
+set_target_properties(pwny PROPERTIES OUTPUT_NAME pwny)
 
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})
 set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})
