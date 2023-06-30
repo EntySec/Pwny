@@ -27,14 +27,14 @@ project(libpwny VERSION 1.0.0)
 
 option(DEBUG "Build in debug mode" OFF)
 option(IPHONE "Is iPhone iOS" OFF)
-option(SDK "SDK to build with" "")
+
+set(SDK "Path to SDK" CACHE PATH "")
 
 if (DEBUG)
     add_compile_definitions(DEBUG=1)
 endif()
 
-include_directories(include)
-include_directories(api)
+include_directories(include api deps/injector/include)
 
 if(CMAKE_SYSTEM_NAME STREQUAL Darwin)
     add_compile_options(-x objective-c -fobjc-arc)
@@ -67,7 +67,6 @@ else()
     add_compile_definitions(LINUX=1)
 endif()
 
-add_compile_options(-Ideps/injector/include)
 add_link_options(-Ldeps -linjector)
 
 file(GLOB PWNY_SOURCES src/*.c)
