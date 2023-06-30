@@ -13,6 +13,9 @@
     <a href="https://github.com/EntySec/Pwny/stargazers">
         <img src="https://img.shields.io/github/stars/EntySec/Pwny?color=yellow">
     </a>
+    <a href="https://www.codefactor.io/repository/github/EntySec/Pwny">
+        <img src="https://www.codefactor.io/repository/github/EntySec/Pwny/badge">
+    </a>
 </p>
 
 Pwny is an implementation of an advanced native-code payload written in pure C and designed for portability, embeddability, and extensibility.
