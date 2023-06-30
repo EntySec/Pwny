@@ -39,15 +39,15 @@
 #include <winsock2.h>
 #endif
 
-#include "log.h"
-#include "tlv.h"
-#include "console.h"
-#include "net.h"
+#include <log.h>
+#include <tlv.h>
+#include <console.h>
+#include <net.h>
 
-#include "uthash/uthash.h"
+#include <uthash/uthash.h>
 
 /*
- * Obtain local hostname, can be used as an identificator of the machine
+ * Obtain local hostname, can be used as a unique ID of the machine
  * which can be sent to the C2 instead of an UUID.
  */
 

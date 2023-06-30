@@ -25,7 +25,7 @@
 #include <stdio.h>
 #include <stdarg.h>
 
-#include "log.h"
+#include <log.h>
 
 /*
  * If DEBUG is specified, then log information provided.

@@ -25,8 +25,8 @@
 #ifndef _CONSOLE_H_
 #define _CONSOLE_H_
 
-#include "c2.h"
-#include "tlv.h"
+#include <c2.h>
+#include <tlv.h>
 
 void tlv_console_loop(tlv_transport_channel_t *);
 

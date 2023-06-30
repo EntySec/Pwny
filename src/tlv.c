@@ -35,8 +35,8 @@
 #include <winsock2.h>
 #endif
 
-#include "c2.h"
-#include "tlv.h"
+#include <c2.h>
+#include <tlv.h>
 
 /*
  * Open TLV channel with the specification provided in the tlv_transport_channel_new structure.

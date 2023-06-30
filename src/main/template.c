@@ -25,7 +25,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "net.h"
+#include <net.h>
 
 int main(int argc, char *argv[])
 {

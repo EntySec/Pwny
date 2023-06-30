@@ -25,9 +25,9 @@
 #ifndef _C2_H_
 #define _C2_H_
 
-#include "tlv.h"
+#include <tlv.h>
 
-#include "uthash/uthash.h"
+#include <uthash/uthash.h>
 
 enum c2_api_call_statuses {
     API_CALL_SUCCESS, API_CALL_FAIL, API_CALL_WAIT,
@@ -74,18 +74,7 @@ void c2_register_api_call(c2_api_calls_t **, int, c2_api_t, int);
 
 void c2_add_str(c2_api_call_t *, char *);
 
-int c2_unload_api_calls(c2_api_calls_t **, int);
-int c2_load_api_calls(c2_api_calls_t **, char *);
-
 void c2_api_call_free(c2_api_call_t *);
 void c2_api_calls_free(c2_api_calls_t *);
-
-/*
- * Platform-specific methods defined here.
- */
-
-#ifdef LINUX
-int c2_load_elf_on_fly(tlv_transport_pkt_t);
-#endif
 
 #endif /* _C2_H_ */
