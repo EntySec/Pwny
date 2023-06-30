@@ -44,7 +44,7 @@ These are platforms which are supported by Pwny.
 * Dependencies: patched SDKs from [here](https://github.com/phracker/MacOSX-SDKs).
 
 ```shell
-make all platform=macos sdk=<path>
+cmake -DSDK=<sdk> -B build; cd build; make
 ```
 
 ### Apple iOS
@@ -52,27 +52,25 @@ make all platform=macos sdk=<path>
 * Dependencies: patched SDKs from [here](https://github.com/theos/sdks).
 
 ```shell
-make all platform=apple_ios sdk=<path>
-make codesign
+cmake -DSDK=<sdk> -DIPHONE=ON -B build; cd build; make
 ```
 
 ### Linux
 
 ```shell
-make all platform=linux
+cmake -B build; cd build; make
 ```
 
 **NOTE:** Specify `arch` if you want to cross-compile, but install compilers first. Example:
 
 ```shell
-make cross
-make all platform=linux arch=i586
+cmake -DARCH=<arch> -B build; cd build; make
 ```
 
 ### Windows
 
 ```shell
-make all platform=windows
+cmake -G "MinGW Makefiles" -B build; cd build; make
 ```
 
 ## Basic usage
