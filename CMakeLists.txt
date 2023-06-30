@@ -36,7 +36,11 @@ endif()
 
 include_directories(include api deps/injector/include)
 
-if(CMAKE_SYSTEM_NAME STREQUAL Darwin)
+if(CMAKE_SYSTEM_NAME STREQUAL "Windows" OR CMAKE_GENERATOR STREQUAL "MinGW Makefiles")
+    add_definitions(-DWINDOWS=1)
+    add_link_options(-s -lws2_32 -limagehlp)
+
+elseif(CMAKE_SYSTEM_NAME STREQUAL Darwin)
     add_compile_options(-x objective-c -fobjc-arc)
 
     if(SDK)
@@ -58,10 +62,6 @@ if(CMAKE_SYSTEM_NAME STREQUAL Darwin)
         add_compile_options(-arch x86_64)
         add_link_options(-framework Foundation -framework AVFoundation -framework AudioToolbox -framework AppKit)
     endif()
-
-elseif(CMAKE_SYSTEM_NAME STREQUAL Windows)
-    add_definitions(-DWINDOWS=1)
-    add_link_options(-s -lws2_32 -limagehlp)
 
 else()
     add_compile_definitions(LINUX=1)
