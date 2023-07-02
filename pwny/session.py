@@ -23,13 +23,11 @@ SOFTWARE.
 """
 
 import os
-import json
 import socket
 
 from typing import Union
 
 from .tlv import TLV, TLVPacket
-from .utils import Utils
 from .console import Console
 
 from hatsploit.lib.loot import Loot
@@ -38,7 +36,7 @@ from hatsploit.lib.session import Session
 from pex.proto.channel import ChannelClient
 
 
-class PwnySession(Session, Console, TLV, Utils, ChannelClient):
+class PwnySession(Session, Console, TLV, ChannelClient):
     """ Subclass of pwny module.
 
     This subclass of pwny module represents an implementation
@@ -94,7 +92,7 @@ class PwnySession(Session, Console, TLV, Utils, ChannelClient):
         return not self.channel.terminated
 
     def send_command(self, command: str, output: bool = False,
-                     args: Union[list, str] = "", scope: dict = {}) -> str:
+                     args: list = [], scope: dict = {}) -> str:
         """ Send command to the Pwny session.
 
         :param str command: command to send
@@ -110,15 +108,15 @@ class PwnySession(Session, Console, TLV, Utils, ChannelClient):
         for s in scope:
             if command in scope[s]:
                 tag = scope[s][command]
-                    
-                if isinstance(args, list):
-                    data = self.pack_args(args)
-                else:
-                    data = args.encode()
 
                 self.tlv_send_packet(self.channel, TLVPacket(
-                    s, tag, self.tlv_success, len(data), data
+                    s, tag, self.tlv_success, 0, b""
                 ))
+
+                for arg in args:
+                    self.tlv_send_packet(self.channel, TLVPacket(
+                        s, tag, self.tlv_success, len(arg), arg.encode()
+                    ))
 
                 result = self.tlv_read_packet(self.channel)
 

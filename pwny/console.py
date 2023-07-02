@@ -24,7 +24,7 @@ SOFTWARE.
 
 from .plugins import Plugins
 
-from hatsploit.core.cli.badges import Badges
+from badges import Badges, Tables
 
 from hatsploit.lib.runtime import Runtime
 from hatsploit.lib.session import Session
@@ -34,7 +34,7 @@ from hatsploit.lib.handler import Handler
 from pex.fs import FS
 
 
-class Console(Plugins, Badges, Runtime, Commands, FS):
+class Console(Plugins, Tables, Badges, Runtime, Commands, FS):
     """ Subclass of pwny module.
 
     This subclass of pwny module is intended for providing

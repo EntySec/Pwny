@@ -24,9 +24,7 @@ SOFTWARE.
 
 import os
 
-from .utils import Utils
-
-from hatsploit.core.cli.badges import Badges
+from badges import Badges
 
 from pex.fs import FS
 from pex.proto.channel import ChannelSocket
@@ -42,9 +40,11 @@ class TLVPacket(NamedTuple):
     data: bytes
 
 
-class TLV(Badges, Utils, FS):
+class TLV(Badges, FS):
     def __init__(self):
         super().__init__()
+
+        self.tlv_stdapi = 0
 
         self.tlv_short = 2
         self.tlv_int = 4
@@ -62,10 +62,8 @@ class TLV(Badges, Utils, FS):
         self.tlv_api_calls = {
             0: {
                 'exit': 0,
-                'load': 1,
-                'unload': 2,
-                'push': 3,
-                'pull': 4,
+                'push': 1,
+                'pull': 2,
             }
         }
 
@@ -97,12 +95,30 @@ class TLV(Badges, Utils, FS):
         exists, is_dir = self.exists(local_file)
 
         if exists or not is_dir:
-            config = self.pack_args([remote_path, local_file])
-
-            push_api_call = self.tlv_api_calls[0]['push']
+            push_api_call = self.tlv_api_calls[self.tlv_stdapi]['push']
 
             self.tlv_send_packet(channel, TLVPacket(
-                0, push_api_call, self.tlv_success, len(config), config
+                scope=self.tlv_stdapi,
+                tag=push_api_call,
+                status=self.tlv_success,
+                size=len(config),
+                data=b""
+            ))
+
+            self.tlv_send_packet(channel, TLVPacket(
+                scope=self.tlv_stdapi,
+                tag=push_api_call,
+                status=self.tlv_success,
+                size=len(remote_path),
+                data=remote_path.encode()
+            ))
+
+            self.tlv_send_packet(channel, TLVPacket(
+                scope=self.tlv_stdapi,
+                tag=push_api_call,
+                status=self.tlv_success,
+                size=len(local_file),
+                data=local_file.encode()
             ))
 
             tlv_packet = self.tlv_read_packet(channel)
@@ -118,11 +134,19 @@ class TLV(Badges, Utils, FS):
                         chunk = data[size:size + 1024]
 
                         self.tlv_send_packet(channel, TLVPacket(
-                            tlv_packet.scope, tlv_packet.tag, self.tlv_wait, len(chunk), chunk
+                            scope=tlv_packet.scope,
+                            tag=tlv_packet.tag,
+                            status=self.tlv_wait,
+                            size=len(chunk),
+                            data=chunk
                         ))
 
                 self.tlv_send_packet(channel, TLVPacket(
-                    0, push_api_call, tlv_packet.status, 0, b''
+                    scope=self.tlv_stdapi,
+                    tag=push_api_call,
+                    status=tlv_packet.status,
+                    size=0,
+                    data=b""
                 ))
 
                 tlv_packet = self.tlv_read_packet(channel)
@@ -167,12 +191,30 @@ class TLV(Badges, Utils, FS):
             if is_dir:
                 local_path = local_path + '/' + os.path.split(remote_file)[1]
 
-            config = self.pack_args([local_path, remote_file])
-
-            pull_api_call = self.tlv_api_calls[0]['pull']
+            pull_api_call = self.tlv_api_calls[self.tlv_stdapi]['pull']
 
             self.tlv_send_packet(channel, TLVPacket(
-                0, pull_api_call, self.tlv_success, len(config), config
+                scope=self.tlv_stdapi,
+                tag=pull_api_call,
+                status=self.tlv_success,
+                size=len(config),
+                data=config
+            ))
+
+            self.tlv_send_packet(channel, TLVPacket(
+                scope=self.tlv_stdapi,
+                tag=pull_api_call,
+                status=self.tlv_success,
+                size=len(local_path),
+                data=local_path.encode()
+            ))
+
+            self.tlv_send_packet(channel, TLVPacket(
+                scope=self.tlv_stdapi,
+                tag=pill_api_call,
+                status=self.tlv_success,
+                size=len(remote_file),
+                data=remote_file.encode()
             ))
 
             tlv_packet = self.tlv_read_packet(channel)
