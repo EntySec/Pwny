@@ -80,20 +80,20 @@ int tlv_console_loop(tlv_transport_channel_t *tlv_transport_channel_new)
                 .net_node_src_port = UNPACK_INT(tlv_argv[1].tlv_transport_pkt_data),
                 .net_node_dst_host = UNPACK_INT(tlv_argv[2].tlv_transport_pkt_data),
                 .net_node_dst_port = UNPACK_INT(tlv_argv[3].tlv_transport_pkt_data),
-            }
+            };
 
             net_nodes_add(&net_nodes_table, net_nodes_id, net_node_new);
-            net_nodes_id += 1
+            net_nodes_id += 1;
 
-            tlv_transport_argv_free(tlv_argv);
+            tlv_transport_argv_free(tlv_argv, 4);
         } else if (tlv_transport_packet.tlv_transport_pkt_scope == API_SCOPE_PEX &&
                    tlv_transport_packet.tlv_transport_pkt_tag == API_DEL_NODE)
         {
             tlv_transport_pkt_t *tlv_argv;
-            tlv_transport_argv_read(tlv_transport_packet.tlv_transport_pkt_channel, &tlv_argv, 1);
+            tlv_transport_argv_read(tlv_transport_packet.tlv_transport_pkt_channel, &tlv_argv, 1, TLV_NO_NULL);
 
             net_nodes_delete(&net_nodes_table, UNPACK_INT(tlv_argv[0].tlv_transport_pkt_data));
-            tlv_transport_argv_free(tlv_argv);
+            tlv_transport_argv_free(tlv_argv, 1);
         } else
         {
             c2_api_call_t *c2_api_call_new = c2_make_api_call(&c2_api_calls_table, tlv_transport_packet);

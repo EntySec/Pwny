@@ -281,7 +281,7 @@ tlv_transport_pkt_t tlv_transport_channel_read(tlv_transport_channel_t *tlv_tran
 int tlv_transport_argv_read(tlv_transport_channel_t *tlv_transport_channel_new,
                             tlv_transport_pkt_t **tlv_argv, int tlv_argc, int append_zero_byte)
 {
-    *tlv_argv = malloc(argc * sizeof(tlv_transport_pkt_t));
+    *tlv_argv = malloc(tlv_argc * sizeof(tlv_transport_pkt_t));
 
     if (*tlv_argv == NULL)
         return -1;
@@ -421,7 +421,7 @@ void tlv_transport_pkt_free(tlv_transport_pkt_t tlv_transport_packet)
  * Free single TLV transport argv.
  */
 
-void tlv_transport_argv_free(tlv_transport_pkt_t *tlv_argv)
+void tlv_transport_argv_free(tlv_transport_pkt_t *tlv_argv, int tlv_argc)
 {
     for (int i = 0; i < tlv_argc; i++)
         tlv_transport_pkt_free(tlv_argv[i]);

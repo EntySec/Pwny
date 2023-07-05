@@ -67,7 +67,7 @@ else()
     add_compile_definitions(LINUX=1)
 endif()
 
-add_link_options(-Ldeps -linjector)
+add_link_options(-L. -linjector)
 
 file(GLOB PWNY_SOURCES src/*.c)
 add_library(pwny STATIC ${PWNY_SOURCES})

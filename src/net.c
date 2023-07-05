@@ -83,10 +83,6 @@ static void *net_traffic_forward(void *net_node_new)
     if (listen(sock_from, 5) == -1)
         return NULL;
 
-    log_debug("* Forwarding %s:%d -> %s:%d\n", inet_ntoa(net_node_data->net_node_src_host),
-              net_node_data->net_node_src_port, inet_ntoa(net_node_data->net_node_dst_host),
-              net_node_data->net_node_dst_port);
-
     for (;;)
     {
         struct sockaddr_in addr_to;
@@ -102,7 +98,7 @@ static void *net_traffic_forward(void *net_node_new)
         struct sockaddr_in addr_new = {
             .sin_family = AF_INET,
             .sin_port = htons(net_node_data->net_node_dst_port),
-            .sin_addr.s_addr = net_node_data->net_node_dst_host;
+            .sin_addr.s_addr = net_node_data->net_node_dst_host
         };
 
         if (connect(new_sock, (struct sockaddr *)&addr_new, sizeof(addr_new)) == -1)
@@ -112,7 +108,7 @@ static void *net_traffic_forward(void *net_node_new)
         }
 
         log_debug("* New connection: %s:%d -> %s:%d\n", inet_ntoa(addr_to.sin_addr),
-                  ntohs(addr_to.sin_port), inet_ntoa(net_node_data->net_node_src_host),
+                  ntohs(addr_to.sin_port), inet_ntoa(addr_from.sin_addr),
                   net_node_data->net_node_src_port);
 
         fd_set set;
@@ -140,7 +136,7 @@ static void *net_traffic_forward(void *net_node_new)
         }
 
         log_debug("* Connection closed: %s:%d -> %s:%d\n", inet_ntoa(addr_to.sin_addr),
-                  ntohs(addr_to.sin_port), inet_ntoa(net_node_data->net_node_src_host),
+                  ntohs(addr_to.sin_port), inet_ntoa(addr_from.sin_addr),
                   net_node_data->net_node_src_port);
 
         close(sock_to);
@@ -274,7 +270,7 @@ void net_nodes_free(net_nodes_t *net_nodes_table)
 {
     net_nodes_t *node;
 
-    for (node = net_nodes_table; node != NULL, node = node->hh.next)
+    for (node = net_nodes_table; node != NULL; node = node->hh.next)
     {
         log_debug("* Freed net node (%d)\n", node->net_node_id);
 
