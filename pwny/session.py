@@ -36,7 +36,7 @@ from hatsploit.lib.session import Session
 from pex.proto.channel import ChannelClient
 
 
-class PwnySession(Session, Console, TLV, ChannelClient):
+class PwnySession(Session, Console, TLV):
     """ Subclass of pwny module.
 
     This subclass of pwny module represents an implementation
@@ -72,7 +72,7 @@ class PwnySession(Session, Console, TLV, ChannelClient):
         :return None: None
         """
 
-        self.channel = self.open_channel(client)
+        self.channel = ChannelClient(client)
         self.start_pwny(self)
 
     def close(self) -> None:

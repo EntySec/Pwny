@@ -236,21 +236,6 @@ void net_c2_init(net_c2_t *net_c2_data)
         tlv_console_loop(&tlv_transport_channel_new);
         tlv_transport_channel_close(&tlv_transport_channel_new);
 
-        HASH_DEL(net_c2_data, c2);
-        free(c2);
-    }
-}
-
-/*
- * Free single C2 server.
- */
-
-void net_c2_free(net_c2_t *net_c2_data)
-{
-    net_c2_t *c2;
-
-    for (c2 = net_c2_data; c2 != NULL; c2 = c2->hh.next)
-    {
         log_debug("* Freed net C2 (%d) (%s)\n", c2->net_c2_id, c2->net_c2_name);
 
         HASH_DEL(net_c2_data, c2);

@@ -57,11 +57,11 @@ static c2_api_call_t *sys_pull(tlv_transport_pkt_t tlv_transport_packet)
 
     if (tlv_transport_channel_send_file(tlv_transport_packet, tlv_transport_file_new) < 0)
     {
-        tlv_transport_argv_free(tlv_argv);
+        tlv_transport_argv_free(tlv_argv, 2);
         return craft_c2_api_call_pkt(tlv_transport_packet, API_CALL_RW_ERROR, "");
     }
 
-    tlv_transport_argv_free(tlv_argv);
+    tlv_transport_argv_free(tlv_argv, 2);
     return craft_c2_api_call_pkt(tlv_transport_packet, API_CALL_SUCCESS, "");
 }
 

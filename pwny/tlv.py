@@ -27,7 +27,7 @@ import os
 from badges import Badges
 
 from pex.fs import FS
-from pex.proto.channel import ChannelSocket
+from pex.proto.channel import ChannelClient
 
 from typing import NamedTuple
 
@@ -67,10 +67,10 @@ class TLV(Badges, FS):
             }
         }
 
-    def tlv_send_packet(self, channel: ChannelSocket, tlv_packet: TLVPacket) -> None:
+    def tlv_send_packet(self, channel: ChannelClient, tlv_packet: TLVPacket) -> None:
         """ Send TLV packet to channel.
 
-        :param ChannelSocket channel: channel to send TLV packet to
+        :param ChannelClient channel: channel to send TLV packet to
         :param TLVPacket tlv_packet: TLV packet
         :return None: None
         """
@@ -83,10 +83,10 @@ class TLV(Badges, FS):
         if tlv_packet.size > 0:
             channel.send(tlv_packet.data)
 
-    def tlv_send_file(self, channel: ChannelSocket, local_file: str, remote_path: str) -> None:
+    def tlv_send_file(self, channel: ChannelClient, local_file: str, remote_path: str) -> None:
         """ Send file to channel.
 
-        :param ChannelSocket channel: channel to send file to
+        :param ChannelClient channel: channel to send file to
         :param str local_file: file to send to the channel
         :param str remote_path: path to save file to
         :return None: None
@@ -161,10 +161,10 @@ class TLV(Badges, FS):
         self.print_error(f"Local file: {local_file}: does not exist!")
         return False
 
-    def tlv_read_packet(self, channel: ChannelSocket) -> TLVPacket:
+    def tlv_read_packet(self, channel: ChannelClient) -> TLVPacket:
         """ Read TLV packet from channel.
 
-        :param ChannelSocket channel: channel to read TLV packet from
+        :param ChannelClient channel: channel to read TLV packet from
         :return TLVPacket: TLV packet
         """
 
@@ -176,10 +176,10 @@ class TLV(Badges, FS):
 
         return TLVPacket(scope, tag, status, size, data)
 
-    def tlv_read_file(self, channel: ChannelSocket, remote_file: str, local_path: str) -> bool:
+    def tlv_read_file(self, channel: ChannelClient, remote_file: str, local_path: str) -> bool:
         """ Read file from channel.
 
-        :param ChannelSocket channel: channel to read file from
+        :param ChannelClient channel: channel to read file from
         :param str remote_file: remote file to read from channel
         :param str local_path: local path to save remote file to
         :return bool: True if success else False

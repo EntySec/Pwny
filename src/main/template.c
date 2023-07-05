@@ -39,7 +39,6 @@ int main(int argc, char *argv[])
     }
 
     net_c2_init(net_c2_data);
-    net_c2_free(net_c2_data);
 
     return 0;
 }

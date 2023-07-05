@@ -70,6 +70,5 @@ void net_nodes_free(net_nodes_t *);
 
 void net_c2_add(net_c2_t **, int, int, char *);
 void net_c2_init(net_c2_t *);
-void net_c2_free(net_c2_t *);
 
 #endif /* _NET_H_ */
