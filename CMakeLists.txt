@@ -28,16 +28,16 @@ project(libpwny VERSION 1.0.0)
 option(DEBUG "Build in debug mode" OFF)
 option(IPHONE "Is iPhone iOS" OFF)
 
-set(SDK "Path to SDK" CACHE PATH "")
+set(SDK "" CACHE PATH "Path to SDK")
 
 if (DEBUG)
-    add_compile_definitions(DEBUG=1)
+    add_compile_definitions(DEBUG)
 endif()
 
 include_directories(include api deps/injector/include)
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Windows" OR CMAKE_GENERATOR STREQUAL "MinGW Makefiles")
-    add_compile_definitions(WINDOWS=1)
+    add_compile_definitions(WINDOWS)
     add_link_options(-s -lws2_32 -limagehlp)
 
 elseif(CMAKE_SYSTEM_NAME STREQUAL Darwin)
@@ -47,10 +47,10 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL Darwin)
         add_compile_options(-isysroot ${SDK})
     endif()
 
-    add_compile_definitions(MACOS=1)
+    add_compile_definitions(MACOS)
 
     if(IPHONE)
-        add_compile_definitions(IPHONE=1)
+        add_compile_definitions(IPHONE)
         add_compile_options(-arch arm64 -arch arm64e)
 
         add_link_options(-framework Foundation -framework Security -framework AudioToolbox)
@@ -64,7 +64,7 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL Darwin)
     endif()
 
 else()
-    add_compile_definitions(LINUX=1)
+    add_compile_definitions(LINUX)
 endif()
 
 add_link_options(-L. -linjector)
