@@ -30,17 +30,24 @@
 #include <uthash/uthash.h>
 
 enum c2_api_call_statuses {
-    API_CALL_SUCCESS, API_CALL_FAIL, API_CALL_WAIT,
-    API_CALL_NOT_IMPLEMENTED, API_CALL_USAGE_ERROR,
-    API_CALL_RW_ERROR, API_CALL_NOT_LOADED,
+    API_CALL_SUCCESS,
+    API_CALL_FAIL,
+    API_CALL_WAIT,
+    API_CALL_NOT_IMPLEMENTED,
+    API_CALL_USAGE_ERROR,
+    API_CALL_RW_ERROR,
+    API_CALL_NOT_LOADED,
 };
 
 enum c2_api_call_builtins {
-    API_QUIT, API_LOAD, API_UNLOAD, API_CALL,
+    API_QUIT,
+    API_ADD_NODE,
+    API_DEL_NODE,
+    API_CALL,
 };
 
 enum c2_api_call_scopes {
-    API_SCOPE_STDAPI,
+    API_SCOPE_PEX,
 };
 
 typedef struct c2_api_call {

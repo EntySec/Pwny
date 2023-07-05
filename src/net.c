@@ -30,8 +30,9 @@
 #include <stdlib.h>
 #include <signal.h>
 #include <unistd.h>
+#include <pthread.h>
 
-#ifndef _WIN32
+#ifndef WINDOWS
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -55,7 +56,145 @@ char *net_local_hostname()
 {
     char *buffer = (char *)malloc(MAX_HOSTNAME_BUF + 1);
     gethostname(buffer, MAX_HOSTNAME_BUF + 1);
-    return buffer;
+    return buffer; /* must be freed when time comes... */
+}
+
+/*
+ * Thread for traffic forwarder between nodes.
+ */
+
+static void *net_traffic_forward(void *net_node_new)
+{
+    net_node_t *net_node_data = (net_node_t *)net_node_new;
+
+    int sock_from = socket(AF_INET, SOCK_STREAM, 0);
+    if (sock_from == -1)
+        return NULL;
+
+    struct sockaddr_in addr_from = {
+        .sin_family = AF_INET,
+        .sin_port = htons(net_node_data->net_node_src_port),
+        .sin_addr.s_addr = net_node_data->net_node_src_host
+    };
+
+    if (bind(sock_from, (struct sockaddr *)&addr_from, sizeof(addr_from)) == -1)
+        return NULL;
+
+    if (listen(sock_from, 5) == -1)
+        return NULL;
+
+    log_debug("* Forwarding %s:%d -> %s:%d\n", inet_ntoa(net_node_data->net_node_src_host),
+              net_node_data->net_node_src_port, inet_ntoa(net_node_data->net_node_dst_host),
+              net_node_data->net_node_dst_port);
+
+    for (;;)
+    {
+        struct sockaddr_in addr_to;
+        socklen_t addr_to_len = sizeof(addr_to);
+        int sock_to = accept(sock_from, (struct sockaddr *)&addr_to, &addr_to_len);
+        if (sock_to == -1)
+            return NULL;
+
+        int new_sock = socket(AF_INET, SOCK_STREAM, 0);
+        if (new_sock == -1)
+            return NULL;
+
+        struct sockaddr_in addr_new = {
+            .sin_family = AF_INET,
+            .sin_port = htons(net_node_data->net_node_dst_port),
+            .sin_addr.s_addr = net_node_data->net_node_dst_host;
+        };
+
+        if (connect(new_sock, (struct sockaddr *)&addr_new, sizeof(addr_new)) == -1)
+        {
+            close(sock_to);
+            close(new_sock);
+        }
+
+        log_debug("* New connection: %s:%d -> %s:%d\n", inet_ntoa(addr_to.sin_addr),
+                  ntohs(addr_to.sin_port), inet_ntoa(net_node_data->net_node_src_host),
+                  net_node_data->net_node_src_port);
+
+        fd_set set;
+        FD_ZERO(&set);
+        int max_fd = (sock_to > new_sock) ? sock_to : new_sock;
+
+        for (;;)
+        {
+            FD_SET(sock_to, &set);
+            FD_SET(new_sock, &set);
+
+            if (select(max_fd + 1, &set, NULL, NULL, NULL) == -1)
+                break;
+
+            if (FD_ISSET(sock_to, &set))
+            {
+                char buffer[NET_NODE_CHUNK];
+                ssize_t bytes_read = recv(new_sock, buffer, sizeof(buffer), 0);
+
+                if (bytes_read <= 0)
+                    break;
+
+                send(sock_to, buffer, bytes_read, 0);
+            }
+        }
+
+        log_debug("* Connection closed: %s:%d -> %s:%d\n", inet_ntoa(addr_to.sin_addr),
+                  ntohs(addr_to.sin_port), inet_ntoa(net_node_data->net_node_src_host),
+                  net_node_data->net_node_src_port);
+
+        close(sock_to);
+        close(new_sock);
+    }
+
+    close(sock_from);
+
+    return NULL;
+}
+
+/*
+ * Add single net node.
+ */
+
+void net_nodes_add(net_nodes_t **net_nodes_table, int net_node_id, net_node_t net_node_new)
+{
+    net_nodes_t *net_nodes_new = calloc(1, sizeof(*net_nodes_new));
+
+    if (net_nodes_new != NULL)
+    {
+        if (pthread_create(&(net_nodes_new->net_node_handle), NULL, net_traffic_forward, (void *)&net_node_new) != 0)
+        {
+            net_nodes_free(net_nodes_new);
+            return;
+        }
+
+        net_nodes_t *net_nodes_data_new;
+        HASH_FIND_INT(*net_nodes_table, &net_node_id, net_nodes_data_new);
+
+        if (net_nodes_data_new == NULL)
+        {
+            HASH_ADD_INT(*net_nodes_table, net_node_id, net_nodes_new);
+            log_debug("* Added net node entry (%d)\n", net_node_id);
+        }
+    }
+}
+
+/*
+ * Delete single net node.
+ */
+
+void net_nodes_delete(net_nodes_t **net_nodes_table, int net_node_id)
+{
+    net_nodes_t *net_nodes_data;
+    HASH_FIND_INT(*net_nodes_table, &net_node_id, net_nodes_data);
+
+    if (net_nodes_data != NULL)
+    {
+        pthread_cancel(net_nodes_data->net_node_handle);
+        HASH_DEL(*net_nodes_table, net_nodes_data);
+
+        log_debug("* Deleted net node entry (%d)\n", net_node_id);
+    }
 }
 
 /*
@@ -112,51 +251,38 @@ void net_c2_init(net_c2_t *net_c2_data)
 
 void net_c2_free(net_c2_t *net_c2_data)
 {
+    net_c2_t *c2;
+
+    for (c2 = net_c2_data; c2 != NULL; c2 = c2->hh.next)
+    {
+        log_debug("* Freed net C2 (%d) (%s)\n", c2->net_c2_id, c2->net_c2_name);
+
+        HASH_DEL(net_c2_data, c2);
+
+        free(c2->net_c2_name);
+        free(c2);
+    }
+
     free(net_c2_data);
 }
 
 /*
- * Don't know, don't care.
+ * Free single net node.
  */
 
-static void com(net_data_t net_data_new)
+void net_nodes_free(net_nodes_t *net_nodes_table)
 {
-    char buf[1024 * 4];
-    int r, i, j;
+    net_nodes_t *node;
 
-    r = read(net_data_new.net_data_src, buf, 1024 * 4);
+    for (node = net_nodes_table; node != NULL, node = node->hh.next)
+    {
+        log_debug("* Freed net node (%d)\n", node->net_node_id);
 
-    while (r > 0) {
-        i = 0;
+        pthread_cancel(node->net_node_handle);
+        HASH_DEL(net_nodes_table, node);
 
-        while (i < r) {
-            j = write(net_data_new.net_data_dst, buf + i, r - i);
-
-            if (j == -1) {
-                return;
-            }
-
-            i += j;
-        }
-
-        r = read(net_data_new.net_data_src, buf, 1024 * 4);
+        free(node);
     }
 
-    if (r == -1) {
-        return;
-    }
-
-    #ifndef WINDOWS
-    close(net_data_new.net_data_src);
-    close(net_data_new.net_data_dst);
-    #else
-    closesocket(net_data_new.net_data_src);
-    closesocket(net_data_new.net_data_dst);
-    #endif
-}
-
-int net_forward_traffic(net_forwarder_t *net_forwarder_new)
-{
-    net_forwarder_new = NULL; // hax!
-    return 1;
+    free(net_nodes_table);
 }

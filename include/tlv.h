@@ -25,7 +25,7 @@
 #ifndef _TLV_H_
 #define _TLV_H_
 
-#ifndef _WIN32
+#ifndef WINDOWS
 #include <netinet/in.h>
 #else
 #include <winsock2.h>
@@ -46,6 +46,9 @@
         val_pkt[1] = (val >> 8) & 0xff; \
         val_pkt[0] = val & 0xff
 #define UNPACK_INT(val_pkt) val_pkt[0] | val_pkt[1] << 8 | val_pkt[2] << 16 | val_pkt[3] << 24
+
+#define TLV_NULL 1
+#define TLV_NO_NULL 0
 
 /*
  * Primary channel structure here
@@ -103,6 +106,8 @@ void tlv_transport_channel_close(tlv_transport_channel_t *);
 void tlv_transport_channel_send(tlv_transport_pkt_t);
 tlv_transport_pkt_t tlv_transport_channel_read(tlv_transport_channel_t *, int);
 
+int tlv_transport_argv_read(tlv_transport_channel_t *, tlv_transport_pkt_t **, int, int);
+
 /*
  * Channel FI/FO methods here
  */
@@ -117,5 +122,6 @@ void tlv_transport_channel_read_file_fd(tlv_transport_pkt_t, int);
  */
 
 void tlv_transport_pkt_free(tlv_transport_pkt_t);
+void tlv_transport_argv_free(tlv_transport_pkt_t *, int);
 
 #endif /* _TLV_H_ */

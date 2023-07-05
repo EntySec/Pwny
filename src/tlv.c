@@ -27,7 +27,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#ifndef _WIN32
+#ifndef WINDOWS
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -275,6 +275,29 @@ tlv_transport_pkt_t tlv_transport_channel_read(tlv_transport_channel_t *tlv_tran
 }
 
 /*
+ * Read argv from TLV transport channel.
+ */
+
+int tlv_transport_argv_read(tlv_transport_channel_t *tlv_transport_channel_new,
+                            tlv_transport_pkt_t **tlv_argv, int tlv_argc, int append_zero_byte)
+{
+    *tlv_argv = malloc(argc * sizeof(tlv_transport_pkt_t));
+
+    if (*tlv_argv == NULL)
+        return -1;
+
+    for (int i = 0; i < tlv_argc; i++)
+    {
+        if (append_zero_byte)
+            (*tlv_argv)[i] = tlv_transport_channel_read(tlv_transport_channel_new, TLV_NULL);
+        else
+            (*tlv_argv)[i] = tlv_transport_channel_read(tlv_transport_channel_new, TLV_NO_NULL);
+    }
+
+    return 0;
+}
+
+/*
  * Read file from TLV transport channel to the file descriptor.
  */
 
@@ -392,6 +415,18 @@ tlv_transport_pkt_raw_t tlv_transport_pkt_make_raw(tlv_transport_pkt_t tlv_trans
 void tlv_transport_pkt_free(tlv_transport_pkt_t tlv_transport_packet)
 {
     free(tlv_transport_packet.tlv_transport_pkt_data);
+}
+
+/*
+ * Free single TLV transport argv.
+ */
+
+void tlv_transport_argv_free(tlv_transport_pkt_t *tlv_argv)
+{
+    for (int i = 0; i < tlv_argc; i++)
+        tlv_transport_pkt_free(tlv_argv[i]);
+
+    free(tlv_argv);
 }
 
 /*

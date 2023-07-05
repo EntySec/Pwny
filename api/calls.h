@@ -25,9 +25,8 @@
 #ifndef _CALLS_H_
 #define _CALLS_H_
 
-#include "c2.h"
-#include "sys.h"
-
+#include <c2.h>
+#include <sys.h>
 
 void register_api_calls(c2_api_calls_t **c2_api_calls_table)
 {

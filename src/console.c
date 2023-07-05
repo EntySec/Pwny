@@ -24,6 +24,7 @@
 
 #include <tlv.h>
 #include <c2.h>
+#include <net.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -50,12 +51,15 @@ int tlv_console_loop(tlv_transport_channel_t *tlv_transport_channel_new)
     c2_api_calls_t *c2_api_calls_table = NULL;
     c2_register_api_calls(&c2_api_calls_table);
 
+    net_nodes_t *net_nodes_table = NULL;
+    unsigned int net_nodes_id = 0;
+
     while (1)
     {
         tlv_transport_pkt_t tlv_transport_packet;
-        tlv_transport_packet = tlv_transport_channel_read(tlv_transport_channel_new, 1);
+        tlv_transport_packet = tlv_transport_channel_read(tlv_transport_channel_new, TLV_NULL);
 
-        if (tlv_transport_packet.tlv_transport_pkt_scope == API_SCOPE_STDAPI &&
+        if (tlv_transport_packet.tlv_transport_pkt_scope == API_SCOPE_PEX &&
             tlv_transport_packet.tlv_transport_pkt_tag == API_QUIT)
         {
             c2_api_call_t *c2_api_call_new = craft_c2_api_call_pkt(tlv_transport_packet, API_CALL_SUCCESS, "");
@@ -65,6 +69,31 @@ int tlv_console_loop(tlv_transport_channel_t *tlv_transport_channel_new)
             tlv_transport_pkt_free(tlv_transport_packet);
 
             break;
+        } else if (tlv_transport_packet.tlv_transport_pkt_scope == API_SCOPE_PEX &&
+                   tlv_transport_packet.tlv_transport_pkt_tag == API_ADD_NODE)
+        {
+            tlv_transport_pkt_t *tlv_argv;
+            tlv_transport_argv_read(tlv_transport_packet.tlv_transport_pkt_channel, &tlv_argv, 4, TLV_NO_NULL);
+
+            net_node_t net_node_new = {
+                .net_node_src_host = UNPACK_INT(tlv_argv[0].tlv_transport_pkt_data),
+                .net_node_src_port = UNPACK_INT(tlv_argv[1].tlv_transport_pkt_data),
+                .net_node_dst_host = UNPACK_INT(tlv_argv[2].tlv_transport_pkt_data),
+                .net_node_dst_port = UNPACK_INT(tlv_argv[3].tlv_transport_pkt_data),
+            }
+
+            net_nodes_add(&net_nodes_table, net_nodes_id, net_node_new);
+            net_nodes_id += 1
+
+            tlv_transport_argv_free(tlv_argv);
+        } else if (tlv_transport_packet.tlv_transport_pkt_scope == API_SCOPE_PEX &&
+                   tlv_transport_packet.tlv_transport_pkt_tag == API_DEL_NODE)
+        {
+            tlv_transport_pkt_t *tlv_argv;
+            tlv_transport_argv_read(tlv_transport_packet.tlv_transport_pkt_channel, &tlv_argv, 1);
+
+            net_nodes_delete(&net_nodes_table, UNPACK_INT(tlv_argv[0].tlv_transport_pkt_data));
+            tlv_transport_argv_free(tlv_argv);
         } else
         {
             c2_api_call_t *c2_api_call_new = c2_make_api_call(&c2_api_calls_table, tlv_transport_packet);

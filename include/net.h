@@ -25,7 +25,9 @@
 #ifndef _NET_H_
 #define _NET_H_
 
-#ifndef _WIN32
+#include <pthread.h>
+
+#ifndef WINDOWS
 #include <netinet/in.h>
 #else
 #include <winsock2.h>
@@ -34,6 +36,7 @@
 #include <uthash/uthash.h>
 
 #define MAX_HOSTNAME_BUF 1024
+#define NET_NODE_CHUNK 4096
 
 #define PACK_IPV4(o1,o2,o3,o4) (htonl((o1 << 24) | (o2 << 16) | (o3 << 8) | (o4 << 0)))
 
@@ -44,31 +47,26 @@ typedef struct net_c2 {
     UT_hash_handle hh;
 } net_c2_t;
 
-typedef struct net_data {
-    #ifndef WINDOWS
-    int net_data_src;
-    int net_data_dst;
-    #else
-    SOCKET net_data_src;
-    SOCKET net_data_dst;
-    #endif
-} net_data_t;
+typedef struct net_nodes {
+    int net_node_id;
+    int net_node_src;
+    int net_node_dst;
+    pthread_t net_node_handle;
+    UT_hash_handle hh;
+} net_nodes_t;
 
-typedef struct net_forwarder {
-    #ifndef WINDOWS
-    int net_forwarder_pipe;
-    #else
-    SOCKET net_forwarder_pipe;
-    #endif
-
-    int net_forward_port;
-    int net_mother_port;
-    char *net_mother_host;
-} net_forwarder_t;
+typedef struct net_node {
+    int net_node_src_host;
+    int net_node_src_port;
+    int net_node_dst_host;
+    int net_node_dst_port;
+} net_node_t;
 
 char *net_local_hostname();
 
-int net_traffic_forward(net_forwarder_t *);
+void net_nodes_add(net_nodes_t **, int, net_node_t);
+void net_nodes_delete(net_nodes_t **, int);
+void net_nodes_free(net_nodes_t *);
 
 void net_c2_add(net_c2_t **, int, int, char *);
 void net_c2_init(net_c2_t *);
