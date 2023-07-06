@@ -97,21 +97,6 @@ pwny = Pwny()
 template = pwny.get_template('linux', 'x64')
 ```
 
-To serialize Pwny config, you should call `serialize_config()`.
-
-```python3
-from pwny import Pwny
-
-pwny = Pwny()
-args = pwny.serialize_config({})
-```
-
-Here is a short list of Pwny config options:
-
-* `host` - Pwny back connect host
-* `port` - Pwny back connect (or bind) port
-* `type` - Pwny connection type (bind_tcp, reverse_tcp)
-
 To get Pwny executable, you should call `get_pwny()`.
 
 ```python3
@@ -120,8 +105,6 @@ from pwny import Pwny
 pwny = Pwny()
 executable = pwny.get_pwny('linux', 'x64', config)
 ```
-
-**NOTE:** If you want Pwny to connect you should specify both `host` and `port`, but if you want Pwny to listen, you should specify only `port`.
 
 To get Pwny phase, you should call `get_phase()`.
 
