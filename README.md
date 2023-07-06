@@ -97,40 +97,14 @@ pwny = Pwny()
 executable = pwny.get_pwny('linux', 'x64')
 ```
 
-To get Pwny phase, you should call `get_phase()`.
+To get Pwny injectable implant, you should call `get_implant()`.
 
 ```python3
 from pwny import Pwny
 
 pwny = Pwny()
-phase = pwny.get_phase('linux', 'x64')
+phase = pwny.get_implant('linux', 'x64')
 ```
-
-## Adding Pwny payload
-
-To add Pwny payload to HatSploit you should follow these steps.
-
-* Write a basic HatSploit payload template.
-* Import `Pwny` and `PwnySession` and put `Pwny` to `HatSploitPayload` class.
-* Set payload parameter `Session` to `PwnySession`.
-* Add `get_pwny()` with platform, architecture and config specified to the `run()`.
-
-```python3
-return self.get_pwny(
-    self.details['Platform'],
-    self.details['Architecture'],
-    {
-        'host': remote_host,
-        'port': remote_port,
-        'type': connection_type,
-    }
-)
-```
-
-* Add method `phase()` that will return shellcode that loads Pwny phase into the memory (see [Pwny Phase Stack](https://github.com/EntySec/Pwny/tree/main/docs/phase_stack.md)).
-* Add method `implant()` and return `get_implant()` with platform and architecture from it.
-
-You can find an example of implementing Pwny in the HatSploit Framework here - [Linux x64 Pwny Reverse TCP](https://github.com/EntySec/Pwny/blob/main/payload/linux/x64/pwny_reverse_tcp.py).
 
 ## Caveats
 
