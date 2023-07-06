@@ -88,22 +88,13 @@ from pwny.session import PwnySession
 * `Pwny` - Pwny utilities, mostly for generating payloads and encoding arguments.
 * `PwnySession` - Wrapper for `HatSploitSession` for Pwny, HatSploit should use it with Pwny payload.
 
-To get Pwny template, you should call `get_template()`.
-
-```python3
-from pwny import Pwny
-
-pwny = Pwny()
-template = pwny.get_template('linux', 'x64')
-```
-
 To get Pwny executable, you should call `get_pwny()`.
 
 ```python3
 from pwny import Pwny
 
 pwny = Pwny()
-executable = pwny.get_pwny('linux', 'x64', config)
+executable = pwny.get_pwny('linux', 'x64')
 ```
 
 To get Pwny phase, you should call `get_phase()`.
