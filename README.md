@@ -18,7 +18,7 @@
     </a>
 </p>
 
-Pwny is an implementation of an advanced native-code payload written in pure C and designed for portability, embeddability, and extensibility.
+Pwny is an implementation of an advanced payload written in pure C and designed for portability and extensibility.
 
 That repository contains Pwny, which is supposed to work on `macOS`, `Linux`, `Windows` and `Apple iOS`, but can be ported to almost every Posix system. Note that `Android` app will come soon with generic support of this native Pwny codebase and will be optimized to work with HatSploit Framework (Checkmate C2) as well as with Ghost Framework.
 
