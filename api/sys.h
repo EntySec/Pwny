@@ -25,48 +25,54 @@
 #include <c2.h>
 #include <tlv.h>
 
-static c2_api_call_t *sys_push(tlv_transport_pkt_t tlv_transport_packet)
+static c2_api_call_t *sys_test(tlv_pkt_t tlv_packet)
 {
-    tlv_transport_pkt_t *tlv_argv;
-    tlv_transport_argv_read(tlv_transport_packet.tlv_transport_pkt_channel, &tlv_argv, 2, TLV_NULL);
+    return craft_c2_api_call_pkt(tlv_packet, API_CALL_SUCCESS, "Test");
+}
 
-    tlv_transport_file_t tlv_transport_file_new = {
-        .tlv_transport_file_to = tlv_argv[0].tlv_transport_pkt_data,
-        .tlv_transport_file_from = tlv_argv[1].tlv_transport_pkt_data,
+static c2_api_call_t *sys_push(tlv_pkt_t tlv_packet)
+{
+    tlv_pkt_t *tlv_argv;
+    tlv_argv_read(tlv_packet.tlv_pkt_channel, &tlv_argv, 2, TLV_NULL);
+
+    tlv_file_t tlv_file_new = {
+        .tlv_file_to = tlv_argv[0].tlv_pkt_data,
+        .tlv_file_from = tlv_argv[1].tlv_pkt_data,
     };
 
-    if (tlv_transport_channel_read_file(tlv_transport_packet, tlv_transport_file_new) < 0)
+    if (tlv_channel_read_file(tlv_packet, tlv_file_new) < 0)
     {
-        tlv_transport_argv_free(tlv_argv, 2);
-        return craft_c2_api_call_pkt(tlv_transport_packet, API_CALL_RW_ERROR, "");
+        tlv_argv_free(tlv_argv, 2);
+        return craft_c2_api_call_pkt(tlv_packet, API_CALL_RW_ERROR, "");
     }
 
-    tlv_transport_argv_free(tlv_argv, 2);
+    tlv_argv_free(tlv_argv, 2);
     return NULL;
 }
 
-static c2_api_call_t *sys_pull(tlv_transport_pkt_t tlv_transport_packet)
+static c2_api_call_t *sys_pull(tlv_pkt_t tlv_packet)
 {
-    tlv_transport_pkt_t *tlv_argv;
-    tlv_transport_argv_read(tlv_transport_packet.tlv_transport_pkt_channel, &tlv_argv, 2, TLV_NULL);
+    tlv_pkt_t *tlv_argv;
+    tlv_argv_read(tlv_packet.tlv_pkt_channel, &tlv_argv, 2, TLV_NULL);
 
-    tlv_transport_file_t tlv_transport_file_new = {
-        .tlv_transport_file_to = tlv_argv[0].tlv_transport_pkt_data,
-        .tlv_transport_file_from = tlv_argv[1].tlv_transport_pkt_data,
+    tlv_file_t tlv_file_new = {
+        .tlv_file_to = tlv_argv[0].tlv_pkt_data,
+        .tlv_file_from = tlv_argv[1].tlv_pkt_data,
     };
 
-    if (tlv_transport_channel_send_file(tlv_transport_packet, tlv_transport_file_new) < 0)
+    if (tlv_channel_send_file(tlv_packet, tlv_file_new) < 0)
     {
-        tlv_transport_argv_free(tlv_argv, 2);
-        return craft_c2_api_call_pkt(tlv_transport_packet, API_CALL_RW_ERROR, "");
+        tlv_argv_free(tlv_argv, 2);
+        return craft_c2_api_call_pkt(tlv_packet, API_CALL_RW_ERROR, "");
     }
 
-    tlv_transport_argv_free(tlv_argv, 2);
-    return craft_c2_api_call_pkt(tlv_transport_packet, API_CALL_SUCCESS, "");
+    tlv_argv_free(tlv_argv, 2);
+    return craft_c2_api_call_pkt(tlv_packet, API_CALL_SUCCESS, "");
 }
 
 void register_sys_api_calls(c2_api_calls_t **c2_api_calls_table)
 {
-    c2_register_api_call(c2_api_calls_table, API_CALL, sys_push, API_SCOPE_PEX);
-    c2_register_api_call(c2_api_calls_table, API_CALL + 1, sys_pull, API_SCOPE_PEX);
+    c2_register_api_call(c2_api_calls_table, API_CALL, sys_test, API_POOL_PEX);
+    c2_register_api_call(c2_api_calls_table, API_CALL + 1, sys_push, API_POOL_PEX);
+    c2_register_api_call(c2_api_calls_table, API_CALL + 2, sys_pull, API_POOL_PEX);
 }

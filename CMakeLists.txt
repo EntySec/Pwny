@@ -37,7 +37,7 @@ endif()
 include_directories(include api deps/injector/include)
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Windows" OR CMAKE_GENERATOR STREQUAL "MinGW Makefiles")
-    add_compile_definitions(WINDOWS)
+    add_compile_definitions(WINDOWS PE)
     add_link_options(-s -lws2_32 -limagehlp)
 
 elseif(CMAKE_SYSTEM_NAME STREQUAL Darwin)
@@ -47,7 +47,7 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL Darwin)
         add_compile_options(-isysroot ${SDK})
     endif()
 
-    add_compile_definitions(MACOS)
+    add_compile_definitions(MACOS MACHO)
 
     if(IPHONE)
         add_compile_definitions(IPHONE)
@@ -64,10 +64,8 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL Darwin)
     endif()
 
 else()
-    add_compile_definitions(LINUX)
+    add_compile_definitions(LINUX ELF)
 endif()
-
-add_link_options(-L. -linjector)
 
 file(GLOB PWNY_SOURCES src/*.c)
 add_library(pwny STATIC ${PWNY_SOURCES})

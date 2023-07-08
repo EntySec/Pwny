@@ -33,7 +33,7 @@ from typing import NamedTuple
 
 
 class TLVPacket(NamedTuple):
-    scope: int
+    pool: int
     tag: int
     status: int
     size: int
@@ -44,7 +44,8 @@ class TLV(Badges, FS):
     def __init__(self):
         super().__init__()
 
-        self.tlv_stdapi = 0
+        self.tlv_pool_builtins = 0
+        self.tlv_pool_pex = 1
 
         self.tlv_short = 2
         self.tlv_int = 4
@@ -60,8 +61,15 @@ class TLV(Badges, FS):
         self.endian = 'little'
 
         self.tlv_api_calls = {
-            0: {
+            self.tlv_pool_builtins: {
                 'exit': 0,
+                'add_node': 1,
+                'del_node': 2,
+                'add_tab': 3,
+                'del_tab': 4,
+            },
+            self.tlv_pool_pex: {
+                'test': 0,
                 'push': 1,
                 'pull': 2,
             }
@@ -75,7 +83,7 @@ class TLV(Badges, FS):
         :return None: None
         """
 
-        channel.send(int.to_bytes(tlv_packet.scope, self.tlv_short, self.endian))
+        channel.send(int.to_bytes(tlv_packet.pool, self.tlv_short, self.endian))
         channel.send(int.to_bytes(tlv_packet.tag, self.tlv_short, self.endian))
         channel.send(int.to_bytes(tlv_packet.status, self.tlv_short, self.endian))
         channel.send(int.to_bytes(tlv_packet.size, self.tlv_int, self.endian))
@@ -83,22 +91,22 @@ class TLV(Badges, FS):
         if tlv_packet.size > 0:
             channel.send(tlv_packet.data)
 
-    def tlv_send_file(self, channel: ChannelClient, local_file: str, remote_path: str) -> None:
+    def tlv_send_file(self, channel: ChannelClient, local_file: str, remote_path: str) -> bool:
         """ Send file to channel.
 
         :param ChannelClient channel: channel to send file to
         :param str local_file: file to send to the channel
         :param str remote_path: path to save file to
-        :return None: None
+        :return bool: True if success else False
         """
 
         exists, is_dir = self.exists(local_file)
 
         if exists or not is_dir:
-            push_api_call = self.tlv_api_calls[self.tlv_stdapi]['push']
+            push_api_call = self.tlv_api_calls[self.tlv_pool_pex]['push']
 
             self.tlv_send_packet(channel, TLVPacket(
-                scope=self.tlv_stdapi,
+                pool=self.tlv_pool_pex,
                 tag=push_api_call,
                 status=self.tlv_success,
                 size=len(config),
@@ -106,7 +114,7 @@ class TLV(Badges, FS):
             ))
 
             self.tlv_send_packet(channel, TLVPacket(
-                scope=self.tlv_stdapi,
+                pool=self.tlv_pool_pex,
                 tag=push_api_call,
                 status=self.tlv_success,
                 size=len(remote_path),
@@ -114,7 +122,7 @@ class TLV(Badges, FS):
             ))
 
             self.tlv_send_packet(channel, TLVPacket(
-                scope=self.tlv_stdapi,
+                pool=self.tlv_pool_pex,
                 tag=push_api_call,
                 status=self.tlv_success,
                 size=len(local_file),
@@ -134,7 +142,7 @@ class TLV(Badges, FS):
                         chunk = data[size:size + 1024]
 
                         self.tlv_send_packet(channel, TLVPacket(
-                            scope=tlv_packet.scope,
+                            pool=tlv_packet.pool,
                             tag=tlv_packet.tag,
                             status=self.tlv_wait,
                             size=len(chunk),
@@ -142,7 +150,7 @@ class TLV(Badges, FS):
                         ))
 
                 self.tlv_send_packet(channel, TLVPacket(
-                    scope=self.tlv_stdapi,
+                    pool=self.tlv_pool_pex,
                     tag=push_api_call,
                     status=tlv_packet.status,
                     size=0,
@@ -168,13 +176,13 @@ class TLV(Badges, FS):
         :return TLVPacket: TLV packet
         """
 
-        scope = int.from_bytes(channel.read(self.tlv_short), self.endian)
+        pool = int.from_bytes(channel.read(self.tlv_short), self.endian)
         tag = int.from_bytes(channel.read(self.tlv_short), self.endian)
         status = int.from_bytes(channel.read(self.tlv_short), self.endian)
         size = int.from_bytes(channel.read(self.tlv_int), self.endian)
         data = channel.read(size)
 
-        return TLVPacket(scope, tag, status, size, data)
+        return TLVPacket(pool, tag, status, size, data)
 
     def tlv_read_file(self, channel: ChannelClient, remote_file: str, local_path: str) -> bool:
         """ Read file from channel.
@@ -191,10 +199,10 @@ class TLV(Badges, FS):
             if is_dir:
                 local_path = local_path + '/' + os.path.split(remote_file)[1]
 
-            pull_api_call = self.tlv_api_calls[self.tlv_stdapi]['pull']
+            pull_api_call = self.tlv_api_calls[self.tlv_pool_pex]['pull']
 
             self.tlv_send_packet(channel, TLVPacket(
-                scope=self.tlv_stdapi,
+                pool=self.tlv_pool_pex,
                 tag=pull_api_call,
                 status=self.tlv_success,
                 size=len(config),
@@ -202,7 +210,7 @@ class TLV(Badges, FS):
             ))
 
             self.tlv_send_packet(channel, TLVPacket(
-                scope=self.tlv_stdapi,
+                pool=self.tlv_pool_pex,
                 tag=pull_api_call,
                 status=self.tlv_success,
                 size=len(local_path),
@@ -210,7 +218,7 @@ class TLV(Badges, FS):
             ))
 
             self.tlv_send_packet(channel, TLVPacket(
-                scope=self.tlv_stdapi,
+                pool=self.tlv_pool_pex,
                 tag=pill_api_call,
                 status=self.tlv_success,
                 size=len(remote_file),

@@ -92,30 +92,40 @@ class PwnySession(Session, Console, TLV):
         return not self.channel.terminated
 
     def send_command(self, command: str, output: bool = False,
-                     args: list = [], scope: dict = {}) -> str:
+                     args: list = [], pool: dict = {}) -> str:
         """ Send command to the Pwny session.
 
         :param str command: command to send
         :param bool output: wait for the output or not
         :param Union[dict, str] args: command arguments
-        :param dict scope: scope
+        :param dict pool: pool
         :return str: command output
         """
 
-        if not scope:
-            scope = self.tlv_api_calls
+        if not pool:
+            pool = self.tlv_api_calls
 
-        for s in scope:
-            if command in scope[s]:
-                tag = scope[s][command]
+        for s in pool:
+            if command in pool[s]:
+                tag = pool[s][command]
 
                 self.tlv_send_packet(self.channel, TLVPacket(
-                    s, tag, self.tlv_success, 0, b""
+                    pool=s,
+                    tag=tag,
+                    status=self.tlv_success,
+                    size=0,
+                    data=b""
                 ))
 
                 for arg in args:
+                    data = arg if isinstance(arg, bytes) else arg.encode()
+
                     self.tlv_send_packet(self.channel, TLVPacket(
-                        s, tag, self.tlv_success, len(arg), arg.encode()
+                        pool=s,
+                        tag=tag,
+                        status=self.tlv_success,
+                        size=len(data),
+                        data=data
                     ))
 
                 result = self.tlv_read_packet(self.channel)

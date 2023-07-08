@@ -22,6 +22,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
+import os
+
 from hatsploit.lib.plugins import Plugins as HatSploitPlugins
 from hatsploit.lib.session import Session
 
@@ -67,19 +69,25 @@ class Plugins(object):
         if plugin not in self.loaded_plugins:
             if plugin in self.imported_plugins:
                 plugin_object = self.imported_plugins[plugin]
-
                 self.loaded_plugins.update({plugin: plugin_object})
 
-                if hasattr(plugin_object, 'backend') and isinstance(plugin_object.backend, list):
-                    file_from = plugin_object.backend[0]
-                    file_to = plugin_object.backend[1]
+                session = self.imported_plugins[plugin].session
+                details = plugin_object.details
 
-                    session = self.imported_plugins[plugin].session
+                tab_path = (session.pwny_libs +
+                            session.details['Platform'] +
+                            '/' + session.details['Architecture'] +
+                            '/' + details['Plugin'])
 
-                    session.upload(session.pwny_libs + file_from, file_to)
-                    session.send_command('load', args=file_to, output=False)
+                if os.path.exists(tab_path):
+                    with open(tab_path, 'rb') as f:
+                        session.send_command('add_tab', args=[
+                            details['Pool'].to_bytes(4, 'little'), f.read()])
 
-                plugin_object.load()
+                    plugin_object.load()
+                else:
+                    self.loaded_plugins.pop(plugin)
+                    raise RuntimeError(f"Plugin executable link does not exist at {tab_path}!")
             else:
                 raise RuntimeError(f"Invalid plugin: {plugin}!")
         else:
@@ -96,9 +104,9 @@ class Plugins(object):
         if plugin in self.imported_plugins:
             plugin_object = self.loaded_plugins[plugin]
 
-            if hasattr(plugin_object, 'scope') and isinstance(plugin_object.scope, dict):
-                for scope in plugin_object.scope:
-                    session.send_command('unload', args=str(scope), output=False)
+            plugin_object.session.send_command('del_tab', args=[str(
+                plugin_object.details['Pool']
+            )], output=False)
 
             self.loaded_plugins.pop(plugin)
         else:

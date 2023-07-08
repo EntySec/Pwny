@@ -30,18 +30,7 @@
 
 int main(int argc, char *argv[])
 {
-	net_c2_t *net_c2_data = NULL;
+	/* todo */
 
-	tlv_transport_channel_t tlv_transport_channel_new = {
-		.tlv_transport_channel_host = PACK_IPV4(127, 0, 0, 1),
-		.tlv_transport_channel_port = 8888,
-	};
-
-	tlv_transport_channel_open(&tlv_transport_channel_new);
-
-	net_c2_add(&net_c2_data, 0, tlv_transport_channel_new.tlv_transport_channel_pipe, net_local_hostname());
-	net_c2_init(net_c2_data);
-
-	tlv_transport_channel_close(&tlv_transport_channel_new);
 	return 0;
 }

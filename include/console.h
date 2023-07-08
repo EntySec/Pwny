@@ -28,6 +28,7 @@
 #include <c2.h>
 #include <tlv.h>
 
-void tlv_console_loop(tlv_transport_channel_t *);
+void tlv_console_loop(int);
+void tab_console_loop(c2_api_calls_t *);
 
 #endif /* _CONSOLE_H_ */

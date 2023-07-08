@@ -29,6 +29,8 @@
 
 #include <uthash/uthash.h>
 
+#define TAB_API_CALL 1
+
 enum c2_api_call_statuses {
     API_CALL_SUCCESS,
     API_CALL_FAIL,
@@ -43,21 +45,27 @@ enum c2_api_call_builtins {
     API_QUIT,
     API_ADD_NODE,
     API_DEL_NODE,
+    API_ADD_TAB,
+    API_DEL_TAB,
+};
+
+enum c2_api_call_other {
     API_CALL,
 };
 
-enum c2_api_call_scopes {
-    API_SCOPE_PEX,
+enum c2_api_call_pools {
+    API_POOL_BUILTINS,
+    API_POOL_PEX,
 };
 
 typedef struct c2_api_call {
-    int c2_api_call_scope;
+    int c2_api_call_pool;
     int c2_api_call_tag;
     int c2_api_call_status;
     char *c2_api_call_result;
 } c2_api_call_t;
 
-typedef c2_api_call_t *(*c2_api_t)(tlv_transport_pkt_t);
+typedef c2_api_call_t *(*c2_api_t)(tlv_pkt_t);
 
 typedef struct c2_api_call_handlers {
     int c2_api_call_tag;
@@ -66,16 +74,16 @@ typedef struct c2_api_call_handlers {
 } c2_api_call_handlers_t;
 
 typedef struct c2_api_calls {
-    int c2_api_call_scope;
+    int c2_api_call_pool;
     void *c2_api_call_plugin;
     c2_api_call_handlers_t *c2_api_call_handlers;
     UT_hash_handle hh;
 } c2_api_calls_t;
 
-tlv_transport_pkt_t craft_c2_tlv_pkt(tlv_transport_pkt_t, c2_api_call_t *);
-c2_api_call_t *craft_c2_api_call_pkt(tlv_transport_pkt_t, int, char *);
+tlv_pkt_t craft_c2_tlv_pkt(tlv_pkt_t, c2_api_call_t *);
+c2_api_call_t *craft_c2_api_call_pkt(tlv_pkt_t, int, char *);
 
-c2_api_call_t *c2_make_api_call(c2_api_calls_t **, tlv_transport_pkt_t);
+c2_api_call_t *c2_make_api_call(c2_api_calls_t **, tlv_pkt_t);
 void c2_register_api_calls(c2_api_calls_t **);
 void c2_register_api_call(c2_api_calls_t **, int, c2_api_t, int);
 

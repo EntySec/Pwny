@@ -50,7 +50,6 @@ class Console(Plugins, Tables, Badges, Runtime, Commands, FS):
             ('exit', 'Terminate Pwny session.'),
             ('help', 'Show available commands.'),
             ('load', 'Load Pwny plugin.'),
-            ('migrate', 'Migrate Pwny to another process.'),
             ('plugins', 'List Pwny plugins.'),
             ('quit', 'Stop interaction.'),
             ('unload', 'Unload Pwny plugin.')
@@ -125,40 +124,6 @@ class Console(Plugins, Tables, Badges, Runtime, Commands, FS):
                 if result is not Exception and result:
                     break
 
-    def pwny_migrate(self, session: Session, process: int) -> None:
-        """ Migrate Pwny to the specified process.
-
-        :param Session session: session to migrate Pwny for
-        :param int process: pid of name of the process
-        :return None: None
-        """
-
-        template = session.details['Architecture']
-
-        if session.details['Platform'].lower() == 'windows':
-            template = template + '.dll'
-            side_template = "C:\\Windows\\Temp\\" + template
-
-        elif session.details['Platform'].lower() in ['macos', 'apple_ios']:
-            template = template + '.dylib'
-            side_template = "/private/var/tmp/" + template
-
-        else:
-            template = template + '.so'
-            side_template = "/tmp/" + template
-
-        template = self.pwny + 'templates/' + self.details['Platform'].lower() + '/' + template
-
-        self.print_process("Uploading dynamic library...")
-
-        if not session.upload(template, side_template):
-            self.print_error("Failed to upload dynamic library!")
-            return
-
-        self.print_process("Injecting dynamic library...")
-
-        session.send_command('migrate', args={'pid': process})
-
     def pwny_shell(self, session: Session) -> bool:
         """ Start Pwny shell.
 
@@ -184,12 +149,6 @@ class Console(Plugins, Tables, Badges, Runtime, Commands, FS):
                 else:
                     self.unload_plugin(command[1])
 
-            elif command[0] == 'migrate':
-                if len(command) < 2:
-                    self.print_usage("migrate <pid|name>")
-                else:
-                    self.pwny_migrate(session, command[1])
-
             elif command[0] == 'help':
                 self.print_table("Core Commands", ('Command', 'Description'),
                                  *self.core_commands)
@@ -212,7 +171,6 @@ class Console(Plugins, Tables, Badges, Runtime, Commands, FS):
 
                         for label in sorted(commands_data):
                             self.print_table(label.title() + " Commands", headers, *commands_data[label])
-                        
 
             elif command[0] == 'plugins':
                 all_plugins = self.imported_plugins

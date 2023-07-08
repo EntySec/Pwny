@@ -22,8 +22,6 @@
  * SOFTWARE.
  */
 
-#define _DEFAULT_SOURCE
-
 #include <stdio.h>
 #include <sys/types.h>
 #include <string.h>
@@ -158,6 +156,8 @@ void net_nodes_add(net_nodes_t **net_nodes_table, int net_node_id, net_node_t ne
 
     if (net_nodes_new != NULL)
     {
+        net_nodes_new->net_node_id = net_node_id;
+
         if (pthread_create(&(net_nodes_new->net_node_handle), NULL, net_traffic_forward, (void *)&net_node_new) != 0)
         {
             net_nodes_free(net_nodes_new);
@@ -230,11 +230,8 @@ void net_c2_init(net_c2_t *net_c2_data)
 
     for (c2 = net_c2_data; c2 != NULL; c2 = c2->hh.next)
     {
-        tlv_transport_channel_t tlv_transport_channel_new;
-        tlv_transport_channel_new.tlv_transport_channel_pipe = c2->net_c2_fd;
-
-        tlv_console_loop(&tlv_transport_channel_new);
-        tlv_transport_channel_close(&tlv_transport_channel_new);
+        tlv_console_loop(c2->net_c2_fd);
+        tlv_channel_close(c2->net_c2_fd);
 
         log_debug("* Freed net C2 (%d) (%s)\n", c2->net_c2_id, c2->net_c2_name);
 

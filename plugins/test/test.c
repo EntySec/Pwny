@@ -22,51 +22,26 @@
  * SOFTWARE.
  */
 
-#ifndef _NET_H_
-#define _NET_H_
+#include <tab.h>
+#include <c2.h>
+#include <tlv.h>
+#include <console.h>
 
-#include <pthread.h>
+#define TEST_POOL 2
 
-#ifndef WINDOWS
-#include <netinet/in.h>
-#else
-#include <winsock2.h>
-#endif
+c2_api_call_t *test_test(tlv_pkt_t tlv_packet)
+{
+    return craft_c2_api_call_pkt(tlv_packet, API_CALL_SUCCESS, "Test");
+}
 
-#include <uthash/uthash.h>
+int main(void)
+{
+    c2_api_calls_t *c2_api_calls_table = NULL;
 
-#define MAX_HOSTNAME_BUF 1024
-#define NET_NODE_CHUNK 4096
+    c2_register_api_call(&c2_api_calls_table, TAB_API_CALL, test_test, TEST_POOL);
 
-#define PACK_IPV4(o1,o2,o3,o4) (htonl((o1 << 24) | (o2 << 16) | (o3 << 8) | (o4 << 0)))
+    tab_console_loop(c2_api_calls_table);
+    c2_api_calls_free(c2_api_calls_table);
 
-typedef struct net_c2 {
-    int net_c2_id;
-    int net_c2_fd;
-    char *net_c2_name;
-    UT_hash_handle hh;
-} net_c2_t;
-
-typedef struct net_nodes {
-    int net_node_id;
-    pthread_t net_node_handle;
-    UT_hash_handle hh;
-} net_nodes_t;
-
-typedef struct net_node {
-    int net_node_src_host;
-    int net_node_src_port;
-    int net_node_dst_host;
-    int net_node_dst_port;
-} net_node_t;
-
-char *net_local_hostname();
-
-void net_nodes_add(net_nodes_t **, int, net_node_t);
-void net_nodes_delete(net_nodes_t **, int);
-void net_nodes_free(net_nodes_t *);
-
-void net_c2_add(net_c2_t **, int, int, char *);
-void net_c2_init(net_c2_t *);
-
-#endif /* _NET_H_ */
+    return 0;
+}
