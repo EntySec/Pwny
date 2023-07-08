@@ -111,7 +111,6 @@ static void c2_register_api_calls_pool(c2_api_calls_t **c2_api_calls_table, int 
         if (c2_api_calls_table_new != NULL)
         {
             c2_api_calls_table_new->c2_api_call_pool = c2_api_call_pool;
-            c2_api_calls_table_new->c2_api_call_plugin = NULL;
             c2_api_calls_table_new->c2_api_call_handlers = NULL;
 
             HASH_ADD_INT(*c2_api_calls_table, c2_api_call_pool, c2_api_calls_table_new);
