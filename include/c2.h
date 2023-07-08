@@ -75,7 +75,6 @@ typedef struct c2_api_call_handlers {
 
 typedef struct c2_api_calls {
     int c2_api_call_pool;
-    void *c2_api_call_plugin;
     c2_api_call_handlers_t *c2_api_call_handlers;
     UT_hash_handle hh;
 } c2_api_calls_t;
