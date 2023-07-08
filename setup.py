@@ -26,7 +26,7 @@ from setuptools import setup, find_packages
 
 setup(name='pwny',
       version='1.0.0',
-      description='Pwny is an implementation of an advanced native-code payload written in pure C and designed for portability, embeddability, and extensibility.',
+      description='Pwny is an implementation of an advanced payload written in pure C and designed for portability and extensibility.',
       url='https://github.com/EntySec/Pwny',
       author='EntySec',
       author_email='entysec@gmail.com',
