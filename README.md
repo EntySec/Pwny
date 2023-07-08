@@ -27,7 +27,7 @@ That repository contains Pwny, which is supposed to work on `macOS`, `Linux`, `W
 * Portable C code, that can be compiled for a big range of CPUs.
 * Support for `macOS`, `Linux`, `Windows` and `Apple iOS` targets.
 * Small executable with low resource utilization which is good on embedded systems.
-* Dynamically-extendable, might load plugins which are shared libraries.
+* Dynamically-extendable, might load plugins which will extend its functions.
 * Evasion techniques such as process migration.
 
 ## Installing
