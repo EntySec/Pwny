@@ -65,7 +65,7 @@ static int create_tab(tabs_t *tab_new, unsigned char *buffer)
     return 0;
 }
 
-int tab_lookup(tabs_t **tabs_table, int tlv_pool, tlv_pkt_t tlv_packet)
+int tab_lookup(tabs_t **tabs_table, int tlv_pool, tlv_pkt_t *tlv_packet)
 {
     log_debug("* Searching for tab entry (%d)\n", tlv_pool);
 
@@ -110,12 +110,7 @@ void tab_add(tabs_t **tabs_table, int tab_pool, unsigned char *buffer)
 
 int tab_exit(tabs_t *tab)
 {
-    tlv_pkt_t tlv_packet = {
-        .tlv_pkt_pool = tab->tab_pool,
-        .tlv_pkt_tag = API_QUIT,
-        .tlv_pkt_status = API_CALL_SUCCESS,
-        .tlv_pkt_size = TLV_NO_DATA,
-    };
+    tlv_pkt_t *tlv_packet = tlv_channel_pkt(TLV_NO_CHANNEL);
 
     tlv_channel_send_fd(tab->tab_fd, tlv_packet);
     close(tab->tab_fd);

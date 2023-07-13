@@ -81,8 +81,10 @@ class Plugins(object):
 
                 if os.path.exists(tab_path):
                     with open(tab_path, 'rb') as f:
+                        data = f.read()
+
                         session.send_command('add_tab', args=[
-                            details['Pool'].to_bytes(4, 'little'), f.read()])
+                            details['Pool'].to_bytes(4, 'little'), data])
 
                     plugin_object.load()
                 else:

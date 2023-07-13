@@ -58,14 +58,7 @@ enum c2_api_call_pools {
     API_POOL_PEX,
 };
 
-typedef struct c2_api_call {
-    int c2_api_call_pool;
-    int c2_api_call_tag;
-    int c2_api_call_status;
-    char *c2_api_call_result;
-} c2_api_call_t;
-
-typedef c2_api_call_t *(*c2_api_t)(tlv_pkt_t);
+typedef tlv_pkt_t *(*c2_api_t)(tlv_pkt_t *);
 
 typedef struct c2_api_call_handlers {
     int c2_api_call_tag;
@@ -79,16 +72,14 @@ typedef struct c2_api_calls {
     UT_hash_handle hh;
 } c2_api_calls_t;
 
-tlv_pkt_t craft_c2_tlv_pkt(tlv_pkt_t, c2_api_call_t *);
-c2_api_call_t *craft_c2_api_call_pkt(tlv_pkt_t, int, char *);
+tlv_pkt_t *craft_c2_tlv_pkt(tlv_pkt_t *, int, char *);
+tlv_pkt_t *c2_make_api_call(c2_api_calls_t **, tlv_pkt_t *);
 
-c2_api_call_t *c2_make_api_call(c2_api_calls_t **, tlv_pkt_t);
 void c2_register_api_calls(c2_api_calls_t **);
 void c2_register_api_call(c2_api_calls_t **, int, c2_api_t, int);
 
-void c2_add_str(c2_api_call_t *, char *);
+void c2_add_str(tlv_pkt_t *, char *);
 
-void c2_api_call_free(c2_api_call_t *);
 void c2_api_calls_free(c2_api_calls_t *);
 
 #endif /* _C2_H_ */

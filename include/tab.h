@@ -45,7 +45,7 @@ void tab_add(tabs_t **, int, unsigned char *);
 int tab_delete(tabs_t **, int);
 int tab_exit(tabs_t *);
 
-int tab_lookup(tabs_t **, int, tlv_pkt_t);
+int tab_lookup(tabs_t **, int, tlv_pkt_t *);
 void tabs_free(tabs_t *);
 
 #endif /* _TAB_H_ */

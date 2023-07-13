@@ -25,12 +25,6 @@
 #ifndef _TLV_H_
 #define _TLV_H_
 
-#ifndef WINDOWS
-#include <netinet/in.h>
-#else
-#include <winsock2.h>
-#endif
-
 /*
  * Pre-defined macros here
  */
@@ -49,15 +43,15 @@
 
 #define TLV_NULL 1
 #define TLV_NO_NULL 0
-
 #define TLV_NO_DATA 0
 
+#define TLV_NO_CHANNEL -1
+
 typedef struct tlv_pkt_raw {
-    int tlv_pkt_channel;
-    char tlv_pkt_pool[2];
-    char tlv_pkt_tag[2];
-    char tlv_pkt_status[2];
-    char tlv_pkt_size[4];
+    unsigned char tlv_pkt_pool[2];
+    unsigned char tlv_pkt_tag[2];
+    unsigned char tlv_pkt_status[2];
+    unsigned char tlv_pkt_size[4];
     char *tlv_pkt_data;
 } tlv_pkt_raw_t;
 
@@ -75,39 +69,42 @@ typedef struct tlv_file {
     char *tlv_file_from;
 } tlv_file_t;
 
-tlv_pkt_t tlv_pkt_make(tlv_pkt_raw_t);
-tlv_pkt_raw_t tlv_pkt_make_raw(tlv_pkt_t);
+tlv_pkt_t *tlv_channel_pkt(int);
+
+void tlv_pkt_make(tlv_pkt_raw_t, tlv_pkt_t *);
+tlv_pkt_raw_t tlv_pkt_make_raw(tlv_pkt_t *);
 
 /*
  * Channel control methods here
  */
 
-void tlv_channel_close(int);
+void tlv_channel_close(tlv_pkt_t *);
 
 /*
  * Channel I/O methods here
  */
 
-void tlv_channel_send(tlv_pkt_t);
-void tlv_channel_send_fd(int, tlv_pkt_t);
+void tlv_channel_send(tlv_pkt_t *);
+void tlv_channel_send_fd(int, tlv_pkt_t *);
 
-tlv_pkt_t tlv_channel_read(int, int);
-tlv_pkt_t tlv_channel_read_fd(int, int);
+void tlv_channel_read(tlv_pkt_t *, int);
+void tlv_channel_read_fd(int, tlv_pkt_t *, int);
 
-int tlv_argv_read(tlv_pkt_t, tlv_pkt_t **, int, int);
+int tlv_argv_read(tlv_pkt_t *, tlv_pkt_t **[], int, int);
 
 /*
  * Channel FI/FO methods here
  */
 
-int tlv_channel_send_file(tlv_pkt_t, tlv_file_t);
-int tlv_channel_read_file(tlv_pkt_t, tlv_file_t);
+int tlv_channel_send_file(tlv_pkt_t *, tlv_file_t);
+int tlv_channel_read_file(tlv_pkt_t *, tlv_file_t);
 
 /*
  * Clean up methods here
  */
 
-void tlv_pkt_free(tlv_pkt_t);
-void tlv_argv_free(tlv_pkt_t *, int);
+void tlv_data_free(tlv_pkt_t *);
+void tlv_pkt_free(tlv_pkt_t *);
+void tlv_argv_free(tlv_pkt_t *[], int);
 
 #endif /* _TLV_H_ */

@@ -29,9 +29,9 @@
 
 #define TEST_POOL 2
 
-c2_api_call_t *test_test(tlv_pkt_t tlv_packet)
+static tlv_pkt_t *test_test(tlv_pkt_t *tlv_packet)
 {
-    return craft_c2_api_call_pkt(tlv_packet, API_CALL_SUCCESS, "Test");
+    return craft_c2_tlv_pkt(tlv_packet, API_CALL_SUCCESS, "Test");
 }
 
 int main(void)

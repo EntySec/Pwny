@@ -230,11 +230,13 @@ void net_c2_init(net_c2_t *net_c2_data)
 
     for (c2 = net_c2_data; c2 != NULL; c2 = c2->hh.next)
     {
-        tlv_console_loop(c2->net_c2_fd);
-        tlv_channel_close(c2->net_c2_fd);
+        tlv_pkt_t *tlv_packet = tlv_channel_pkt(c2->net_c2_fd);
+        tlv_console_loop(tlv_packet);
+
+        tlv_channel_close(tlv_packet);
+        tlv_pkt_free(tlv_packet);
 
         log_debug("* Freed net C2 (%d) (%s)\n", c2->net_c2_id, c2->net_c2_name);
-
         HASH_DEL(net_c2_data, c2);
 
         free(c2->net_c2_name);
