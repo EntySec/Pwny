@@ -33,6 +33,12 @@ from typing import NamedTuple
 
 
 class TLVPacket(NamedTuple):
+    """ Subclass of pwny module.
+
+    This subclass of pwny module is intended for providing
+    an implementation of pwny TLV protocol stack.
+    """
+
     pool: int
     tag: int
     status: int
@@ -41,7 +47,13 @@ class TLVPacket(NamedTuple):
 
 
 class TLV(Badges, FS):
-    def __init__(self):
+    """ Subclass of pwny module.
+
+    This subclass of pwny module is intended for providing
+    an implementation of pwny TLV protocol implementation.
+    """
+
+    def __init__(self) -> None:
         super().__init__()
 
         self.tlv_pool_builtins = 0

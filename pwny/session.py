@@ -43,7 +43,7 @@ class PwnySession(Session, Console, TLV):
     of the Pwny session for HatSploit Framework.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
 
         self.loot = Loot()

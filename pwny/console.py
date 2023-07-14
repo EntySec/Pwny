@@ -173,17 +173,7 @@ class Console(Plugins, Tables, Badges, Runtime, Commands, FS):
                             self.print_table(label.title() + " Commands", headers, *commands_data[label])
 
             elif command[0] == 'plugins':
-                all_plugins = self.imported_plugins
-                headers = ("Number", "Name", "Description")
-
-                number = 0
-                plugins_data = []
-
-                for plugin in all_plugins:
-                    plugins_data.append((number, plugin, all_plugins[plugin].details['Description']))
-                    number += 1
-
-                self.print_table("Plugins", headers, *plugins_data)
+                self.show_plugins()
 
             elif command[0] == 'exit':
                 session.send_command("exit")

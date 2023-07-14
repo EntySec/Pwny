@@ -24,18 +24,20 @@ SOFTWARE.
 
 import os
 
+from badges import Tables
+
 from hatsploit.lib.plugins import Plugins as HatSploitPlugins
 from hatsploit.lib.session import Session
 
 
-class Plugins(object):
+class Plugins(Tables):
     """ Subclass of pwny module.
 
     This subclass of pwny module is intended for providing
     Pwny plugins handler implementation.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
 
         self.plugins = HatSploitPlugins()
@@ -57,6 +59,24 @@ class Plugins(object):
 
         for plugin in self.imported_plugins:
             self.imported_plugins[plugin].session = session
+
+    def show_plugins(self) -> None:
+        """ Show plugins.
+
+        :return None: None
+        """
+
+        all_plugins = self.imported_plugins
+        headers = ("Number", "Name", "Description")
+
+        number = 0
+        plugins_data = []
+
+        for plugin in all_plugins:
+            plugins_data.append((number, plugin, all_plugins[plugin].details['Description']))
+            number += 1
+
+        self.print_table("Plugins", headers, *plugins_data)
 
     def load_plugin(self, plugin: str) -> None:
         """ Load specified plugin.
