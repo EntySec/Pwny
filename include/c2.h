@@ -72,7 +72,9 @@ typedef struct c2_api_calls {
     UT_hash_handle hh;
 } c2_api_calls_t;
 
-tlv_pkt_t *craft_c2_tlv_pkt(tlv_pkt_t *, int, char *);
+tlv_pkt_t *create_c2_tlv_pkt(tlv_pkt_t *, int);
+void craft_c2_tlv_pkt(tlv_pkt_t *, int, char *);
+
 tlv_pkt_t *c2_make_api_call(c2_api_calls_t **, tlv_pkt_t *);
 
 void c2_register_api_calls(c2_api_calls_t **);

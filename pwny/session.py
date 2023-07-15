@@ -92,13 +92,14 @@ class PwnySession(Session, Console, TLV):
         return not self.channel.terminated
 
     def send_command(self, command: str, output: bool = False,
-                     args: list = [], pool: dict = {}) -> str:
+                     args: list = [], pool: dict = {}, messages: bool = False) -> str:
         """ Send command to the Pwny session.
 
         :param str command: command to send
         :param bool output: wait for the output or not
         :param Union[dict, str] args: command arguments
         :param dict pool: pool
+        :param bool messages: receive messages in loop
         :return str: command output
         """
 
@@ -128,10 +129,14 @@ class PwnySession(Session, Console, TLV):
                         data=data
                     ))
 
-                result = self.tlv_read_packet(self.channel)
+                if not messages:
+                    result = self.tlv_read_packet(self.channel)
 
-                if output:
-                    return result.data.decode()
+                    if output:
+                        return result.data.decode()
+                    return ''
+
+                self.tlv_read_messages(self.channel)
 
         return ''
 

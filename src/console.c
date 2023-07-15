@@ -56,7 +56,7 @@ void tlv_console_loop(tlv_pkt_t *tlv_packet)
         {
             if (tlv_packet->tlv_pkt_tag == API_QUIT)
             {
-                tlv_result = craft_c2_tlv_pkt(tlv_packet, API_CALL_SUCCESS, NULL);
+                tlv_result = create_c2_tlv_pkt(tlv_packet, API_CALL_SUCCESS);
                 tlv_channel_send(tlv_result);
 
                 tlv_pkt_free(tlv_result);
@@ -105,7 +105,7 @@ void tlv_console_loop(tlv_pkt_t *tlv_packet)
                 tlv_argv_free(tlv_argv, 1);
             }
 
-            tlv_result = craft_c2_tlv_pkt(tlv_packet, API_CALL_SUCCESS, NULL);
+            tlv_result = create_c2_tlv_pkt(tlv_packet, API_CALL_SUCCESS);
             tlv_channel_send(tlv_result);
 
             tlv_pkt_free(tlv_result);
@@ -121,7 +121,7 @@ void tlv_console_loop(tlv_pkt_t *tlv_packet)
         {
             if (tab_lookup(&tabs_table, tlv_packet->tlv_pkt_pool, tlv_packet) < 0)
             {
-                tlv_result = craft_c2_tlv_pkt(tlv_packet, API_CALL_NOT_IMPLEMENTED, NULL);
+                tlv_result = create_c2_tlv_pkt(tlv_packet, API_CALL_NOT_IMPLEMENTED);
                 tlv_channel_send(tlv_result);
             }
         }
@@ -162,7 +162,7 @@ void tab_console_loop(c2_api_calls_t *c2_api_calls_table)
 
         } else
         {
-            tlv_result = craft_c2_tlv_pkt(tlv_packet, API_CALL_NOT_IMPLEMENTED, NULL);
+            tlv_result = create_c2_tlv_pkt(tlv_packet, API_CALL_NOT_IMPLEMENTED);
 
             tlv_channel_send(tlv_result);
         }

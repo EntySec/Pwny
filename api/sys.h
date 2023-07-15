@@ -25,11 +25,6 @@
 #include <c2.h>
 #include <tlv.h>
 
-static tlv_pkt_t *sys_test(tlv_pkt_t *tlv_packet)
-{
-    return craft_c2_tlv_pkt(tlv_packet, API_CALL_SUCCESS, "Test");
-}
-
 static tlv_pkt_t *sys_push(tlv_pkt_t *tlv_packet)
 {
     tlv_pkt_t **tlv_argv;
@@ -43,11 +38,11 @@ static tlv_pkt_t *sys_push(tlv_pkt_t *tlv_packet)
     if (tlv_channel_read_file(tlv_packet, tlv_file_new) < 0)
     {
         tlv_argv_free(tlv_argv, 2);
-        return craft_c2_tlv_pkt(tlv_packet, API_CALL_RW_ERROR, NULL);
+        return create_c2_tlv_pkt(tlv_packet, API_CALL_RW_ERROR);
     }
 
     tlv_argv_free(tlv_argv, 2);
-    return NULL;
+    return create_c2_tlv_pkt(tlv_packet, API_CALL_SUCCESS);
 }
 
 static tlv_pkt_t *sys_pull(tlv_pkt_t *tlv_packet)
@@ -63,16 +58,15 @@ static tlv_pkt_t *sys_pull(tlv_pkt_t *tlv_packet)
     if (tlv_channel_send_file(tlv_packet, tlv_file_new) < 0)
     {
         tlv_argv_free(tlv_argv, 2);
-        return craft_c2_tlv_pkt(tlv_packet, API_CALL_RW_ERROR, NULL);
+        return create_c2_tlv_pkt(tlv_packet, API_CALL_RW_ERROR);
     }
 
     tlv_argv_free(tlv_argv, 2);
-    return craft_c2_tlv_pkt(tlv_packet, API_CALL_SUCCESS, NULL);
+    return create_c2_tlv_pkt(tlv_packet, API_CALL_SUCCESS);
 }
 
 void register_sys_api_calls(c2_api_calls_t **c2_api_calls_table)
 {
-    c2_register_api_call(c2_api_calls_table, API_CALL, sys_test, API_POOL_PEX);
-    c2_register_api_call(c2_api_calls_table, API_CALL + 1, sys_push, API_POOL_PEX);
-    c2_register_api_call(c2_api_calls_table, API_CALL + 2, sys_pull, API_POOL_PEX);
+    c2_register_api_call(c2_api_calls_table, API_CALL, sys_push, API_POOL_PEX);
+    c2_register_api_call(c2_api_calls_table, API_CALL + 1, sys_pull, API_POOL_PEX);
 }

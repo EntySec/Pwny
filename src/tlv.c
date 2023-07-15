@@ -167,6 +167,7 @@ void tlv_channel_read_fd(int tlv_fd, tlv_pkt_t *tlv_packet, int flag)
             {
                 read(tlv_fd, tlv_raw.tlv_pkt_data, size);
                 tlv_raw.tlv_pkt_data[size] = '\0';
+                tlv_raw.tlv_pkt_size += 1;
             }
         } else
         {
@@ -207,6 +208,7 @@ void tlv_channel_read(tlv_pkt_t *tlv_packet, int flag)
             {
                 recv(tlv_packet->tlv_pkt_channel, tlv_raw.tlv_pkt_data, size, 0);
                 tlv_raw.tlv_pkt_data[size] = '\0';
+                tlv_raw.tlv_pkt_size += 1;
             }
         } else
         {

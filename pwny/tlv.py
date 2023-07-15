@@ -196,6 +196,19 @@ class TLV(Badges, FS):
 
         return TLVPacket(pool, tag, status, size, data)
 
+    def tlv_read_messages(self, channel: ChannelClient) -> None:
+        """ Read TLV packet messages and print them all.
+
+        :param ChannelClient channel: channel to read from
+        :return None: None
+        """
+
+        tlv_packet = self.tlv_read_packet(channel)
+
+        while tlv_packet.status == self.tlv_wait:
+            self.print_empty(tlv_packet.data.decode(), end='')
+            tlv_packet = self.tlv_read_packet(channel)
+
     def tlv_read_file(self, channel: ChannelClient, remote_file: str, local_path: str) -> bool:
         """ Read file from channel.
 

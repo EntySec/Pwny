@@ -35,16 +35,30 @@
 #include <uthash/uthash.h>
 
 /*
- * Craft C2 API call packet from primary TLV transport packet
- * and C2 API call status and result.
+ * Create C2 TLV packet from existing TLV packet.
  */
 
-tlv_pkt_t *craft_c2_tlv_pkt(tlv_pkt_t *tlv_packet, int c2_api_call_status,
-                            char *c2_api_call_result)
+tlv_pkt_t *create_c2_tlv_pkt(tlv_pkt_t *tlv_packet, int c2_api_call_status)
 {
     tlv_pkt_t *tlv_pkt_new = calloc(1, sizeof(*tlv_pkt_new));
 
     tlv_pkt_new->tlv_pkt_channel = tlv_packet->tlv_pkt_channel;
+    tlv_pkt_new->tlv_pkt_pool = tlv_packet->tlv_pkt_pool;
+    tlv_pkt_new->tlv_pkt_tag = tlv_packet->tlv_pkt_tag;
+    tlv_pkt_new->tlv_pkt_status = c2_api_call_status;
+    tlv_pkt_new->tlv_pkt_data = NULL;
+    tlv_pkt_new->tlv_pkt_size = 0;
+
+    return tlv_pkt_new;
+}
+
+/*
+ * Craft C2 API call packet from existing C2 TLV packet and result.
+ */
+
+void craft_c2_tlv_pkt(tlv_pkt_t *tlv_packet, int c2_api_call_status, char *c2_api_call_result)
+{
+    tlv_packet->tlv_pkt_status = c2_api_call_status;
 
     if (c2_api_call_result != NULL)
     {
@@ -54,19 +68,13 @@ tlv_pkt_t *craft_c2_tlv_pkt(tlv_pkt_t *tlv_packet, int c2_api_call_status,
         strncpy(c2_result_msg, c2_api_call_result, length);
         c2_result_msg[length] = '\0';
 
-        tlv_pkt_new->tlv_pkt_data = c2_result_msg;
-        tlv_pkt_new->tlv_pkt_size = length + 1;
+        tlv_packet->tlv_pkt_data = c2_result_msg;
+        tlv_packet->tlv_pkt_size = length + 1;
     } else
     {
-        tlv_pkt_new->tlv_pkt_data = NULL;
-        tlv_pkt_new->tlv_pkt_size = 0;
+        tlv_packet->tlv_pkt_data = NULL;
+        tlv_packet->tlv_pkt_size = 0;
     }
-
-    tlv_pkt_new->tlv_pkt_pool = tlv_packet->tlv_pkt_pool;
-    tlv_pkt_new->tlv_pkt_tag = tlv_packet->tlv_pkt_tag;
-    tlv_pkt_new->tlv_pkt_status = c2_api_call_status;
-
-    return tlv_pkt_new;
 }
 
 /*
