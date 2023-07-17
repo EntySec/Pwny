@@ -81,30 +81,11 @@ cmake -G "MinGW Makefiles" -B build; cd build; make
 To use Pwny and build payloads you should import it to your source.
 
 ```python3
-from pwny import Pwny
 from pwny.session import PwnySession
 ```
 
 * `Pwny` - Pwny utilities, mostly for generating payloads and encoding arguments.
 * `PwnySession` - Wrapper for `HatSploitSession` for Pwny, HatSploit should use it with Pwny payload.
-
-To get Pwny executable, you should call `get_pwny()`.
-
-```python3
-from pwny import Pwny
-
-pwny = Pwny()
-executable = pwny.get_pwny('linux', 'x64')
-```
-
-To get Pwny injectable implant, you should call `get_implant()`.
-
-```python3
-from pwny import Pwny
-
-pwny = Pwny()
-phase = pwny.get_implant('linux', 'x64')
-```
 
 ## Caveats
 

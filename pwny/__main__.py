@@ -65,13 +65,3 @@ class Pwny(EXE, Socket, String):
         """
 
         return self.get_template(platform, arch, '.bin')
-
-    def get_pwny(self, platform: str, arch: str) -> bytes:
-        """ Get Pwny.
-
-        :param str platform: platform to get Pwny for
-        :param str arch: architecture to get Pwny for
-        :return bytes: Pwny
-        """
-
-        return self.get_template(platform, arch)

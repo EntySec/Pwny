@@ -29,7 +29,11 @@
 
 #include <uthash/uthash.h>
 
+/* Macro definitions */
+
 #define TAB_API_CALL 1
+
+/* Essential constants definitions */
 
 enum c2_api_call_statuses {
     API_CALL_SUCCESS,
@@ -58,6 +62,8 @@ enum c2_api_call_pools {
     API_POOL_PEX,
 };
 
+/* Essential data types definitions */
+
 typedef tlv_pkt_t *(*c2_api_t)(tlv_pkt_t *);
 
 typedef struct c2_api_call_handlers {
@@ -72,15 +78,23 @@ typedef struct c2_api_calls {
     UT_hash_handle hh;
 } c2_api_calls_t;
 
+/* TLV packet formation */
+
 tlv_pkt_t *create_c2_tlv_pkt(tlv_pkt_t *, int);
 void craft_c2_tlv_pkt(tlv_pkt_t *, int, char *);
+
+/* C2 API calls */
 
 tlv_pkt_t *c2_make_api_call(c2_api_calls_t **, tlv_pkt_t *);
 
 void c2_register_api_calls(c2_api_calls_t **);
 void c2_register_api_call(c2_api_calls_t **, int, c2_api_t, int);
 
+/* C2 API result formation */
+
 void c2_add_str(tlv_pkt_t *, char *);
+
+/* C2 API clean up */
 
 void c2_api_calls_free(c2_api_calls_t *);
 

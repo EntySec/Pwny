@@ -59,6 +59,7 @@ tlv_pkt_t *create_c2_tlv_pkt(tlv_pkt_t *tlv_packet, int c2_api_call_status)
 void craft_c2_tlv_pkt(tlv_pkt_t *tlv_packet, int c2_api_call_status, char *c2_api_call_result)
 {
     tlv_packet->tlv_pkt_status = c2_api_call_status;
+    tlv_data_free(tlv_packet);
 
     if (c2_api_call_result != NULL)
     {

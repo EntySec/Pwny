@@ -25,6 +25,8 @@
 #ifndef _LOG_H_
 #define _LOG_H_
 
+/* Debug logging for development */
+
 void log_debug(const char *, ...);
 
 #endif /* _LOG_H_ */

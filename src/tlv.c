@@ -40,7 +40,7 @@
 #include <tlv.h>
 
 /*
- * Get TLV packet.
+ * Create TLV packet.
  */
 
 tlv_pkt_t *tlv_channel_pkt(int tlv_channel)

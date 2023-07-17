@@ -33,6 +33,8 @@
 
 #include <uthash/uthash.h>
 
+/* Essential data types definitions */
+
 typedef struct tabs {
     int tab_pool;
     pid_t tab_pid;
@@ -40,12 +42,15 @@ typedef struct tabs {
     UT_hash_handle hh;
 } tabs_t;
 
+/* Tab addition and deletion and lookup */
+
 void tab_add(tabs_t **, int, unsigned char *);
-
 int tab_delete(tabs_t **, int);
-int tab_exit(tabs_t *);
-
 int tab_lookup(tabs_t **, int, tlv_pkt_t *);
+
+/* Tab clean up */
+
+int tab_exit(tabs_t *);
 void tabs_free(tabs_t *);
 
 #endif /* _TAB_H_ */

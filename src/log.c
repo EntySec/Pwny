@@ -28,7 +28,7 @@
 #include <log.h>
 
 /*
- * If DEBUG is specified, then log information provided.
+ * If DEBUG is defined, then log information provided.
  */
 
 void log_debug(const char* fmt, ...)

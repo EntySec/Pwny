@@ -28,6 +28,8 @@
 #include <c2.h>
 #include <tlv.h>
 
+/* Interactive consoles for base and tab */
+
 void tlv_console_loop(tlv_pkt_t *);
 void tab_console_loop(c2_api_calls_t *);
 

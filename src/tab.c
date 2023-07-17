@@ -38,6 +38,10 @@
 
 #include <uthash/uthash.h>
 
+/*
+ * Create a tab from buffer.
+ */
+
 static int create_tab(tabs_t *tab_new, unsigned char *buffer)
 {
     int pipes[2];
@@ -53,7 +57,17 @@ static int create_tab(tabs_t *tab_new, unsigned char *buffer)
     {
         dup2(pipes[0], STDIN_FILENO);
         char *argv[] = {"pwny"};
+
+        #ifdef LINUX
+
         pawn_exec(buffer, argv, environ);
+
+        #else
+        #ifdef MACOS
+
+        pawn_exec_bundle(buffer, argv, environ);
+        #endif
+        #endif
     } else
     {
         fcntl(pipes[1], F_SETFL, O_NONBLOCK);
@@ -64,6 +78,10 @@ static int create_tab(tabs_t *tab_new, unsigned char *buffer)
 
     return 0;
 }
+
+/*
+ * Look through the tabs, find the pool and pass TLV packet to it.
+ */
 
 int tab_lookup(tabs_t **tabs_table, int tlv_pool, tlv_pkt_t *tlv_packet)
 {
@@ -82,6 +100,10 @@ int tab_lookup(tabs_t **tabs_table, int tlv_pool, tlv_pkt_t *tlv_packet)
 
     return -1;
 }
+
+/*
+ * Add tab with the specific pool from buffer.
+ */
 
 void tab_add(tabs_t **tabs_table, int tab_pool, unsigned char *buffer)
 {
@@ -108,6 +130,12 @@ void tab_add(tabs_t **tabs_table, int tab_pool, unsigned char *buffer)
     }
 }
 
+/*
+ * Exit tab and close it's descriptor.
+ *
+ * NOTE: Sends API_CALL_QUIT to the tab's console.
+ */
+
 int tab_exit(tabs_t *tab)
 {
     tlv_pkt_t *tlv_packet = tlv_channel_pkt(TLV_NO_CHANNEL);
@@ -115,6 +143,10 @@ int tab_exit(tabs_t *tab)
     tlv_channel_send_fd(tab->tab_fd, tlv_packet);
     close(tab->tab_fd);
 }
+
+/*
+ * Delete a single tab.
+ */
 
 int tab_delete(tabs_t **tabs_table, int tab_pool)
 {
@@ -132,6 +164,10 @@ int tab_delete(tabs_t **tabs_table, int tab_pool)
 
     return -1;
 }
+
+/*
+ * Free tabs table.
+ */
 
 void tabs_free(tabs_t *tabs_table)
 {

@@ -25,9 +25,7 @@
 #ifndef _TLV_H_
 #define _TLV_H_
 
-/*
- * Pre-defined macros here
- */
+/* Macro definitions */
 
 #define TLV_TRANSPORT_CHUNK_SIZE 1024
 
@@ -46,6 +44,8 @@
 #define TLV_NO_DATA 0
 
 #define TLV_NO_CHANNEL -1
+
+/* Essential data types definitions */
 
 typedef struct tlv_pkt_raw {
     unsigned char tlv_pkt_pool[2];
@@ -69,20 +69,13 @@ typedef struct tlv_file {
     char *tlv_file_from;
 } tlv_file_t;
 
-tlv_pkt_t *tlv_channel_pkt(int);
+/* TLV packet formation */
 
+tlv_pkt_t *tlv_channel_pkt(int);
 void tlv_pkt_make(tlv_pkt_raw_t, tlv_pkt_t *);
 tlv_pkt_raw_t tlv_pkt_make_raw(tlv_pkt_t *);
 
-/*
- * Channel control methods here
- */
-
-void tlv_channel_close(tlv_pkt_t *);
-
-/*
- * Channel I/O methods here
- */
+/* TLV channel I/O methods */
 
 void tlv_channel_send(tlv_pkt_t *);
 void tlv_channel_send_fd(int, tlv_pkt_t *);
@@ -92,17 +85,14 @@ void tlv_channel_read_fd(int, tlv_pkt_t *, int);
 
 int tlv_argv_read(tlv_pkt_t *, tlv_pkt_t **[], int, int);
 
-/*
- * Channel FI/FO methods here
- */
+/* TLV channel FI/FO methods */
 
 int tlv_channel_send_file(tlv_pkt_t *, tlv_file_t);
 int tlv_channel_read_file(tlv_pkt_t *, tlv_file_t);
 
-/*
- * Clean up methods here
- */
+/* TLV and channel clean up */
 
+void tlv_channel_close(tlv_pkt_t *);
 void tlv_data_free(tlv_pkt_t *);
 void tlv_pkt_free(tlv_pkt_t *);
 void tlv_argv_free(tlv_pkt_t *[], int);
