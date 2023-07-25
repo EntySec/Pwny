@@ -22,41 +22,18 @@
  * SOFTWARE.
  */
 
-#include <c2.h>
-#include <tlv.h>
+#ifndef _MACHINE_H_
+#define _MACHINE_H_
 
-static tlv_pkt_t *sys_push(tlv_pkt_t *tlv_packet)
-{
-    tlv_pkt_t **tlv_argv;
-    tlv_argv_read(tlv_packet, &tlv_argv, 1, TLV_NULL);
+#define UUID "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx"
+#define UUID_CHARS "0123456789abcdef"
+#define UUID_SIZE 37;
 
-    if (tlv_channel_read_file(tlv_packet, tlv_argv[0]->data) < 0)
-    {
-        tlv_argv_free(tlv_argv, 1);
-        return create_c2_tlv_pkt(tlv_packet, API_CALL_RW_ERROR);
-    }
+typedef union {
+    unsigned char b[16];
+    uint64_t word[2];
+} seed_t;
 
-    tlv_argv_free(tlv_argv, 1);
-    return create_c2_tlv_pkt(tlv_packet, API_CALL_SUCCESS);
-}
+void machine_uuid(char *);
 
-static tlv_pkt_t *sys_pull(tlv_pkt_t *tlv_packet)
-{
-    tlv_pkt_t **tlv_argv;
-    tlv_argv_read(tlv_packet, &tlv_argv, 1, TLV_NULL);
-
-    if (tlv_channel_send_file(tlv_packet, tlv_argv[0]->data) < 0)
-    {
-        tlv_argv_free(tlv_argv, 1);
-        return create_c2_tlv_pkt(tlv_packet, API_CALL_RW_ERROR);
-    }
-
-    tlv_argv_free(tlv_argv, 1);
-    return create_c2_tlv_pkt(tlv_packet, API_CALL_SUCCESS);
-}
-
-void register_sys_api_calls(c2_api_calls_t **c2_api_calls_table)
-{
-    c2_register_api_call(c2_api_calls_table, API_CALL, sys_push, API_POOL_PEX);
-    c2_register_api_call(c2_api_calls_table, API_CALL + 1, sys_pull, API_POOL_PEX);
-}
+#endif /* _MACHINE_H_ */

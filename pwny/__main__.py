@@ -56,6 +56,16 @@ class Pwny(EXE, Socket, String):
             return open(payload, 'rb').read()
         return b''
 
+    def get_loader(self, platform: str, arch: str) -> bytes:
+        """ Get Pwny loader for migrations.
+
+        :param str platform: platform to get Pwny loader for
+        :param str arch: architecture to get Pwny loader for
+        :return bytes: Pwny loader
+        """
+
+        return self.get_template(platform, arch, '.so')
+
     def get_implant(self, platform: str, arch: str) -> bytes:
         """ Get Pwny implant.
 

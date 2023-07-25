@@ -45,89 +45,89 @@
 
 tlv_pkt_t *tlv_channel_pkt(int tlv_channel)
 {
-    tlv_pkt_t *tlv_packet = calloc(1, sizeof(*tlv_packet));
+    tlv_pkt_t *tlv_pkt = calloc(1, sizeof(*tlv_pkt));
 
-    tlv_packet->tlv_pkt_channel = tlv_channel;
-    tlv_packet->tlv_pkt_pool = API_POOL_BUILTINS;
-    tlv_packet->tlv_pkt_tag = API_QUIT;
-    tlv_packet->tlv_pkt_status = API_CALL_SUCCESS;
-    tlv_packet->tlv_pkt_size = TLV_NO_DATA;
-    tlv_packet->tlv_pkt_data = NULL;
+    tlv_pkt->channel = tlv_channel;
+    tlv_pkt->pool = API_POOL_BUILTINS;
+    tlv_pkt->tag = API_QUIT;
+    tlv_pkt->status = API_CALL_SUCCESS;
+    tlv_pkt->size = TLV_NO_DATA;
+    tlv_pkt->data = NULL;
 
-    return tlv_packet;
+    return tlv_pkt;
 }
 
 /*
  * Send data from TLV transport packet to the TLV transport channel.
  */
 
-void tlv_channel_send(tlv_pkt_t *tlv_packet)
+void tlv_channel_send(tlv_pkt_t *tlv_pkt)
 {
-    tlv_pkt_raw_t tlv_raw = tlv_pkt_make_raw(tlv_packet);
+    tlv_pkt_raw_t tlv_raw = tlv_pkt_make_raw(tlv_pkt);
 
-    send(tlv_packet->tlv_pkt_channel, tlv_raw.tlv_pkt_pool, 2, 0);
-    send(tlv_packet->tlv_pkt_channel, tlv_raw.tlv_pkt_tag, 2, 0);
-    send(tlv_packet->tlv_pkt_channel, tlv_raw.tlv_pkt_status, 2, 0);
-    send(tlv_packet->tlv_pkt_channel, tlv_raw.tlv_pkt_size, 4, 0);
+    send(tlv_pkt->channel, tlv_raw.pool, 2, 0);
+    send(tlv_pkt->channel, tlv_raw.tag, 2, 0);
+    send(tlv_pkt->channel, tlv_raw.status, 2, 0);
+    send(tlv_pkt->channel, tlv_raw.size, 4, 0);
 
-    if (tlv_packet->tlv_pkt_size > 0)
-        send(tlv_packet->tlv_pkt_channel, tlv_raw.tlv_pkt_data, tlv_packet->tlv_pkt_size, 0);
+    if (tlv_pkt->size > 0)
+        send(tlv_pkt->channel, tlv_raw.data, tlv_pkt->size, 0);
 }
 
 /*
  * Send data from TLV transport packet to the TLV file descriptor.
  */
 
-void tlv_channel_send_fd(int tlv_fd, tlv_pkt_t *tlv_packet)
+void tlv_channel_send_fd(int tlv_fd, tlv_pkt_t *tlv_pkt)
 {
-    tlv_pkt_raw_t tlv_raw = tlv_pkt_make_raw(tlv_packet);
+    tlv_pkt_raw_t tlv_raw = tlv_pkt_make_raw(tlv_pkt);
 
     unsigned char tlv_channel[4];
-    PACK_INT(tlv_packet->tlv_pkt_channel, tlv_channel);
+    PACK_INT(tlv_pkt->channel, tlv_channel);
 
     write(tlv_fd, tlv_channel, 4);
 
-    write(tlv_fd, tlv_raw.tlv_pkt_pool, 2);
-    write(tlv_fd, tlv_raw.tlv_pkt_tag, 2);
-    write(tlv_fd, tlv_raw.tlv_pkt_status, 2);
-    write(tlv_fd, tlv_raw.tlv_pkt_size, 4);
+    write(tlv_fd, tlv_raw.pool, 2);
+    write(tlv_fd, tlv_raw.tag, 2);
+    write(tlv_fd, tlv_raw.status, 2);
+    write(tlv_fd, tlv_raw.size, 4);
 
-    if (tlv_packet->tlv_pkt_size > 0)
-        write(tlv_fd, tlv_raw.tlv_pkt_data, tlv_packet->tlv_pkt_size);
+    if (tlv_pkt->size > 0)
+        write(tlv_fd, tlv_raw.data, tlv_pkt->size);
 }
 
 /*
  * Send file from TLV transport file to the TLV transport channel.
  */
 
-int tlv_channel_send_file(tlv_pkt_t *tlv_packet, tlv_file_t tlv_file_new)
+int tlv_channel_send_file(tlv_pkt_t *tlv_pkt, char *tlv_file)
 {
-    FILE *fp = fopen(tlv_file_new.tlv_file_from, "rb");
+    FILE *fp = fopen(tlv_file, "rb");
 
     if (fp != NULL)
     {
         int tlv_bytes_read;
 
-        tlv_packet->tlv_pkt_status = API_CALL_SUCCESS;
-        tlv_packet->tlv_pkt_size = TLV_NO_DATA;
+        tlv_pkt->status = API_CALL_SUCCESS;
+        tlv_pkt->size = TLV_NO_DATA;
 
-        tlv_channel_send(tlv_packet);
+        tlv_channel_send(tlv_pkt);
 
-        tlv_packet->tlv_pkt_status = API_CALL_WAIT;
-        tlv_packet->tlv_pkt_data = malloc(TLV_TRANSPORT_CHUNK_SIZE);
+        tlv_pkt->status = API_CALL_WAIT;
+        tlv_pkt->data = malloc(TLV_TRANSPORT_CHUNK_SIZE);
 
-        if (tlv_packet->tlv_pkt_data != NULL)
+        if (tlv_pkt->data != NULL)
         {
-            while ((tlv_bytes_read = fread(tlv_packet->tlv_pkt_data, 1,
+            while ((tlv_bytes_read = fread(tlv_pkt->data, 1,
                     TLV_TRANSPORT_CHUNK_SIZE, fp)) > 0)
             {
-                tlv_packet->tlv_pkt_size = tlv_bytes_read;
-                tlv_channel_send(tlv_packet);
+                tlv_pkt->size = tlv_bytes_read;
+                tlv_channel_send(tlv_pkt);
 
-                memset(tlv_packet->tlv_pkt_data, 0, TLV_TRANSPORT_CHUNK_SIZE);
+                memset(tlv_pkt->data, 0, TLV_TRANSPORT_CHUNK_SIZE);
             }
 
-            free(tlv_packet->tlv_pkt_data);
+            free(tlv_pkt->data);
             return 0;
         }
 
@@ -141,93 +141,93 @@ int tlv_channel_send_file(tlv_pkt_t *tlv_packet, tlv_file_t tlv_file_new)
  * Read from TLV file descriptor.
  */
 
-void tlv_channel_read_fd(int tlv_fd, tlv_pkt_t *tlv_packet, int flag)
+void tlv_channel_read_fd(int tlv_fd, tlv_pkt_t *tlv_pkt, int flag)
 {
     unsigned char tlv_channel[4];
     read(tlv_fd, tlv_channel, 4);
 
-    tlv_packet->tlv_pkt_channel = UNPACK_INT(tlv_channel);
+    tlv_pkt->channel = UNPACK_INT(tlv_channel);
     tlv_pkt_raw_t tlv_raw;
 
-    read(tlv_fd, tlv_raw.tlv_pkt_pool, 2);
-    read(tlv_fd, tlv_raw.tlv_pkt_tag, 2);
-    read(tlv_fd, tlv_raw.tlv_pkt_status, 2);
-    read(tlv_fd, tlv_raw.tlv_pkt_size, 4);
+    read(tlv_fd, tlv_raw.pool, 2);
+    read(tlv_fd, tlv_raw.tag, 2);
+    read(tlv_fd, tlv_raw.status, 2);
+    read(tlv_fd, tlv_raw.size, 4);
 
-    tlv_data_free(tlv_packet);
-    int size = UNPACK_INT(tlv_raw.tlv_pkt_size);
+    tlv_data_free(tlv_pkt);
+    int size = UNPACK_INT(tlv_raw.size);
 
     if (size > 0)
     {
         if (flag == TLV_NULL)
         {
-            tlv_raw.tlv_pkt_data = malloc(size + 1);
+            tlv_raw.data = malloc(size + 1);
 
-            if (tlv_raw.tlv_pkt_data != NULL)
+            if (tlv_raw.data != NULL)
             {
-                read(tlv_fd, tlv_raw.tlv_pkt_data, size);
-                tlv_raw.tlv_pkt_data[size] = '\0';
-                PACK_INT(size + 1, tlv_raw.tlv_pkt_size);
+                read(tlv_fd, tlv_raw.data, size);
+                tlv_raw.data[size] = '\0';
+                PACK_INT(size + 1, tlv_raw.size);
             }
         } else
         {
-            tlv_raw.tlv_pkt_data = malloc(size);
+            tlv_raw.data = malloc(size);
 
-            if (tlv_raw.tlv_pkt_data != NULL)
-                read(tlv_fd, tlv_raw.tlv_pkt_data, size);
+            if (tlv_raw.data != NULL)
+                read(tlv_fd, tlv_raw.data, size);
         }
     } else
-        tlv_raw.tlv_pkt_data = NULL;
+        tlv_raw.data = NULL;
 
-    tlv_pkt_make(tlv_raw, tlv_packet);
+    tlv_pkt_make(tlv_raw, tlv_pkt);
 }
 
 /*
  * Read from TLV transport channel.
  */
 
-void tlv_channel_read(tlv_pkt_t *tlv_packet, int flag)
+void tlv_channel_read(tlv_pkt_t *tlv_pkt, int flag)
 {
     tlv_pkt_raw_t tlv_raw;
 
-    recv(tlv_packet->tlv_pkt_channel, tlv_raw.tlv_pkt_pool, 2, 0);
-    recv(tlv_packet->tlv_pkt_channel, tlv_raw.tlv_pkt_tag, 2, 0);
-    recv(tlv_packet->tlv_pkt_channel, tlv_raw.tlv_pkt_status, 2, 0);
-    recv(tlv_packet->tlv_pkt_channel, tlv_raw.tlv_pkt_size, 4, 0);
+    recv(tlv_pkt->channel, tlv_raw.pool, 2, 0);
+    recv(tlv_pkt->channel, tlv_raw.tag, 2, 0);
+    recv(tlv_pkt->channel, tlv_raw.status, 2, 0);
+    recv(tlv_pkt->channel, tlv_raw.size, 4, 0);
 
-    tlv_data_free(tlv_packet);
-    int size = UNPACK_INT(tlv_raw.tlv_pkt_size);
+    tlv_data_free(tlv_pkt);
+    int size = UNPACK_INT(tlv_raw.size);
 
     if (size > 0)
     {
         if (flag == TLV_NULL)
         {
-            tlv_raw.tlv_pkt_data = malloc(size + 1);
+            tlv_raw.data = malloc(size + 1);
 
-            if (tlv_raw.tlv_pkt_data != NULL)
+            if (tlv_raw.data != NULL)
             {
-                recv(tlv_packet->tlv_pkt_channel, tlv_raw.tlv_pkt_data, size, 0);
-                tlv_raw.tlv_pkt_data[size] = '\0';
-                PACK_INT(size + 1, tlv_raw.tlv_pkt_size);
+                recv(tlv_pkt->channel, tlv_raw.data, size, 0);
+                tlv_raw.data[size] = '\0';
+                PACK_INT(size + 1, tlv_raw.size);
             }
         } else
         {
-            tlv_raw.tlv_pkt_data = malloc(size);
+            tlv_raw.data = malloc(size);
 
-            if (tlv_raw.tlv_pkt_data != NULL)
-                recv(tlv_packet->tlv_pkt_channel, tlv_raw.tlv_pkt_data, size, 0);
+            if (tlv_raw.data != NULL)
+                recv(tlv_pkt->channel, tlv_raw.data, size, 0);
         }
     } else
-        tlv_raw.tlv_pkt_data = NULL;
+        tlv_raw.data = NULL;
 
-    tlv_pkt_make(tlv_raw, tlv_packet);
+    tlv_pkt_make(tlv_raw, tlv_pkt);
 }
 
 /*
  * Read argv from TLV transport channel.
  */
 
-int tlv_argv_read(tlv_pkt_t *tlv_packet, tlv_pkt_t **tlv_argv[], int tlv_argc, int flags)
+int tlv_argv_read(tlv_pkt_t *tlv_pkt, tlv_pkt_t **tlv_argv[], int tlv_argc, int flags)
 {
     *tlv_argv = malloc(tlv_argc * sizeof(tlv_pkt_t *));
 
@@ -236,35 +236,54 @@ int tlv_argv_read(tlv_pkt_t *tlv_packet, tlv_pkt_t **tlv_argv[], int tlv_argc, i
 
     for (int i = 0; i < tlv_argc; i++)
     {
-        (*tlv_argv)[i] = tlv_channel_pkt(tlv_packet->tlv_pkt_channel);
+        (*tlv_argv)[i] = tlv_channel_pkt(tlv_pkt->channel);
         tlv_channel_read((*tlv_argv)[i], flags);
-        log_debug("* tlv_argv (%d) - (pool: %d, tag: %d, size: %d)\n", i, (*tlv_argv)[i]->tlv_pkt_pool,
-                  (*tlv_argv)[i]->tlv_pkt_tag, (*tlv_argv)[i]->tlv_pkt_size);
+        log_debug("* tlv_argv (%d) - (pool: %d, tag: %d, size: %d)\n", i, (*tlv_argv)[i]->pool,
+                  (*tlv_argv)[i]->tag, (*tlv_argv)[i]->size);
     }
 
     return 0;
 }
 
 /*
+ * Read file from TLV transport channel to fd.
+ */
+
+void tlv_channel_read_file_fd(tlv_pkt_t *tlv_pkt, int fd)
+{
+    tlv_pkt->status = API_CALL_SUCCESS;
+    tlv_pkt->size = TLV_NO_DATA;
+
+    tlv_channel_send(tlv_pkt);
+    tlv_channel_read(tlv_pkt, TLV_NO_NULL);
+
+    while (tlv_pkt->status == API_CALL_WAIT)
+    {
+        write(fd, tlv_pkt->data, tlv_pkt->size);
+        tlv_channel_read(tlv_pkt, TLV_NO_NULL);
+    }
+}
+
+/*
  * Read file from TLV transport channel.
  */
 
-int tlv_channel_read_file(tlv_pkt_t *tlv_packet, tlv_file_t tlv_file_new)
+int tlv_channel_read_file(tlv_pkt_t *tlv_pkt, char *tlv_file)
 {
-    FILE *fp = fopen(tlv_file_new.tlv_file_to, "wb");
+    FILE *fp = fopen(tlv_file, "wb");
 
     if (fp != NULL)
     {
-        tlv_packet->tlv_pkt_status = API_CALL_SUCCESS;
-        tlv_packet->tlv_pkt_size = TLV_NO_DATA;
+        tlv_pkt->status = API_CALL_SUCCESS;
+        tlv_pkt->size = TLV_NO_DATA;
 
-        tlv_channel_send(tlv_packet);
-        tlv_channel_read(tlv_packet, TLV_NO_NULL);
+        tlv_channel_send(tlv_pkt);
+        tlv_channel_read(tlv_pkt, TLV_NO_NULL);
 
-        while (tlv_packet->tlv_pkt_status == API_CALL_WAIT)
+        while (tlv_pkt->status == API_CALL_WAIT)
         {
-            fwrite(tlv_packet->tlv_pkt_data, sizeof(char), tlv_packet->tlv_pkt_size, fp);
-            tlv_channel_read(tlv_packet, TLV_NO_NULL);
+            fwrite(tlv_pkt->data, sizeof(char), tlv_pkt->size, fp);
+            tlv_channel_read(tlv_pkt, TLV_NO_NULL);
         }
 
         fclose(fp);
@@ -278,57 +297,47 @@ int tlv_channel_read_file(tlv_pkt_t *tlv_packet, tlv_file_t tlv_file_new)
  * Make readable TLV transport packet from raw TLV transport packet.
  */
 
-void tlv_pkt_make(tlv_pkt_raw_t tlv_raw, tlv_pkt_t *tlv_packet)
+void tlv_pkt_make(tlv_pkt_raw_t tlv_raw, tlv_pkt_t *tlv_pkt)
 {
-    tlv_packet->tlv_pkt_pool = UNPACK_SHORT(tlv_raw.tlv_pkt_pool);
-    tlv_packet->tlv_pkt_tag = UNPACK_SHORT(tlv_raw.tlv_pkt_tag);
-    tlv_packet->tlv_pkt_status = UNPACK_SHORT(tlv_raw.tlv_pkt_status);
-    tlv_packet->tlv_pkt_size = UNPACK_INT(tlv_raw.tlv_pkt_size);
-    tlv_packet->tlv_pkt_data = tlv_raw.tlv_pkt_data;
+    tlv_pkt->pool = UNPACK_SHORT(tlv_raw.pool);
+    tlv_pkt->tag = UNPACK_SHORT(tlv_raw.tag);
+    tlv_pkt->status = UNPACK_SHORT(tlv_raw.status);
+    tlv_pkt->size = UNPACK_INT(tlv_raw.size);
+    tlv_pkt->data = tlv_raw.data;
 }
 
 /*
  * Make raw TLV transport packet from readable TLV transport packet.
  */
 
-tlv_pkt_raw_t tlv_pkt_make_raw(tlv_pkt_t *tlv_packet)
+tlv_pkt_raw_t tlv_pkt_make_raw(tlv_pkt_t *tlv_pkt)
 {
     tlv_pkt_raw_t tlv_raw;
 
-    PACK_SHORT(tlv_packet->tlv_pkt_pool, tlv_raw.tlv_pkt_pool);
-    PACK_SHORT(tlv_packet->tlv_pkt_tag, tlv_raw.tlv_pkt_tag);
-    PACK_SHORT(tlv_packet->tlv_pkt_status, tlv_raw.tlv_pkt_status);
-    PACK_INT(tlv_packet->tlv_pkt_size, tlv_raw.tlv_pkt_size);
-    tlv_raw.tlv_pkt_data = tlv_packet->tlv_pkt_data;
+    PACK_SHORT(tlv_pkt->pool, tlv_raw.pool);
+    PACK_SHORT(tlv_pkt->tag, tlv_raw.tag);
+    PACK_SHORT(tlv_pkt->status, tlv_raw.status);
+    PACK_INT(tlv_pkt->size, tlv_raw.size);
+    tlv_raw.data = tlv_pkt->data;
 
     return tlv_raw;
 }
 
 /*
- * Close TLV transport channel.
- */
-
-void tlv_channel_close(tlv_pkt_t *tlv_packet)
-{
-    close(tlv_packet->tlv_pkt_channel);
-}
-
-
-/*
  * Free single TLV transport packet data.
  */
 
-void tlv_data_free(tlv_pkt_t *tlv_packet)
+void tlv_data_free(tlv_pkt_t *tlv_pkt)
 {
-    if (tlv_packet->tlv_pkt_size > 0 && tlv_packet->tlv_pkt_data != NULL)
+    if (tlv_pkt->size > 0 && tlv_pkt->data != NULL)
     {
-        log_debug("* Freeing TLV packet (pool: %d, tag: %d, size: %d)\n", tlv_packet->tlv_pkt_pool,
-                  tlv_packet->tlv_pkt_tag, tlv_packet->tlv_pkt_size);
+        log_debug("* Freeing TLV packet (pool: %d, tag: %d, size: %d)\n",
+                  tlv_pkt->pool, tlv_pkt->tag, tlv_pkt->size);
 
-        free(tlv_packet->tlv_pkt_data);
+        free(tlv_pkt->data);
 
-        tlv_packet->tlv_pkt_size = 0;
-        tlv_packet->tlv_pkt_data = NULL;
+        tlv_pkt->size = 0;
+        tlv_pkt->data = NULL;
     }
 }
 
@@ -336,10 +345,10 @@ void tlv_data_free(tlv_pkt_t *tlv_packet)
  * Free single TLV transport packet.
  */
 
-void tlv_pkt_free(tlv_pkt_t *tlv_packet)
+void tlv_pkt_free(tlv_pkt_t *tlv_pkt)
 {
-    tlv_data_free(tlv_packet);
-    free(tlv_packet);
+    tlv_data_free(tlv_pkt);
+    free(tlv_pkt);
 }
 
 /*

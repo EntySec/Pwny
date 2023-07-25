@@ -58,6 +58,7 @@ class PwnySession(Pwny, Session, Console, TLV):
         self.pwny_commands = self.pwny + 'commands/'
 
         self.channel = None
+        self.uuid = None
 
         self.details.update({
             'Type': "pwny"
@@ -68,6 +69,7 @@ class PwnySession(Pwny, Session, Console, TLV):
 
         :param socket.socket client: client to open session with
         :return None: None
+        :raises RuntimeError: with trailing error message
         """
 
         client.send(self.get_implant(
@@ -76,7 +78,13 @@ class PwnySession(Pwny, Session, Console, TLV):
         ))
 
         self.channel = ChannelClient(client)
-        self.start_pwny(self)
+        self.uuid = self.tlv_read_packet(self.channel).data
+
+        if self.uuid:
+            self.start_pwny(self)
+            return
+
+        raise RuntimeError("No UUID received or UUID broken!")
 
     def close(self) -> None:
         """ Close the Pwny session.

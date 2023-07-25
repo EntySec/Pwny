@@ -35,10 +35,10 @@
 
 /* Essential data types definitions */
 
-typedef struct tabs {
-    int tab_pool;
-    pid_t tab_pid;
-    int tab_fd;
+typedef struct {
+    int pool;
+    pid_t pid;
+    int fd;
     UT_hash_handle hh;
 } tabs_t;
 

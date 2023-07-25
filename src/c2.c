@@ -38,90 +38,75 @@
  * Create C2 TLV packet from existing TLV packet.
  */
 
-tlv_pkt_t *create_c2_tlv_pkt(tlv_pkt_t *tlv_packet, int c2_api_call_status)
+tlv_pkt_t *create_c2_tlv_pkt(tlv_pkt_t *tlv_pkt, int c2_api_call_status)
 {
-    tlv_pkt_t *tlv_pkt_new = calloc(1, sizeof(*tlv_pkt_new));
+    tlv_pkt_t *tlv_packet = calloc(1, sizeof(*tlv_packet));
 
-    tlv_pkt_new->tlv_pkt_channel = tlv_packet->tlv_pkt_channel;
-    tlv_pkt_new->tlv_pkt_pool = tlv_packet->tlv_pkt_pool;
-    tlv_pkt_new->tlv_pkt_tag = tlv_packet->tlv_pkt_tag;
-    tlv_pkt_new->tlv_pkt_status = c2_api_call_status;
-    tlv_pkt_new->tlv_pkt_data = NULL;
-    tlv_pkt_new->tlv_pkt_size = 0;
+    tlv_pkt_new->channel = tlv_pkt->channel;
+    tlv_pkt_new->pool = tlv_pkt->pool;
+    tlv_pkt_new->tag = tlv_pkt->tag;
+    tlv_pkt_new->status = status;
+    tlv_pkt_new->data = NULL;
+    tlv_pkt_new->size = 0;
 
-    return tlv_pkt_new;
+    return tlv_packet;
 }
 
 /*
  * Craft C2 API call packet from existing C2 TLV packet and result.
  */
 
-void craft_c2_tlv_pkt(tlv_pkt_t *tlv_packet, int c2_api_call_status, char *c2_api_call_result)
+void craft_c2_tlv_pkt(tlv_pkt_t *tlv_pkt, int c2_status, char *c2_result)
 {
-    tlv_packet->tlv_pkt_status = c2_api_call_status;
-    tlv_data_free(tlv_packet);
+    tlv_pkt->status = c2_status;
+    tlv_data_free(tlv_pkt);
 
-    if (c2_api_call_result != NULL)
+    if (c2_result != NULL)
     {
-        size_t length = strlen(c2_api_call_result);
+        size_t length = strlen(c2_result);
         char *c2_result_msg = malloc(length + 1);
 
-        strncpy(c2_result_msg, c2_api_call_result, length);
+        strncpy(c2_result_msg, c2_result, length);
         c2_result_msg[length] = '\0';
 
-        tlv_packet->tlv_pkt_data = c2_result_msg;
-        tlv_packet->tlv_pkt_size = length + 1;
+        tlv_pkt->data = c2_result_msg;
+        tlv_pkt->size = length + 1;
     } else
     {
-        tlv_packet->tlv_pkt_data = NULL;
-        tlv_packet->tlv_pkt_size = 0;
+        tlv_pkt->data = NULL;
+        tlv_pkt->size = 0;
     }
-}
-
-/*
- * Append string to the C2 API call packet.
- */
-
-void c2_add_str(tlv_pkt_t *tlv_packet, char *c2_str)
-{
-    size_t str_len = strlen(c2_str) + 1;
-    size_t result_len = strlen(tlv_packet->tlv_pkt_data) + 1;
-
-    char result[str_len + result_len];
-    snprintf(result, sizeof(result), "%s%s", tlv_packet->tlv_pkt_data, c2_str);
-
-    tlv_packet->tlv_pkt_data = result;
 }
 
 /*
  * Register C2 API calls and save them to the C2 API calls table.
  */
 
-void c2_register_api_calls(c2_api_calls_t **c2_api_calls_table)
+void c2_register_api_calls(c2_api_calls_t **c2_api_calls)
 {
-    register_api_calls(c2_api_calls_table);
+    register_api_calls(c2_api_calls);
 }
 
 /*
  * Register C2 API calls pool and connect C2 API calls table to it.
  */
 
-static void c2_register_api_calls_pool(c2_api_calls_t **c2_api_calls_table, int c2_api_call_pool)
+static void c2_register_api_calls_pool(c2_api_calls_t **c2_api_calls, int c2_pool)
 {
-    c2_api_calls_t *c2_api_calls_new;
-    HASH_FIND_INT(*c2_api_calls_table, &c2_api_call_pool, c2_api_calls_new);
+    c2_api_calls_t *c2_api_call;
+    HASH_FIND_INT(*c2_api_calls, &c2_pool, c2_api_call);
 
-    if (c2_api_calls_new == NULL)
+    if (c2_api_call == NULL)
     {
-        c2_api_calls_t *c2_api_calls_table_new = calloc(1, sizeof(*c2_api_calls_table_new));
+        c2_api_calls_t *c2_api_call_new = calloc(1, sizeof(*c2_api_call_new));
 
-        if (c2_api_calls_table_new != NULL)
+        if (c2_api_call_new != NULL)
         {
-            c2_api_calls_table_new->c2_api_call_pool = c2_api_call_pool;
-            c2_api_calls_table_new->c2_api_call_handlers = NULL;
+            c2_api_call_new->pool = c2_pool;
+            c2_api_call_new->handlers = NULL;
 
-            HASH_ADD_INT(*c2_api_calls_table, c2_api_call_pool, c2_api_calls_table_new);
-            log_debug("* Registered C2 API call pool (%d)\n", c2_api_call_pool);
+            HASH_ADD_INT(*c2_api_calls, c2_pool, c2_api_call_new);
+            log_debug("* Registered C2 API call pool (%d)\n", c2_pool);
         }
     }
 }
@@ -130,30 +115,28 @@ static void c2_register_api_calls_pool(c2_api_calls_t **c2_api_calls_table, int 
  * Register C2 API calls tag.
  */
 
-static void c2_register_api_calls_tag(c2_api_calls_t **c2_api_calls_table, int c2_api_call_pool,
-                                      int c2_api_call_tag, c2_api_t c2_api_call_handler)
+static void c2_register_api_calls_tag(c2_api_calls_t **c2_api_calls, int c2_pool,
+                                      int c2_tag, c2_api_t c2_handler)
 {
-    c2_register_api_calls_pool(c2_api_calls_table, c2_api_call_pool);
+    c2_api_calls_t *c2_api_call;
+    HASH_FIND_INT(*c2_api_calls, &c2_pool, c2_api_call);
 
-    c2_api_calls_t *c2_api_calls_new;
-    HASH_FIND_INT(*c2_api_calls_table, &c2_api_call_pool, c2_api_calls_new);
-
-    if (c2_api_calls_new != NULL)
+    if (c2_api_call != NULL)
     {
-        c2_api_call_handlers_t *c2_api_call_handler_new;
-        HASH_FIND_INT(c2_api_calls_new->c2_api_call_handlers, &c2_api_call_tag, c2_api_call_handler_new);
+        c2_api_call_handlers_t *c2_api_call_handler;
+        HASH_FIND_INT(c2_api_call->handlers, &c2_tag, c2_api_call_handler);
 
-        if (c2_api_call_handler_new == NULL)
+        if (c2_api_call_handler == NULL)
         {
-            c2_api_call_handlers_t *c2_api_call_handlers_new = calloc(1, sizeof(*c2_api_call_handlers_new));
+            c2_api_call_handlers_t *c2_api_call_handler_new = calloc(1, sizeof(*c2_api_call_handler_new));
 
-            if (c2_api_call_handlers_new != NULL)
+            if (c2_api_call_handler_new != NULL)
             {
-                c2_api_call_handlers_new->c2_api_call_tag = c2_api_call_tag;
-                c2_api_call_handlers_new->c2_api_call_handler = c2_api_call_handler;
+                c2_api_call_handler_new->tag = c2_tag;
+                c2_api_call_handler_new->handler = c2_handler;
 
-                HASH_ADD_INT(c2_api_calls_new->c2_api_call_handlers, c2_api_call_tag, c2_api_call_handlers_new);
-                log_debug("* Registered C2 API call (%d)\n", c2_api_call_tag);
+                HASH_ADD_INT(c2_api_call->handlers, c2_tag, c2_api_call_handler_new);
+                log_debug("* Registered C2 API call (%d)\n", c2_tag);
             }
         }
     }
@@ -163,73 +146,71 @@ static void c2_register_api_calls_tag(c2_api_calls_t **c2_api_calls_table, int c
  * Register C2 API call.
  */
 
-void c2_register_api_call(c2_api_calls_t **c2_api_calls_table,
-                          int c2_api_call_tag, c2_api_t c2_api_call_handler,
-                          int c2_api_call_pool)
+void c2_register_api_call(c2_api_calls_t **c2_api_calls, int c2_tag,
+                          c2_api_t c2_handler, int c2_pool)
 {
-    c2_register_api_calls_tag(c2_api_calls_table, c2_api_call_pool,
-                              c2_api_call_tag, c2_api_call_handler);
+    c2_register_api_calls_pool(c2_api_calls, c2_pool);
+    c2_register_api_calls_tag(c2_api_calls, c2_pool, c2_tag, c2_handler);
 }
 
 /*
  * Make C2 API call.
  */
 
-tlv_pkt_t *c2_make_api_call(c2_api_calls_t **c2_api_calls_table,
-                            tlv_pkt_t *tlv_packet)
+tlv_pkt_t *c2_make_api_call(c2_api_calls_t **c2_api_calls, tlv_pkt_t *tlv_pkt)
 {
-    c2_api_calls_t *c2_api_calls_new;
+    c2_api_calls_t *c2_api_call;
 
-    log_debug("* Looking for C2 API call pool (%d)\n", tlv_packet->tlv_pkt_pool);
-    HASH_FIND_INT(*c2_api_calls_table, &tlv_packet->tlv_pkt_pool, c2_api_calls_new);
+    log_debug("* Looking for C2 API call pool (%d)\n", tlv_pkt->pool);
+    HASH_FIND_INT(*c2_api_calls, &tlv_pkt->pool, c2_api_call);
 
-    if (c2_api_calls_new == NULL)
+    if (c2_api_call == NULL)
     {
-        log_debug("* C2 API call pool was not found (%d)\n", tlv_packet->tlv_pkt_pool);
+        log_debug("* C2 API call pool was not found (%d)\n", tlv_pkt->pool);
         return NULL;
     }
 
-    c2_api_call_handlers_t *c2_api_call_handlers_new;
+    c2_api_call_handlers_t *c2_api_call_handler;
 
-    log_debug("* Looking for C2 API call (%d)\n", tlv_packet->tlv_pkt_tag);
-    HASH_FIND_INT(c2_api_calls_new->c2_api_call_handlers, &tlv_packet->tlv_pkt_tag, c2_api_call_handlers_new);
+    log_debug("* Looking for C2 API call (%d)\n", tlv_pkt->tag);
+    HASH_FIND_INT(c2_api_call->handlers, &tlv_pkt->tag, c2_api_call_handler);
 
-    if (c2_api_call_handlers_new == NULL)
+    if (c2_api_call_handler == NULL)
     {
-        log_debug("* C2 API call was not found (%d)\n", tlv_packet->tlv_pkt_tag);
+        log_debug("* C2 API call was not found (%d)\n", tlv_pkt->tag);
         return NULL;
     }
 
-    return c2_api_call_handlers_new->c2_api_call_handler(tlv_packet);
+    return c2_api_call_handler->handler(tlv_pkt);
 }
 
 /*
  * Free whole C2 API calls table.
  */
 
-void c2_api_calls_free(c2_api_calls_t *c2_api_calls_new)
+void c2_api_calls_free(c2_api_calls_t *c2_api_calls)
 {
-    c2_api_calls_t *c2;
+    c2_api_calls_t *c2_api_call;
 
-    for (c2 = c2_api_calls_new; c2 != NULL; c2 = c2->hh.next)
+    for (c2_api_call = c2_api_calls; c2_api_call != NULL; c2_api_call = c2_api_call->hh.next)
     {
         c2_api_call_handlers_t *c2_handler;
 
-        for (c2_handler = c2_api_calls_new->c2_api_call_handlers; c2_handler != NULL; c2_handler = c2_handler->hh.next)
+        for (c2_handler = c2_api_calls->handlers; c2_handler != NULL; c2_handler = c2_handler->hh.next)
         {
-            log_debug("* Freed C2 API call (%d)\n", c2_handler->c2_api_call_tag);
+            log_debug("* Freed C2 API call (%d)\n", c2_handler->tag);
 
-            HASH_DEL(c2_api_calls_new->c2_api_call_handlers, c2_handler);
+            HASH_DEL(c2_api_calls->handlers, c2_handler);
             free(c2_handler);
         }
 
-        log_debug("* Freed C2 API call pool (%d)\n", c2->c2_api_call_pool);
+        log_debug("* Freed C2 API call pool (%d)\n", c2->pool);
 
-        HASH_DEL(c2_api_calls_new, c2);
+        HASH_DEL(c2_api_calls, c2_api_call);
 
-        free(c2->c2_api_call_handlers);
-        free(c2);
+        free(c2_api_call->handlers);
+        free(c2_api_call);
     }
 
-    free(c2_api_calls_new);
+    free(c2_api_calls);
 }

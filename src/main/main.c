@@ -22,41 +22,27 @@
  * SOFTWARE.
  */
 
-#include <c2.h>
-#include <tlv.h>
+#include <stdlib.h>
+#include <stdio.h>
 
-static tlv_pkt_t *sys_push(tlv_pkt_t *tlv_packet)
+#include <net.h>
+#include <machine.h>
+
+int main(int argc, char *argv[])
 {
-    tlv_pkt_t **tlv_argv;
-    tlv_argv_read(tlv_packet, &tlv_argv, 1, TLV_NULL);
+    net_c2_t *net_c2 = NULL;
 
-    if (tlv_channel_read_file(tlv_packet, tlv_argv[0]->data) < 0)
+    if (strcmp(argv[0], "p") == 0)
     {
-        tlv_argv_free(tlv_argv, 1);
-        return create_c2_tlv_pkt(tlv_packet, API_CALL_RW_ERROR);
+        int net_c2_fd = (int)((long *)argv)[1];
+
+        char uuid[UUID_SIZE];
+        machine_uuid(uuid);
+
+        net_c2_add(&net_c2, 0, net_c2_fd, uuid);
     }
 
-    tlv_argv_free(tlv_argv, 1);
-    return create_c2_tlv_pkt(tlv_packet, API_CALL_SUCCESS);
-}
+    net_c2_init(net_c2);
 
-static tlv_pkt_t *sys_pull(tlv_pkt_t *tlv_packet)
-{
-    tlv_pkt_t **tlv_argv;
-    tlv_argv_read(tlv_packet, &tlv_argv, 1, TLV_NULL);
-
-    if (tlv_channel_send_file(tlv_packet, tlv_argv[0]->data) < 0)
-    {
-        tlv_argv_free(tlv_argv, 1);
-        return create_c2_tlv_pkt(tlv_packet, API_CALL_RW_ERROR);
-    }
-
-    tlv_argv_free(tlv_argv, 1);
-    return create_c2_tlv_pkt(tlv_packet, API_CALL_SUCCESS);
-}
-
-void register_sys_api_calls(c2_api_calls_t **c2_api_calls_table)
-{
-    c2_register_api_call(c2_api_calls_table, API_CALL, sys_push, API_POOL_PEX);
-    c2_register_api_call(c2_api_calls_table, API_CALL + 1, sys_pull, API_POOL_PEX);
+    return 0;
 }

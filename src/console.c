@@ -35,93 +35,97 @@
  * Run TLV console loop which reads commands repeatedly.
  */
 
-void tlv_console_loop(tlv_pkt_t *tlv_packet)
+void tlv_console_loop(tlv_pkt_t *tlv_pkt)
 {
-    c2_api_calls_t *c2_api_calls_table = NULL;
-    c2_register_api_calls(&c2_api_calls_table);
+    c2_api_calls_t *c2_api_calls = NULL;
+    c2_register_api_calls(&c2_api_calls);
 
-    tabs_t *tabs_table = NULL;
-    net_nodes_t *net_nodes_table = NULL;
+    tabs_t *tabs = NULL;
+    net_nodes_t *net_nodes = NULL;
 
     int net_nodes_id = 0;
 
     for (;;)
     {
         tlv_pkt_t *tlv_result;
-        tlv_channel_read(tlv_packet, TLV_NULL);
+        tlv_channel_read(tlv_pkt, TLV_NULL);
 
-        log_debug("* Talking to %d for now from base\n", tlv_packet->tlv_pkt_channel);
+        log_debug("* Talking to %d for now from base\n", tlv_pkt->channel);
 
-        if (tlv_packet->tlv_pkt_pool == API_POOL_BUILTINS)
+        if (tlv_pkt->pool == API_POOL_BUILTINS)
         {
-            if (tlv_packet->tlv_pkt_tag == API_QUIT)
+            if (tlv_pkt->tag == API_QUIT)
             {
-                tlv_result = create_c2_tlv_pkt(tlv_packet, API_CALL_SUCCESS);
+                tlv_result = create_c2_tlv_pkt(tlv_pkt, API_CALL_SUCCESS);
                 tlv_channel_send(tlv_result);
 
                 tlv_pkt_free(tlv_result);
                 break;
             }
 
-            if (tlv_packet->tlv_pkt_tag == API_ADD_NODE)
+            if (tlv_pkt->tag == API_ADD_NODE)
             {
                 tlv_pkt_t **tlv_argv;
-                tlv_argv_read(tlv_packet, &tlv_argv, 4, TLV_NO_NULL);
+                tlv_argv_read(tlv_pkt, &tlv_argv, 4, TLV_NO_NULL);
 
-                net_node_t net_node_new = {
-                    .net_node_src_host = UNPACK_INT(tlv_argv[0]->tlv_pkt_data),
-                    .net_node_src_port = UNPACK_INT(tlv_argv[1]->tlv_pkt_data),
-                    .net_node_dst_host = UNPACK_INT(tlv_argv[2]->tlv_pkt_data),
-                    .net_node_dst_port = UNPACK_INT(tlv_argv[3]->tlv_pkt_data),
-                };
-
-                net_nodes_add(&net_nodes_table, net_nodes_id, net_node_new);
+                net_nodes_add(&net_nodes, net_nodes_id,
+                              UNPACK_INT(tlv_argv[0]->data),
+                              UNPACK_INT(tlv_argv[1]->data),
+                              UNPACK_INT(tlv_argv[2]->data),
+                              UNPACK_INT(tlv_argv[3]->data));
                 net_nodes_id += 1;
 
                 tlv_argv_free(tlv_argv, 4);
 
-            } else if (tlv_packet->tlv_pkt_tag == API_DEL_NODE)
+            } else if (tlv_pkt->tag == API_DEL_NODE)
             {
                 tlv_pkt_t **tlv_argv;
-                tlv_argv_read(tlv_packet, &tlv_argv, 1, TLV_NO_NULL);
+                tlv_argv_read(tlv_pkt, &tlv_argv, 1, TLV_NO_NULL);
 
-                net_nodes_delete(&net_nodes_table, UNPACK_INT(tlv_argv[0]->tlv_pkt_data));
+                net_nodes_delete(&net_nodes, UNPACK_INT(tlv_argv[0]->data));
                 tlv_argv_free(tlv_argv, 1);
 
-            } else if (tlv_packet->tlv_pkt_tag == API_ADD_TAB)
+            } else if (tlv_pkt->tag == API_ADD_TAB)
             {
                 tlv_pkt_t **tlv_argv;
-                tlv_argv_read(tlv_packet, &tlv_argv, 2, TLV_NO_NULL);
+                tlv_argv_read(tlv_pkt, &tlv_argv, 2, TLV_NO_NULL);
 
-                tab_add(&tabs_table, UNPACK_INT(tlv_argv[0]->tlv_pkt_data), tlv_argv[1]->tlv_pkt_data);
+                tab_add(&tabs, UNPACK_INT(tlv_argv[0]->data), tlv_argv[1]->data);
                 tlv_argv_free(tlv_argv, 1);
 
-            } else if (tlv_packet->tlv_pkt_tag == API_DEL_TAB)
+            } else if (tlv_pkt->tag == API_DEL_TAB)
             {
                 tlv_pkt_t **tlv_argv;
-                tlv_argv_read(tlv_packet, &tlv_argv, 1, TLV_NO_NULL);
+                tlv_argv_read(tlv_pkt, &tlv_argv, 1, TLV_NO_NULL);
 
-                tab_delete(&tabs_table, UNPACK_INT(tlv_argv[0]->tlv_pkt_data));
+                tab_delete(&tabs, UNPACK_INT(tlv_argv[0]->data));
                 tlv_argv_free(tlv_argv, 1);
+
+            } else if (tlv_pkt->tag == API_MIGRATE)
+            {
+                tlv_pkt_t **tlv_argv;
+                tlv_argv_read(tlv_pkt, &tlv_argv, 1, TLV_NO_NULL);
+
+                migrate_init(tlv_pkt, UNPACK_INT(tlv_argv[0]->data));
             }
 
-            tlv_result = create_c2_tlv_pkt(tlv_packet, API_CALL_SUCCESS);
+            tlv_result = create_c2_tlv_pkt(tlv_pkt, API_CALL_SUCCESS);
             tlv_channel_send(tlv_result);
 
             tlv_pkt_free(tlv_result);
             continue;
         }
 
-        tlv_result = c2_make_api_call(&c2_api_calls_table, tlv_packet);
+        tlv_result = c2_make_api_call(&c2_api_calls, tlv_pkt);
 
         if (tlv_result != NULL)
         {
             tlv_channel_send(tlv_result);
         } else
         {
-            if (tab_lookup(&tabs_table, tlv_packet->tlv_pkt_pool, tlv_packet) < 0)
+            if (tab_lookup(&tabs, tlv_pkt->pool, tlv_pkt) < 0)
             {
-                tlv_result = create_c2_tlv_pkt(tlv_packet, API_CALL_NOT_IMPLEMENTED);
+                tlv_result = create_c2_tlv_pkt(tlv_pkt, API_CALL_NOT_IMPLEMENTED);
                 tlv_channel_send(tlv_result);
             }
         }
@@ -129,40 +133,40 @@ void tlv_console_loop(tlv_pkt_t *tlv_packet)
         tlv_pkt_free(tlv_result);
     }
 
-    net_nodes_free(net_nodes_table);
-    tabs_free(tabs_table);
+    net_nodes_free(net_nodes);
+    tabs_free(tabs);
 
-    c2_api_calls_free(c2_api_calls_table);
+    c2_api_calls_free(c2_api_calls);
 }
 
 /*
  * Run TLV tab loop which reads commands repeatedly.
  */
 
-void tab_console_loop(c2_api_calls_t *c2_api_calls_table)
+void tab_console_loop(c2_api_calls_t *c2_api_calls)
 {
-    tlv_pkt_t *tlv_packet = tlv_channel_pkt(TLV_NO_CHANNEL);
+    tlv_pkt_t *tlv_pkt = tlv_channel_pkt(TLV_NO_CHANNEL);
 
     for (;;)
     {
-        tlv_channel_read_fd(STDIN_FILENO, tlv_packet, TLV_NULL);
-        log_debug("* Talking to %d for now from tab\n", tlv_packet->tlv_pkt_channel);
+        tlv_channel_read_fd(STDIN_FILENO, tlv_pkt, TLV_NULL);
+        log_debug("* Talking to %d for now from tab\n", tlv_pkt->channel);
 
-        if (tlv_packet->tlv_pkt_tag == API_QUIT)
+        if (tlv_pkt->tag == API_QUIT)
             break;
 
-        tlv_pkt_t *tlv_result = c2_make_api_call(&c2_api_calls_table, tlv_packet);
+        tlv_pkt_t *tlv_result = c2_make_api_call(&c2_api_calls, tlv_pkt);
 
         if (tlv_result != NULL)
         {
             tlv_channel_send(tlv_result);
 
-            log_debug("* Tab forced to (pool: %d, tag: %d, fd: %d)\n", tlv_result->tlv_pkt_pool,
-                      tlv_result->tlv_pkt_tag, tlv_result->tlv_pkt_channel);
+            log_debug("* Tab forced to (pool: %d, tag: %d, fd: %d)\n", tlv_result->pool,
+                      tlv_result->tag, tlv_result->channel);
 
         } else
         {
-            tlv_result = create_c2_tlv_pkt(tlv_packet, API_CALL_NOT_IMPLEMENTED);
+            tlv_result = create_c2_tlv_pkt(tlv_pkt, API_CALL_NOT_IMPLEMENTED);
 
             tlv_channel_send(tlv_result);
         }
@@ -170,5 +174,5 @@ void tab_console_loop(c2_api_calls_t *c2_api_calls_table)
         tlv_data_free(tlv_result);
     }
 
-    tlv_pkt_free(tlv_packet);
+    tlv_pkt_free(tlv_pkt);
 }

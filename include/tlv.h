@@ -47,27 +47,22 @@
 
 /* Essential data types definitions */
 
-typedef struct tlv_pkt_raw {
-    unsigned char tlv_pkt_pool[2];
-    unsigned char tlv_pkt_tag[2];
-    unsigned char tlv_pkt_status[2];
-    unsigned char tlv_pkt_size[4];
-    char *tlv_pkt_data;
+typedef struct {
+    unsigned char pool[2];
+    unsigned char tag[2];
+    unsigned char status[2];
+    unsigned char size[4];
+    char *data;
 } tlv_pkt_raw_t;
 
-typedef struct tlv_pkt {
-    int tlv_pkt_channel;
-    int tlv_pkt_pool;
-    int tlv_pkt_tag;
-    int tlv_pkt_status;
-    int tlv_pkt_size;
-    char *tlv_pkt_data;
+typedef struct {
+    int channel;
+    int pool;
+    int tag;
+    int status;
+    int size;
+    char *data;
 } tlv_pkt_t;
-
-typedef struct tlv_file {
-    char *tlv_file_to;
-    char *tlv_file_from;
-} tlv_file_t;
 
 /* TLV packet formation */
 
@@ -90,9 +85,10 @@ int tlv_argv_read(tlv_pkt_t *, tlv_pkt_t **[], int, int);
 int tlv_channel_send_file(tlv_pkt_t *, tlv_file_t);
 int tlv_channel_read_file(tlv_pkt_t *, tlv_file_t);
 
+void tlv_channel_read_file_fd(tlv_pkt_t *tlv_pkt, int fd);
+
 /* TLV and channel clean up */
 
-void tlv_channel_close(tlv_pkt_t *);
 void tlv_data_free(tlv_pkt_t *);
 void tlv_pkt_free(tlv_pkt_t *);
 void tlv_argv_free(tlv_pkt_t *[], int);

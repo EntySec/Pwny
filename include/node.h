@@ -22,77 +22,31 @@
  * SOFTWARE.
  */
 
-#ifndef _C2_H_
-#define _C2_H_
-
-#include <tlv.h>
+#ifndef _NODE_H_
+#define _NODE_H_
 
 #include <uthash/uthash.h>
 
-/* Macro definitions */
-
-#define TAB_API_CALL 1
-
-/* Essential constants definitions */
-
-enum c2_api_call_statuses {
-    API_CALL_SUCCESS,
-    API_CALL_FAIL,
-    API_CALL_WAIT,
-    API_CALL_NOT_IMPLEMENTED,
-    API_CALL_USAGE_ERROR,
-    API_CALL_RW_ERROR,
-    API_CALL_NOT_LOADED,
-};
-
-enum c2_api_call_builtins {
-    API_QUIT,
-    API_ADD_NODE,
-    API_DEL_NODE,
-    API_ADD_TAB,
-    API_DEL_TAB,
-    API_MIGRATE,
-};
-
-enum c2_api_call_other {
-    API_CALL,
-};
-
-enum c2_api_call_pools {
-    API_POOL_BUILTINS,
-    API_POOL_PEX,
-};
-
 /* Essential data types definitions */
 
-typedef tlv_pkt_t *(*c2_api_t)(tlv_pkt_t *);
+typedef uint32_t ipv4_t;
+typedef uint16_t port_t;
 
 typedef struct {
-    int tag;
-    c2_api_t handler;
+    int id;
+    ipv4_t src_host, src_port;
+    port_t src_port, dst_port;
+    pthread_t handle;
     UT_hash_handle hh;
-} c2_api_call_handlers_t;
+} nodes_t;
 
-typedef struct {
-    int pool;
-    c2_api_call_handlers_t *handlers;
-    UT_hash_handle hh;
-} c2_api_calls_t;
+/* Network nodes addition and deletion */
 
-/* TLV packet formation */
+void node_add(nodes_t **, int, ipv4_t, port_t, ipv4_t, port_t);
+void node_delete(nodes_t **, int);
 
-tlv_pkt_t *create_c2_tlv_pkt(tlv_pkt_t *, int);
-void craft_c2_tlv_pkt(tlv_pkt_t *, int, char *);
+/* Network nodes clean up */
 
-/* C2 API calls */
+void nodes_free(nodes_t *);
 
-tlv_pkt_t *c2_make_api_call(c2_api_calls_t **, tlv_pkt_t *);
-
-void c2_register_api_calls(c2_api_calls_t **);
-void c2_register_api_call(c2_api_calls_t **, int, c2_api_t, int);
-
-/* C2 API clean up */
-
-void c2_api_calls_free(c2_api_calls_t *);
-
-#endif /* _C2_H_ */
+#endif /* _NODE_H_ */

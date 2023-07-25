@@ -44,37 +44,15 @@ These are platforms which are supported by Pwny.
 
 ### macOS
 
-* Dependencies: patched SDKs from [here](https://github.com/phracker/MacOSX-SDKs).
+There are some build options that allows you to build for the specific platform.
 
-```shell
-cmake -DSDK=<sdk> -B build; cd build; make
-```
-
-### Apple iOS
-
-* Dependencies: patched SDKs from [here](https://github.com/theos/sdks).
-
-```shell
-cmake -DSDK=<sdk> -DIPHONE=ON -B build; cd build; make
-```
-
-### Linux
-
-```shell
-cmake -B build; cd build; make
-```
-
-**NOTE:** Specify `arch` if you want to cross-compile, but install compilers first. Example:
-
-```shell
-cmake -DARCH=<arch> -B build; cd build; make
-```
-
-### Windows
-
-```shell
-cmake -G "MinGW Makefiles" -B build; cd build; make
-```
+* `PLATFORM` - Platform to build for (lower-case, `windows`, `linux` or `macos`).
+* `ARCH` - Platform architecture (lower-case).
+* `IPHONE` - Should be `ON` if building for Apple iOS, depends on `PLATFORM` to be set as `macos`.
+* `SDK` - Set SDK for macOS and Apple iOS targets.
+  * macOS patched SDKs from [here](https://github.com/phracker/MacOSX-SDKs).
+  * Apple iOS patched SDKs from [here](https://github.com/theos/sdks).
+* `DEBUG` - Enable debug logging for development.
 
 ## Basic usage
 

@@ -29,18 +29,22 @@ option(DEBUG "Build in debug mode" OFF)
 option(IPHONE "Is iPhone iOS" OFF)
 
 set(SDK "" CACHE PATH "Path to SDK")
+set(PLATFORM "linux" CACHE STRING "Platform to build for")
+set(ARCH "x64" CACHE STRING "Architecture to build for")
 
 if (DEBUG)
     add_compile_definitions(DEBUG)
 endif()
 
+set(CMAKE_TOOLCHAIN_PATH /cmake/${PLATFORM}_${ARCH}.cmake)
+
 include_directories(include api deps/injector/include)
 
-if(CMAKE_SYSTEM_NAME STREQUAL "Windows" OR CMAKE_GENERATOR STREQUAL "MinGW Makefiles")
+if(PLATFORM STREQUAL windows)
     add_compile_definitions(WINDOWS PE)
     add_link_options(-s -lws2_32 -limagehlp)
 
-elseif(CMAKE_SYSTEM_NAME STREQUAL Darwin)
+elseif(PLATFORM STREQUAL macos)
     add_compile_options(-x objective-c -fobjc-arc)
 
     if(SDK)
@@ -65,6 +69,7 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL Darwin)
 
 else()
     add_compile_definitions(LINUX ELF)
+
 endif()
 
 file(GLOB PWNY_SOURCES src/*.c)
