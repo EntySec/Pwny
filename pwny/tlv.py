@@ -68,7 +68,6 @@ class TLV(Badges, FS):
         self.tlv_not_implemented = 3
         self.tlv_usage_error = 4
         self.tlv_rw_error = 5
-        self.tlv_not_loaded = 6
 
         self.endian = 'little'
 
@@ -79,13 +78,41 @@ class TLV(Badges, FS):
                 'del_node': 2,
                 'add_tab': 3,
                 'del_tab': 4,
+                'migrate': 5,
             },
             self.tlv_pool_pex: {
-                'test': 0,
                 'push': 1,
                 'pull': 2,
             }
         }
+
+    def tlv_process_error(self, tlv_packet: TLVPacket) -> None:
+        """ Process error if one exists.
+
+        :param TLVPacket tlv_packet: TLV packet
+        :return None: None
+        :raises RuntimeError: with trailing error message
+        """
+
+        if tlv_packet.status == self.tlv_fail:
+            if tlv_packet.size > 0:
+                raise RuntimeError(f"Execution failed with error ({tlv_packet.data.decode()})")
+            raise RuntimeError("Execution failed with error!")
+
+        elif tlv_packet.status == self.tlv_not_implemented:
+            if tlv_packet.size > 0:
+                raise RuntimeError(f"Not implemented ({tlv_packet.data.decode()})")
+            raise RuntimeError("Not implemented!")
+
+        elif tlv_packet.status == self.tlv_rw_error:
+            if tlv_packet.size > 0:
+                raise RuntimeError(f"Unable to read and/or write ({tlv_packet.data.decode()})")
+            raise RuntimeError("Unable to read and/or write!")
+
+        elif tlv_packet.status == self.tlv_usage_error:
+            if tlv_packet.size > 0:
+                raise RuntimeError(f"Incorrect usage ({tlv_packet.data.decode()})")
+            raise RuntimeError("Incorrect usage!")
 
     def tlv_send_packet(self, channel: ChannelClient, tlv_packet: TLVPacket) -> None:
         """ Send TLV packet to channel.
@@ -131,14 +158,6 @@ class TLV(Badges, FS):
                 status=self.tlv_success,
                 size=len(remote_path),
                 data=remote_path.encode()
-            ))
-
-            self.tlv_send_packet(channel, TLVPacket(
-                pool=self.tlv_pool_pex,
-                tag=push_api_call,
-                status=self.tlv_success,
-                size=len(local_file),
-                data=local_file.encode()
             ))
 
             tlv_packet = self.tlv_read_packet(channel)
@@ -232,14 +251,6 @@ class TLV(Badges, FS):
                 status=self.tlv_success,
                 size=len(config),
                 data=config
-            ))
-
-            self.tlv_send_packet(channel, TLVPacket(
-                pool=self.tlv_pool_pex,
-                tag=pull_api_call,
-                status=self.tlv_success,
-                size=len(local_path),
-                data=local_path.encode()
             ))
 
             self.tlv_send_packet(channel, TLVPacket(

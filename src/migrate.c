@@ -23,7 +23,12 @@
  */
 
 #include <limits.h>
+#include <unistd.h>
+#include <stdio.h>
 #include <syscall.h>
+
+#include <linux/memfd.h>
+
 #include <injector.h>
 
 #include <tlv.h>
@@ -33,17 +38,17 @@
  * Perform reading from socket for further migration.
  */
 
-int migrate_init(tlv_pkt_t *tlv_pkt, pid_t migrate_pid)
+int migrate_init(tlv_pkt_t *tlv_pkt, pid_t migrate_pid, int buffer_len, unsigned char *buffer)
 {
     #ifdef LINUX
     int fd = syscall(SYS_memfd_create, "", MFD_CLOEXEC);
 
     if (fd >= 0)
     {
-        tlv_channel_read_file_fd(tlv_pkt, fd);
+        write(fd, buffer, buffer_len);
 
         char image[PATH_MAX];
-        sprintf(&image, "/proc/self/fd/%d", fd);
+        sprintf(image, "/proc/self/fd/%d", fd);
 
         migrate_inject(tlv_pkt, migrate_pid, image);
         return 0;

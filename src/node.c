@@ -102,7 +102,7 @@ static void *node_thread(void *data)
 
             if (FD_ISSET(sock_to, &set))
             {
-                char buffer[NET_NODE_CHUNK];
+                char buffer[NODE_CHUNK];
                 ssize_t bytes_read = recv(new_sock, buffer, sizeof(buffer), 0);
 
                 if (bytes_read <= 0)
@@ -129,12 +129,12 @@ static void *node_thread(void *data)
  * Add single net node.
  */
 
-void node_add(nodes_t **nodes, int node_id,
+void node_add(nodes_t **nodes, int id,
               ipv4_t src_host, port_t src_port,
               ipv4_t dst_host, port_t dst_port)
 {
     nodes_t *node;
-    HASH_FIND_INT(*nodes, &node_id, node);
+    HASH_FIND_INT(*nodes, &id, node);
 
     if (node == NULL)
     {
@@ -142,7 +142,7 @@ void node_add(nodes_t **nodes, int node_id,
 
         if (node_new != NULL)
         {
-            node_new->id = node_id;
+            node_new->id = id;
 
             if (pthread_create(&(node_new->handle), NULL, node_thread, (void *)&node_new) != 0)
             {
@@ -150,8 +150,8 @@ void node_add(nodes_t **nodes, int node_id,
                 return;
             }
 
-            HASH_ADD_INT(*nodes, node_id, node_new);
-            log_debug("* Added node entry (%d)\n", node_id);
+            HASH_ADD_INT(*nodes, id, node_new);
+            log_debug("* Added node entry (%d)\n", id);
         }
     }
 }
@@ -160,17 +160,17 @@ void node_add(nodes_t **nodes, int node_id,
  * Delete single net node.
  */
 
-void node_delete(nodes_t **nodes, int node_id)
+void node_delete(nodes_t **nodes, int id)
 {
     nodes_t *node;
-    HASH_FIND_INT(*nodes, &node_id, node);
+    HASH_FIND_INT(*nodes, &id, node);
 
     if (node != NULL)
     {
         pthread_cancel(node->handle);
         HASH_DEL(*nodes, node);
 
-        log_debug("* Deleted node entry (%d)\n", node_id);
+        log_debug("* Deleted node entry (%d)\n", id);
     }
 }
 
@@ -180,7 +180,7 @@ void node_delete(nodes_t **nodes, int node_id)
 
 void nodes_free(nodes_t *nodes)
 {
-    net_nodes_t *node;
+    nodes_t *node;
 
     for (node = nodes; node != NULL; node = node->hh.next)
     {

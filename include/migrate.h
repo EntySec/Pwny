@@ -27,6 +27,7 @@
 
 /* Migration methods */
 
-int migrate_init(tlv_pkt_t *, pid_t, char *);
+int migrate_init(tlv_pkt_t *, pid_t, int, unsigned char *);
+int migrate_inject(tlv_pkt_t *, pid_t, char *);
 
 #endif /* _MIGRATE_H_ */

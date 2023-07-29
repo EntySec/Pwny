@@ -36,13 +36,33 @@ if (DEBUG)
     add_compile_definitions(DEBUG)
 endif()
 
-set(CMAKE_TOOLCHAIN_PATH /cmake/${PLATFORM}_${ARCH}.cmake)
+set(CMAKE_TOOLCHAIN_FILE /cmake/${PLATFORM}_${ARCH}.cmake)
 
-include_directories(include api deps/injector/include)
+file(GLOB PWNY_SOURCES src/*.c)
+add_library(pwny STATIC ${PWNY_SOURCES})
+
+set_property(TARGET pwny PROPERTY C_STANDART 99)
+set_property(TARGET pwny PROPERTY POSITION_INDEPENDENT_CODE ON)
+
+set_target_properties(pwny PROPERTIES OUTPUT_NAME pwny)
+
+file(GLOB MAIN_SOURCES src/main/*.c)
+add_executable(main ${MAIN_SOURCES})
+
+target_compile_options(main PRIVATE -static -pie)
+
+if(ARCH STREQUAL x64)
+    target_compile_options(main PRIVATE -Wl,-z,max-page-size=4096)
+endif()
+
+target_link_libraries(main PRIVATE pwny)
+add_link_options(-Ldeps/${PLATFORM}/${ARCH} -linjector -lpawn)
+
+include_directories(include api deps/${PLATFORM}/${ARCH})
 
 if(PLATFORM STREQUAL windows)
     add_compile_definitions(WINDOWS PE)
-    add_link_options(-s -lws2_32 -limagehlp)
+    target_link_libraries(main PRIVATE ws2_32 imagehlp)
 
 elseif(PLATFORM STREQUAL macos)
     add_compile_options(-x objective-c -fobjc-arc)
@@ -57,28 +77,31 @@ elseif(PLATFORM STREQUAL macos)
         add_compile_definitions(IPHONE)
         add_compile_options(-arch arm64 -arch arm64e)
 
-        add_link_options(-framework Foundation -framework Security -framework AudioToolbox)
-        add_link_options(-framework CoreFoundation -framework MediaPlayer -framework UIKit)
-        add_link_options(-framework AVFoundation -framework CoreLocation)
-        add_link_options(-framework SpringBoardServices -framework IOSurface)
+        add_link_options(
+            -framework Foundation
+            -framework Security
+            -framework AudioToolbox
+            -framework CoreFoundation
+            -framework MediaPlayer
+            -framework UIKit
+            -framework AVFoundation
+            -framework CoreLocation
+            -framework SpringBoardServices
+            -framework IOSurface)
 
     else()
         add_compile_options(-arch x86_64)
-        add_link_options(-framework Foundation -framework AVFoundation -framework AudioToolbox -framework AppKit)
+        add_link_options(
+            -framework Foundation
+            -framework AVFoundation
+            -framework AudioToolbox
+            -framework AppKit)
     endif()
 
 else()
     add_compile_definitions(LINUX ELF)
 
 endif()
-
-file(GLOB PWNY_SOURCES src/*.c)
-add_library(pwny STATIC ${PWNY_SOURCES})
-
-set_property(TARGET pwny PROPERTY C_STANDART 99)
-set_property(TARGET pwny PROPERTY POSITION_INDEPENDENT_CODE ON)
-
-set_target_properties(pwny PROPERTIES OUTPUT_NAME pwny)
 
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})
 set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})

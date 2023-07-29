@@ -1,5 +1,5 @@
-set(CMAKE_SYSTEM_NAME Windows)
-set(TOOLCHAIN_PREFIX x86_64-w64-mingw32)
+set(CMAKE_SYSTEM_NAME Linux)
+set(TOOLCHAIN_PREFIX /etc/cross/aarch64/bin/aarch64-linux-musl)
 
 set(CMAKE_C_COMPILER ${TOOLCHAIN_PREFIX}-gcc)
 set(CMAKE_CXX_COMPILER ${TOOLCHAIN_PREFIX}-g++)

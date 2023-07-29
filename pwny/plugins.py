@@ -96,7 +96,7 @@ class Plugins(Tables):
 
                 tab_path = (session.pwny_libs +
                             session.details['Platform'] +
-                            '/' + session.details['Architecture'] +
+                            '/' + session.details['Arch'] +
                             '/' + details['Plugin'])
 
                 if os.path.exists(tab_path):

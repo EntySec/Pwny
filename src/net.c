@@ -40,10 +40,10 @@
  * Add C2 server. Solves the problem of multiple C2 servers.
  */
 
-void net_c2_add(net_c2_t **net_c2_table, int net_c2_id, int net_c2_fd, char *net_c2_name)
+void net_c2_add(net_c2_t **net_c2_table, int id, int fd, char *name)
 {
     net_c2_t *net_c2;
-    HASH_FIND_INT(*net_c2_table, &net_c2_id, net_c2);
+    HASH_FIND_INT(*net_c2_table, &id, net_c2);
 
     if (net_c2 == NULL)
     {
@@ -51,12 +51,12 @@ void net_c2_add(net_c2_t **net_c2_table, int net_c2_id, int net_c2_fd, char *net
 
         if (net_c2_new != NULL)
         {
-            net_c2->id = net_c2_id;
-            net_c2->fd = net_c2_fd;
-            net_c2->name = net_c2_name;
+            net_c2->id = id;
+            net_c2->fd = fd;
+            net_c2->name = name;
 
-            HASH_ADD_INT(*net_c2_table, net_c2_id, net_c2_new);
-            log_debug("* Added net C2 entry (%d) - (%s)\n", net_c2_id, net_c2_name);
+            HASH_ADD_INT(*net_c2_table, id, net_c2_new);
+            log_debug("* Added net C2 entry (%d) - (%s)\n", id, name);
         }
     }
 }
@@ -71,7 +71,7 @@ void net_c2_init(net_c2_t *net_c2_table)
 {
     net_c2_t *net_c2;
 
-    for (net_c2 = net_c2_data; net_c2 != NULL; net_c2 = net_c2->hh.next)
+    for (net_c2 = net_c2_table; net_c2 != NULL; net_c2 = net_c2->hh.next)
     {
         tlv_pkt_t *tlv_id = tlv_channel_pkt(net_c2->fd);
 
@@ -87,10 +87,10 @@ void net_c2_init(net_c2_t *net_c2_table)
         tlv_pkt_free(tlv_pkt);
 
         log_debug("* Freed net C2 (%d) (%s)\n", net_c2->id, net_c2->name);
-        HASH_DEL(net_c2_data, net_c2);
+        HASH_DEL(net_c2_table, net_c2);
 
         free(net_c2);
     }
 
-    free(net_c2_data);
+    free(net_c2_table);
 }

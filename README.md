@@ -42,6 +42,13 @@ pip3 install git+https://github.com/EntySec/HatSploit
 
 These are platforms which are supported by Pwny.
 
+First, you need to build dependencies for your platform, so do this:
+
+```shell
+cd make
+make PLATFORM=<platform> ARCH=<arch>
+```
+
 ### macOS
 
 There are some build options that allows you to build for the specific platform.

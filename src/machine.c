@@ -22,9 +22,11 @@
  * SOFTWARE.
  */
 
+#include <stdio.h>
 #include <unistd.h>
-#include <machine.h>
 #include <stdint.h>
+
+#include <machine.h>
 
 static uint64_t xor_shift_128_plus(uint64_t *seed)
 {
@@ -88,7 +90,7 @@ int machine_uuid(char *buffer)
     while (*uuid)
     {
         j = seed.b[i >> 1];
-        j = (i & 1) ? (j >> 4) : (n & 0xf);
+        j = (i & 1) ? (j >> 4) : (j & 0xf);
 
         switch (*uuid)
         {

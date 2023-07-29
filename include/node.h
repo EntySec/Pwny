@@ -29,13 +29,15 @@
 
 /* Essential data types definitions */
 
+#define NODE_CHUNK 4096
+
 typedef uint32_t ipv4_t;
 typedef uint16_t port_t;
 
 typedef struct {
     int id;
     ipv4_t src_host, src_port;
-    port_t src_port, dst_port;
+    port_t dst_host, dst_port;
     pthread_t handle;
     UT_hash_handle hh;
 } nodes_t;

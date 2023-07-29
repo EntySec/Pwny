@@ -82,8 +82,8 @@ int tlv_argv_read(tlv_pkt_t *, tlv_pkt_t **[], int, int);
 
 /* TLV channel FI/FO methods */
 
-int tlv_channel_send_file(tlv_pkt_t *, tlv_file_t);
-int tlv_channel_read_file(tlv_pkt_t *, tlv_file_t);
+int tlv_channel_send_file(tlv_pkt_t *, char *);
+int tlv_channel_read_file(tlv_pkt_t *, char *);
 
 void tlv_channel_read_file_fd(tlv_pkt_t *tlv_pkt, int fd);
 

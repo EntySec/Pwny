@@ -1,7 +1,7 @@
 #!/bin/bash
 
-mkdir -p cross
-cd cross
+mkdir -p /etc/cross
+cd /etc/cross
 
 echo "[Downloading compilers]"
 

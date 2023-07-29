@@ -42,7 +42,6 @@ enum c2_api_call_statuses {
     API_CALL_NOT_IMPLEMENTED,
     API_CALL_USAGE_ERROR,
     API_CALL_RW_ERROR,
-    API_CALL_NOT_LOADED,
 };
 
 enum c2_api_call_builtins {

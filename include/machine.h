@@ -27,13 +27,13 @@
 
 #define UUID "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx"
 #define UUID_CHARS "0123456789abcdef"
-#define UUID_SIZE 37;
+#define UUID_SIZE 37
 
 typedef union {
     unsigned char b[16];
     uint64_t word[2];
 } seed_t;
 
-void machine_uuid(char *);
+int machine_uuid(char *);
 
 #endif /* _MACHINE_H_ */

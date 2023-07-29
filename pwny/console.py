@@ -50,6 +50,7 @@ class Console(Plugins, Tables, Badges, Runtime, Commands, FS):
             ('exit', 'Terminate Pwny session.'),
             ('help', 'Show available commands.'),
             ('load', 'Load Pwny plugin.'),
+            ('migrate', 'Migrate Pwny to PID.'),
             ('plugins', 'List Pwny plugins.'),
             ('quit', 'Stop interaction.'),
             ('unload', 'Unload Pwny plugin.')

@@ -74,7 +74,7 @@ class PwnySession(Pwny, Session, Console, TLV):
 
         client.send(self.get_implant(
             platform=self.details['Platform'],
-            arch=self.details['Architecture']
+            arch=self.details['Arch']
         ))
 
         self.channel = ChannelClient(client)
@@ -142,6 +142,7 @@ class PwnySession(Pwny, Session, Console, TLV):
 
                 if not messages:
                     result = self.tlv_read_packet(self.channel)
+                    self.tlv_process_error(result)
 
                     if output:
                         return result.data.decode()

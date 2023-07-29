@@ -35,9 +35,10 @@ int main(int argc, char *argv[])
     if (strcmp(argv[0], "p") == 0)
     {
         int net_c2_fd = (int)((long *)argv)[1];
-
         char uuid[UUID_SIZE];
-        machine_uuid(uuid);
+
+        if (machine_uuid(uuid) < 0)
+            return 1;
 
         net_c2_add(&net_c2, 0, net_c2_fd, uuid);
     }
