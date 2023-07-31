@@ -25,6 +25,8 @@
 #ifndef _MACHINE_H_
 #define _MACHINE_H_
 
+#include <stdint.h>
+
 #define UUID "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx"
 #define UUID_CHARS "0123456789abcdef"
 #define UUID_SIZE 37
