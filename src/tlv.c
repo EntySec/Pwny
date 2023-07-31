@@ -167,7 +167,7 @@ void tlv_channel_read_fd(int tlv_fd, tlv_pkt_t *tlv_pkt, int flag)
             {
                 read(tlv_fd, tlv_raw.data, size);
                 tlv_raw.data[size] = '\0';
-                PACK_INT(size + 1, tlv_raw.size);
+                PACK_INT((size + 1), tlv_raw.size);
             }
         } else
         {
@@ -208,7 +208,7 @@ void tlv_channel_read(tlv_pkt_t *tlv_pkt, int flag)
             {
                 recv(tlv_pkt->channel, tlv_raw.data, size, 0);
                 tlv_raw.data[size] = '\0';
-                PACK_INT(size + 1, tlv_raw.size);
+                PACK_INT((size + 1), tlv_raw.size);
             }
         } else
         {
