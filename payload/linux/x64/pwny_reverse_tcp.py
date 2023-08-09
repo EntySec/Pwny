@@ -37,7 +37,7 @@ class HatSploitPayload(Payload, Handler, Pwny, Assembler, ELF):
         )
 
         length = len(implant)
-        e_entry = self.get_header(implant)['e_entry']
+        e_entry = self.elf_header(implant)['e_entry']
 
         return self.assemble(
             self.details['Arch'],
