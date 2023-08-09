@@ -12,7 +12,7 @@ from pex.exe import ELF
 from hatsploit.lib.payload.basic import *
 
 
-class HatSploitPayload(Payload, Pwny, Assembler, ELF):
+class HatSploitPayload(Payload, Handler, Pwny, Assembler, ELF):
     def __init__(self):
         super().__init__()
 
