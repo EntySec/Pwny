@@ -55,8 +55,8 @@ if(ARCH STREQUAL x64)
     target_compile_options(main PRIVATE -Wl,-z,max-page-size=4096)
 endif()
 
+target_link_directories(main PRIVATE deps/${PLATFORM}/${ARCH})
 target_link_libraries(main PRIVATE pwny injector pawn)
-target_link_options(main PRIVATE -Ldeps/${PLATFORM}/${ARCH})
 
 include_directories(include api deps/${PLATFORM}/${ARCH})
 
