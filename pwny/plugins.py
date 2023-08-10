@@ -24,13 +24,13 @@ SOFTWARE.
 
 import os
 
-from badges import Tables
+from badges import Tables, Badges
 
 from hatsploit.lib.plugins import Plugins as HatSploitPlugins
 from hatsploit.lib.session import Session
 
 
-class Plugins(Tables):
+class Plugins(Tables, Badges):
     """ Subclass of pwny module.
 
     This subclass of pwny module is intended for providing
@@ -86,6 +86,8 @@ class Plugins(Tables):
         :raises RuntimeError: with trailing error message
         """
 
+        self.print_process(f"Loading plugin {plugin}...")
+
         if plugin not in self.loaded_plugins:
             if plugin in self.imported_plugins:
                 plugin_object = self.imported_plugins[plugin]
@@ -115,6 +117,8 @@ class Plugins(Tables):
         else:
             raise RuntimeWarning(f"Plugin is already loaded: {plugin}.")
 
+        self.print_success(f"Loaded plugin {plugin}!")
+
     def unload_plugin(self, plugin: str) -> None:
         """ Unload specified plugin.
 
@@ -122,6 +126,8 @@ class Plugins(Tables):
         :return None: None
         :raises RuntimeError: with trailing error message
         """
+
+        self.print_process(f"Unloading plugin {plugin}...")
 
         if plugin in self.imported_plugins:
             plugin_object = self.loaded_plugins[plugin]
@@ -133,3 +139,5 @@ class Plugins(Tables):
             self.loaded_plugins.pop(plugin)
         else:
             raise RuntimeError(f"Plugin is not loaded: {plugin}!")
+
+        self.print_success(f"Unloaded plugin {plugin}!")

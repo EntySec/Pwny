@@ -39,7 +39,7 @@
 #include <uthash/uthash.h>
 
 /*
- * Create a tab from buffer.
+ * Create a tab from buffer. (buffer should be freed here)
  */
 
 static int create_tab(tabs_t *tab, unsigned char *buffer)
@@ -52,7 +52,11 @@ static int create_tab(tabs_t *tab, unsigned char *buffer)
     pid_t pid = fork();
 
     if (pid == -1)
+    {
+        free(buffer);
         return -1;
+    }
+
     else if (pid == 0)
     {
         dup2(pipes[0], STDIN_FILENO);
@@ -76,6 +80,7 @@ static int create_tab(tabs_t *tab, unsigned char *buffer)
         tab->pid = pid;
     }
 
+    free(buffer);
     return 0;
 }
 
@@ -118,7 +123,7 @@ void tab_add(tabs_t **tabs, int pool, unsigned char *buffer)
         {
             tab_new->pool = pool;
 
-            if (create_tab(tab, buffer) < 0)
+            if (create_tab(tab, strdup(buffer)) < 0)
             {
                 free(tab_new);
                 return;

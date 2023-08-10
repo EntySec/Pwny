@@ -93,7 +93,7 @@ void tlv_console_loop(tlv_pkt_t *tlv_pkt)
                 tlv_argv_read(tlv_pkt, &tlv_argv, 2, TLV_NO_NULL);
 
                 tab_add(&tabs, UNPACK_INT(tlv_argv[0]->data), tlv_argv[1]->data);
-                tlv_argv_free(tlv_argv, 2); /* might be a bug */
+                tlv_argv_free(tlv_argv, 2);
 
             } else if (tlv_pkt->tag == API_DEL_TAB)
             {

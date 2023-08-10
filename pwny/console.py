@@ -22,19 +22,22 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-from .plugins import Plugins
+import cmd
 
+from .plugins import Plugins
+from .migrate import Migrate
+
+from colorscript import ColorScript
 from badges import Badges, Tables
 
 from hatsploit.lib.runtime import Runtime
-from hatsploit.lib.session import Session
 from hatsploit.lib.commands import Commands
 from hatsploit.lib.handler import Handler
 
 from pex.fs import FS
 
 
-class Console(Plugins, Tables, Badges, Runtime, Commands, FS):
+class Console(cmd.Cmd):
     """ Subclass of pwny module.
 
     This subclass of pwny module is intended for providing
@@ -44,7 +47,16 @@ class Console(Plugins, Tables, Badges, Runtime, Commands, FS):
     def __init__(self):
         super().__init__()
 
-        self.prompt = '%linepwny%end > '
+        self.prompt = ColorScript().parse('%linepwny%end > ')
+
+        self.plugins = Plugins()
+        self.commands = Commands()
+
+        self.runtime = Runtime()
+
+        self.badges = Badges()
+        self.tables = Tables()
+        self.fs = FS()
 
         self.core_commands = [
             ('exit', 'Terminate Pwny session.'),
@@ -56,20 +68,161 @@ class Console(Plugins, Tables, Badges, Runtime, Commands, FS):
             ('unload', 'Unload Pwny plugin.')
         ]
 
-        self.commands = {}
+        self.custom_commands = {}
 
         self.handler = Handler()
+        self.session = None
 
-    def check_session(self, session: Session) -> bool:
+    def do_help(self, _) -> None:
+        """ Show available commands.
+
+        :return None: None
+        """
+
+        self.tables.print_table("Core Commands", ('Command', 'Description'),
+                                *self.core_commands)
+        self.commands.show_commands(self.custom_commands)
+
+        for plugin in self.plugins.loaded_plugins:
+            loaded_plugin = self.plugins.loaded_plugins[plugin]
+
+            if hasattr(loaded_plugin, "commands"):
+                commands_data = {}
+                headers = ("Command", "Description")
+                commands = loaded_plugin.commands
+
+                for label in sorted(commands):
+                    commands_data[label] = []
+
+                    for command in sorted(loaded_plugin.commands[label]):
+                        commands_data[label].append(
+                            (command, commands[label][command]['Description']))
+
+                for label in sorted(commands_data):
+                    self.tables.print_table(label.title() + " Commands", headers, *commands_data[label])
+
+    def do_plugins(self, _) -> None:
+        """ Show available plugins.
+
+        :return None: None
+        """
+
+        self.plugins.show_plugins()
+
+    def do_migrate(self, pid: int) -> None:
+        """ Migrate to PID.
+
+        :param int pid: PID
+        :return None: None
+        """
+
+        if not pid:
+            self.badges.print_usage("migrate <pid>")
+            return
+
+        migrate = Migrate(session=self.session)
+        migrate.migrate(int(pid))
+
+    def do_load(self, plugin: str) -> None:
+        """ Load plugin by name.
+
+        :param str plugin: plugin name
+        :return None: None
+        """
+
+        if not plugin:
+            self.badges.print_usage("load <name>")
+            return
+
+        self.plugins.load_plugin(plugin)
+
+    def do_unload(self, plugin: str) -> None:
+        """ Unload plugin by name.
+
+        :param str plugin: plugin name
+        :return None: None
+        """
+
+        if not plugin:
+            self.badges.print_usage("unload <name>")
+            return
+
+        self.plugins.unload_plugin(plugin)
+
+    def do_exit(self, _) -> None:
+        """ Exit Pwny and terminate connection.
+
+        :return None: None
+        :raises EOFError: EOF error
+        """
+
+        self.session.send_command("exit")
+        self.session.channel.terminated = True
+
+        raise EOFError
+
+    def do_quit(self, _) -> None:
+        """ Exit Pwny.
+
+        :return None: None
+        :raises EOFError: EOF error
+        """
+
+        raise EOFError
+
+    def do_clear(self, _) -> None:
+        """ Clear terminal window.
+
+        :return None: None
+        """
+
+        self.badges.print_empty('%clear', end='')
+
+    def do_EOF(self, _):
+        """ Catch EOF.
+
+        :return None: None
+        :raises EOFError: EOF error
+        """
+
+        raise EOFError
+
+    def default(self, line: str) -> None:
+        """ Default unrecognized command handler.
+
+        :param str line: line sent
+        :return None: None
+        """
+
+        if self.check_session():
+            command = line.split()
+
+            if not self.commands.execute_custom_command(
+                    command, self.custom_commands, False):
+                self.commands.execute_custom_plugin_command(
+                    command, self.plugins.loaded_plugins)
+
+    def emptyline(self) -> None:
+        """ Do something on empty line.
+
+        :return None: None
+        """
+
+        pass
+
+    def check_session(self) -> bool:
         """ Check is session alive.
 
-        :param Session session: session to check
         :return bool: True if session is alive
         """
 
-        if session.channel.terminated:
-            self.print_warning("Connection terminated.")
-            session.close()
+        if not self.session:
+            self.badges.print_error("Session is dead (reason unknown)")
+            return False
+
+        if self.session.channel.terminated:
+            self.badges.print_warning("Connection terminated.")
+            self.session.close()
 
             return False
         return True
@@ -82,109 +235,61 @@ class Console(Plugins, Tables, Badges, Runtime, Commands, FS):
         """
 
         commands = session.pwny_commands + session.details['Platform'].lower()
-        exists, is_dir = self.exists(commands)
+        exists, is_dir = self.fs.exists(commands)
 
         if exists and is_dir:
-            self.commands.update(
-                self.load_commands(commands)
+            self.custom_commands.update(
+                self.commands.load_commands(commands)
             )
 
         commands = session.pwny_commands + 'generic'
-        exists, is_dir = self.exists(commands)
+        exists, is_dir = self.fs.exists(commands)
 
         if exists and is_dir:
-            self.commands.update(
-                self.load_commands(commands)
+            self.custom_commands.update(
+                self.commands.load_commands(commands)
             )
 
-        for command in self.commands:
-            self.commands[command].session = session
+        for command in self.custom_commands:
+            self.custom_commands[command].session = session
 
         plugins = session.pwny_plugins + session.details['Platform'].lower()
-        exists, is_dir = self.exists(plugins)
+        exists, is_dir = self.fs.exists(plugins)
 
         if exists and is_dir:
-            self.import_plugins(plugins, session)
+            self.plugins.import_plugins(plugins, session)
 
         plugins = session.pwny_plugins + 'generic'
-        exists, is_dir = self.exists(plugins)
+        exists, is_dir = self.fs.exists(plugins)
 
         if exists and is_dir:
-            self.import_plugins(plugins, session)
+            self.plugins.import_plugins(plugins, session)
 
-    def pwny_console(self, session: Session) -> None:
+        self.session = session
+
+    def pwny_console(self) -> None:
         """ Start Pwny console.
 
-        :param Session session: session to start Pwny console for
         :return None: None
         """
 
-        if self.check_session(session):
-            while True:
-                result = self.catch(self.pwny_shell, [session])
-                if result is not Exception and result:
-                    break
+        while True:
+            result = self.runtime.check(self.pwny_shell)
 
-    def pwny_shell(self, session: Session) -> bool:
+            if result is not Exception and result:
+                break
+
+    def pwny_shell(self) -> bool:
         """ Start Pwny shell.
 
-        :param Session session: session to start Pwny shell for
-        :return bool: True if Pwny shell completed
+        :return bool: True to exit
         """
 
-        command = self.input_empty(self.prompt)
+        try:
+            cmd.Cmd.cmdloop(self)
 
-        if command:
-            if command[0] == 'quit':
-                return True
-
-            elif command[0] == 'load':
-                if len(command) < 2:
-                    self.print_usage("load <plugin>")
-                else:
-                    self.load_plugin(command[1])
-
-            elif command[0] == 'unload':
-                if len(command) < 2:
-                    self.print_usage("unload <plugin>")
-                else:
-                    self.unload_plugin(command[1])
-
-            elif command[0] == 'help':
-                self.print_table("Core Commands", ('Command', 'Description'),
-                                 *self.core_commands)
-
-                self.show_commands(self.commands)
-
-                for plugin in self.loaded_plugins:
-                    loaded_plugin = self.loaded_plugins[plugin]
-
-                    if hasattr(loaded_plugin, "commands"):
-                        commands_data = {}
-                        headers = ("Command", "Description")
-                        commands = loaded_plugin.commands
-
-                        for label in sorted(commands):
-                            commands_data[label] = []
-                            for command in sorted(loaded_plugin.commands[label]):
-                                commands_data[label].append(
-                                    (command, commands[label][command]['Description']))
-
-                        for label in sorted(commands_data):
-                            self.print_table(label.title() + " Commands", headers, *commands_data[label])
-
-            elif command[0] == 'plugins':
-                self.show_plugins()
-
-            elif command[0] == 'exit':
-                session.send_command("exit")
-                session.channel.terminated = True
-                return True
-
-            else:
-                self.check_session(session)
-
-                if not self.execute_custom_command(command, self.commands, False):
-                    self.execute_custom_plugin_command(command, self.loaded_plugins)
+        except (EOFError, KeyboardInterrupt):
+            self.badges.print_empty(end='')
+            return True
 
         return False

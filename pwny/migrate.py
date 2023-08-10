@@ -24,10 +24,12 @@ SOFTWARE.
 
 from .__main__ import Pwny
 
+from badges import Badges
+
 from hatsploit.lib.session import Session
 
 
-class Migrate(Pwny):
+class Migrate(Pwny, Badges):
     """ Subclass of pwny module.
 
     This subclass of pwny module is intended for providing a
@@ -45,12 +47,15 @@ class Migrate(Pwny):
 
         self.session = session
 
-    def migrate(self, pid: int) -> bool:
+    def migrate(self, pid: int) -> None:
         """ Migrate to the specific PID.
 
         :param int pid: process ID
-        :return bool: True if success else False
+        :return None: None
+        :raises RuntimeError: with trailing error message
         """
+
+        self.print_process(f"Attempting to migrate to {str(pid)}...")
 
         platform = self.session.details['Platform']
         arch = self.session.details['Arch']
@@ -60,9 +65,15 @@ class Migrate(Pwny):
             arch=arch)
 
         if loader:
+            self.print_process(f"Sending migration loader ({str(len(loader))} bytes)...")
+
             self.session.send_command('migrate', args=[
                 pid.to_bytes(4, 'little'), loader])
 
-            session.open(session.channel.sock.sock)
+            self.print_process("Waiting for the migration to complete...")
+
+            session.open(session.channel.client)
         else:
             raise RuntimeError(f"Loader was not found for {platform}/{arch}!")
+
+        self.print_success(f"Successfully migrated to {str(pid)}")

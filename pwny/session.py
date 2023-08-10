@@ -178,4 +178,4 @@ class PwnySession(Pwny, Session, Console, TLV):
         :return None: None
         """
 
-        self.pwny_console(self)
+        self.pwny_console()
