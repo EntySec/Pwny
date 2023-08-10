@@ -36,7 +36,7 @@ if (DEBUG)
     add_compile_definitions(DEBUG)
 endif()
 
-set(CMAKE_TOOLCHAIN_FILE cmake/${PLATFORM}_${ARCH}.cmake)
+set(CMAKE_TOOLCHAIN_FILE "cmake/${PLATFORM}_${ARCH}.cmake")
 
 file(GLOB PWNY_SOURCES src/*.c)
 add_library(pwny STATIC ${PWNY_SOURCES})
