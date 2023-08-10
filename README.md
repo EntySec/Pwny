@@ -20,7 +20,7 @@
 
 Pwny is an implementation of an advanced payload written in pure C and designed for portability and extensibility.
 
-That repository contains Pwny, which is supposed to work on `macOS`, `Linux`, `Windows` and `Apple iOS`, but can be ported to almost every Posix system. Note that `Android` app will come soon with generic support of this native Pwny codebase and will be optimized to work with HatSploit Framework (Checkmate C2) as well as with Ghost Framework.
+That repository contains Pwny, which is supposed to work on `macOS`, `Linux`, `Windows` and `Apple iOS`, but can be ported to almost every Posix system. Note that `Android` app will come soon with generic support of this native Pwny codebase and will be optimized to work with HatSploit Framework as well as with Ghost Framework.
 
 ## Features
 
@@ -49,9 +49,14 @@ cd make
 make PLATFORM=<platform> ARCH=<arch>
 ```
 
-### macOS
+Then you need to execute these commands to build Pwny executable:
 
-There are some build options that allows you to build for the specific platform.
+```shell
+cmake -B build
+cmake --build build
+```
+
+There are some `cmake` build options that allows you to build for the specific platform.
 
 * `PLATFORM` - Platform to build for (lower-case, `windows`, `linux` or `macos`).
 * `ARCH` - Platform architecture (lower-case).
