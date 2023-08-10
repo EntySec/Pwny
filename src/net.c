@@ -51,9 +51,9 @@ void net_c2_add(net_c2_t **net_c2_table, int id, int fd, char *name)
 
         if (net_c2_new != NULL)
         {
-            net_c2->id = id;
-            net_c2->fd = fd;
-            net_c2->name = name;
+            net_c2_new->id = id;
+            net_c2_new->fd = fd;
+            strcpy(net_c2_new->name, name);
 
             HASH_ADD_INT(*net_c2_table, id, net_c2_new);
             log_debug("* Added net C2 entry (%d) - (%s)\n", id, name);
