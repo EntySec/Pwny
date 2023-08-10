@@ -53,7 +53,7 @@ void net_c2_add(net_c2_t **net_c2_table, int id, int fd, char *name)
         {
             net_c2_new->id = id;
             net_c2_new->fd = fd;
-            strcpy(net_c2_new->name, name);
+            net_c2_new->name = strdup(name);
 
             HASH_ADD_INT(*net_c2_table, id, net_c2_new);
             log_debug("* Added net C2 entry (%d) - (%s)\n", id, name);
@@ -79,7 +79,7 @@ void net_c2_init(net_c2_t *net_c2_table)
         tlv_id->size = strlen(net_c2->name) + 1;
 
         tlv_channel_send(tlv_id);
-        free(tlv_id);
+        tlv_pkt_free(tlv_id);
 
         tlv_pkt_t *tlv_pkt = tlv_channel_pkt(net_c2->fd);
         tlv_console_loop(tlv_pkt);
