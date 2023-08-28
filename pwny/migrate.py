@@ -24,6 +24,9 @@ SOFTWARE.
 
 from .__main__ import Pwny
 
+from .types import *
+from .api import *
+
 from badges import Badges
 
 from hatsploit.lib.session import Session
@@ -67,12 +70,20 @@ class Migrate(Pwny, Badges):
         if loader:
             self.print_process(f"Sending migration loader ({str(len(loader))} bytes)...")
 
-            self.session.send_command('migrate', args=[
-                pid.to_bytes(4, 'little'), loader])
+            tlv = self.session.send_command(
+                tag=API_MIGRATE,
+                args={
+                    TLV_TYPE_MIGRATE_PID: pid,
+                    TLV_TYPE_MIGRATE_SIZE: len(loader),
+                    TLV_TYPE_MIGRATE: loader
+                }
+            )
+
+            if tlv.get_int(TLV_TYPE_STATUS) != TLV_STATUS_SUCCESS:
+                raise RuntimeError(f"Failed to migrate to {str(pid)}!")
 
             self.print_process("Waiting for the migration to complete...")
-
-            session.open(session.channel.client)
+            self.session.open(session.channel.client)
         else:
             raise RuntimeError(f"Loader was not found for {platform}/{arch}!")
 

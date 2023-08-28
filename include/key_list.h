@@ -22,61 +22,46 @@
  * SOFTWARE.
  */
 
+#ifndef _KEY_LIST_H_
+#define _KEY_LIST_H_
+
 #include <stdlib.h>
-#include <stdio.h>
-#include <unistd.h>
 
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
+#define KEY_LIST_FOREACH(L, V) key_list_node_t *_node = NULL; \
+                               key_list_node_t *V; \
+                               for (V = _node = L->header; _node != NULL; V = _node = _node->next)
 
-#include <c2.h>
-#include <machine.h>
-
-int connect_to(char *host, int port)
+typedef struct
 {
-    int sockfd = socket(AF_INET, SOCK_STREAM, 0);
+    void *value;
+} value_t;
 
-    if (sockfd == -1)
-        return -1;
+typedef void (*value_releaser_t)(value_t value);
 
-    struct sockaddr_in hint;
-    hint.sin_family = AF_INET;
-    hint.sin_port = htons(port);
-    hint.sin_addr.s_addr = inet_addr(host);
-
-    if (connect(sockfd, (struct sockaddr *)&hint, sizeof(hint)) != 0)
-        return -1;
-
-    return sockfd;
-}
-
-int main(int argc, char *argv[])
+typedef struct key_list_node
 {
-    c2_t *c2 = NULL;
+    int key;
+    value_t value;
+    struct key_list_node *prev;
+    struct key_list_node *next;
+} key_list_node_t;
 
-    if (strcmp(argv[0], "p") == 0)
-    {
-        int c2_fd = (int)((long *)argv)[1];
-        char uuid[UUID_SIZE];
+typedef struct
+{
+    int count;
+    key_list_node_t *header;
+    value_releaser_t releaser;
+} key_list_t;
 
-        if (machine_uuid(uuid) < 0)
-            return 1;
+key_list_t *key_list_create(value_releaser_t);
+void key_list_destroy(key_list_t *);
 
-        c2_add(&c2, 0, c2_fd, uuid);
-    } else
-    {
-        int c2_fd = connect_to("127.0.0.1", 8888);
+int key_list_keyset(key_list_t *, int *, int);
+int key_list_find_key(key_list_t *, int);
 
-        char uuid[UUID_SIZE];
+int key_list_add(key_list_t *, int, value_t);
+int key_list_get(key_list_t *, int, value_t *);
+int key_list_edit(key_list_t *, int, value_t);
+int key_list_delete(key_list_t *, int);
 
-        if (machine_uuid(uuid) < 0)
-            return 1;
-
-        c2_add(&c2, 0, c2_fd, uuid);
-    }
-
-    c2_init(c2);
-
-    return 0;
-}
+#endif /* _KEY_LIST_H_ */

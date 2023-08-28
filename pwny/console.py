@@ -24,8 +24,13 @@ SOFTWARE.
 
 import cmd
 
+from .types import *
+from .api import *
+
 from .plugins import Plugins
 from .migrate import Migrate
+
+from hatsploit.lib.session import Session
 
 from colorscript import ColorScript
 from badges import Badges, Tables
@@ -156,8 +161,10 @@ class Console(cmd.Cmd):
         :raises EOFError: EOF error
         """
 
-        self.session.send_command("exit")
-        self.session.channel.terminated = True
+        self.session.send_command(
+            tag=API_QUIT
+        )
+        self.session.terminated = True
 
         raise EOFError
 
@@ -220,7 +227,7 @@ class Console(cmd.Cmd):
             self.badges.print_error("Session is dead (reason unknown)")
             return False
 
-        if self.session.channel.terminated:
+        if self.session.terminated:
             self.badges.print_warning("Connection terminated.")
             self.session.close()
 
@@ -274,7 +281,7 @@ class Console(cmd.Cmd):
         """
 
         while True:
-            result = self.runtime.check(self.pwny_shell)
+            result = self.runtime.catch(self.pwny_shell)
 
             if result is not Exception and result:
                 break

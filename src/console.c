@@ -23,166 +23,88 @@
  */
 
 #include <tlv.h>
+#include <api.h>
 #include <c2.h>
-#include <net.h>
 #include <node.h>
 #include <migrate.h>
 #include <tab.h>
 #include <log.h>
+#include <tlv_types.h>
 
 #include <stdio.h>
 #include <stdlib.h>
 
-/*
- * Run TLV console loop which reads commands repeatedly.
- */
-
-void tlv_console_loop(tlv_pkt_t *tlv_pkt)
+void tlv_console_loop(c2_t *c2)
 {
-    c2_api_calls_t *c2_api_calls = NULL;
-    c2_register_api_calls(&c2_api_calls);
+    api_calls_register(&c2->dynamic.api_calls);
 
-    tabs_t *tabs = NULL;
-    nodes_t *nodes = NULL;
-
-    int node_id = 0;
+    int tag, status;
+    tlv_pkt_t *tlv_pkt;
 
     for (;;)
     {
-        tlv_pkt_t *tlv_result;
-        tlv_channel_read(tlv_pkt, TLV_NULL);
+        c2_read(c2);
 
-        log_debug("* Talking to %d for now from base\n", tlv_pkt->channel);
+        log_debug("* Talking to %d for now from base\n", c2->fd);
+        tlv_pkt_get_int(c2->tlv_pkt, TLV_TYPE_TAG, &tag);
 
-        if (tlv_pkt->pool == API_POOL_BUILTINS)
+        if ((tlv_pkt = api_call_make(&c2->dynamic.api_calls, c2, tag)) == NULL)
         {
-            if (tlv_pkt->tag == API_QUIT)
-            {
-                tlv_result = create_c2_tlv_pkt(tlv_pkt, API_CALL_SUCCESS);
-                tlv_channel_send(tlv_result);
+            int tab_id;
 
-                tlv_pkt_free(tlv_result);
+            if (tlv_pkt_get_int(c2->tlv_pkt, TLV_TYPE_TAB_ID, &tab_id) == 0)
+                if ((tlv_pkt = tab_lookup(&c2->dynamic.tabs, tab_id, c2)) == NULL)
+                    tlv_pkt = api_craft_tlv_pkt(API_CALL_NOT_IMPLEMENTED);
+            else
+                tlv_pkt = api_craft_tlv_pkt(API_CALL_NOT_IMPLEMENTED);
+        }
+
+        c2_write(c2, tlv_pkt);
+
+        if (tlv_pkt_get_int(tlv_pkt, TLV_TYPE_STATUS, &status) == 0)
+        {
+            if (status == API_CALL_QUIT)
+            {
+                tlv_pkt_destroy(tlv_pkt);
+                tlv_pkt_destroy(c2->tlv_pkt);
+
                 break;
             }
-
-            if (tlv_pkt->tag == API_ADD_NODE)
-            {
-                tlv_pkt_t **tlv_argv;
-                tlv_argv_read(tlv_pkt, &tlv_argv, 4, TLV_NO_NULL);
-
-                node_add(&nodes, node_id,
-                          UNPACK_INT(tlv_argv[0]->data),
-                          UNPACK_INT(tlv_argv[1]->data),
-                          UNPACK_INT(tlv_argv[2]->data),
-                          UNPACK_INT(tlv_argv[3]->data));
-                node_id += 1;
-
-                tlv_argv_free(tlv_argv, 4);
-
-            } else if (tlv_pkt->tag == API_DEL_NODE)
-            {
-                tlv_pkt_t **tlv_argv;
-                tlv_argv_read(tlv_pkt, &tlv_argv, 1, TLV_NO_NULL);
-
-                node_delete(&nodes, UNPACK_INT(tlv_argv[0]->data));
-                tlv_argv_free(tlv_argv, 1);
-
-            } else if (tlv_pkt->tag == API_ADD_TAB)
-            {
-                tlv_pkt_t **tlv_argv;
-                tlv_argv_read(tlv_pkt, &tlv_argv, 2, TLV_NO_NULL);
-
-                tab_add(&tabs, UNPACK_INT(tlv_argv[0]->data), tlv_argv[1]->data);
-                tlv_argv_free(tlv_argv, 2);
-
-            } else if (tlv_pkt->tag == API_DEL_TAB)
-            {
-                tlv_pkt_t **tlv_argv;
-                tlv_argv_read(tlv_pkt, &tlv_argv, 1, TLV_NO_NULL);
-
-                tab_delete(&tabs, UNPACK_INT(tlv_argv[0]->data));
-                tlv_argv_free(tlv_argv, 1);
-
-            } else if (tlv_pkt->tag == API_MIGRATE)
-            {
-                tlv_pkt_t **tlv_argv;
-                tlv_argv_read(tlv_pkt, &tlv_argv, 2, TLV_NO_NULL);
-
-                if (migrate_init(tlv_pkt, UNPACK_INT(tlv_argv[0]->data), tlv_argv[1]->size, tlv_argv[1]->data) == 0)
-                {
-                    tlv_argv_free(tlv_argv, 2);
-                    tlv_result = create_c2_tlv_pkt(tlv_pkt, API_CALL_SUCCESS);
-                    tlv_channel_send(tlv_result);
-
-                    tlv_pkt_free(tlv_result);
-                    break;
-                }
-            }
-
-            tlv_result = create_c2_tlv_pkt(tlv_pkt, API_CALL_SUCCESS);
-            tlv_channel_send(tlv_result);
-
-            tlv_pkt_free(tlv_result);
-            continue;
         }
 
-        tlv_result = c2_make_api_call(&c2_api_calls, tlv_pkt);
-
-        if (tlv_result != NULL)
-        {
-            tlv_channel_send(tlv_result);
-        } else
-        {
-            if (tab_lookup(&tabs, tlv_pkt->pool, tlv_pkt) < 0)
-            {
-                tlv_result = create_c2_tlv_pkt(tlv_pkt, API_CALL_NOT_IMPLEMENTED);
-                tlv_channel_send(tlv_result);
-            }
-        }
-
-        tlv_pkt_free(tlv_result);
+        tlv_pkt_destroy(tlv_pkt);
+        tlv_pkt_destroy(c2->tlv_pkt);
     }
-
-    nodes_free(nodes);
-    tabs_free(tabs);
-
-    c2_api_calls_free(c2_api_calls);
 }
 
-/*
- * Run TLV tab loop which reads commands repeatedly.
- */
-
-void tab_console_loop(c2_api_calls_t *c2_api_calls)
+void tab_console_loop(c2_t *c2)
 {
-    tlv_pkt_t *tlv_pkt = tlv_channel_pkt(TLV_NO_CHANNEL);
+    tlv_pkt_t *tlv_pkt;
+    int tag;
 
     for (;;)
     {
-        tlv_channel_read_fd(STDIN_FILENO, tlv_pkt, TLV_NULL);
-        log_debug("* Talking to %d for now from tab\n", tlv_pkt->channel);
+        c2_read(c2);
 
-        if (tlv_pkt->tag == API_QUIT)
+        log_debug("* Talking to %d for now from tab\n", c2->fd);
+        tlv_pkt_get_int(c2->tlv_pkt, TLV_TYPE_TAG, &tag);
+
+        if (tag == TAB_TERM)
+        {
+            tlv_pkt_destroy(c2->tlv_pkt);
             break;
-
-        tlv_pkt_t *tlv_result = c2_make_api_call(&c2_api_calls, tlv_pkt);
-
-        if (tlv_result != NULL)
-        {
-            tlv_channel_send(tlv_result);
-
-            log_debug("* Tab forced to (pool: %d, tag: %d, fd: %d)\n", tlv_result->pool,
-                      tlv_result->tag, tlv_result->channel);
-
-        } else
-        {
-            tlv_result = create_c2_tlv_pkt(tlv_pkt, API_CALL_NOT_IMPLEMENTED);
-
-            tlv_channel_send(tlv_result);
         }
 
-        tlv_data_free(tlv_result);
+        log_debug("* Tab forced to (tag: %d, fd: %d)\n", tag, c2->fd);
+
+        if ((tlv_pkt = api_call_make(&c2->dynamic.api_calls, c2, tag)) == NULL)
+            tlv_pkt = api_craft_tlv_pkt(API_CALL_NOT_IMPLEMENTED);
+
+        c2_write(c2, tlv_pkt);
+
+        tlv_pkt_destroy(tlv_pkt);
+        tlv_pkt_destroy(c2->tlv_pkt);
     }
 
-    tlv_pkt_free(tlv_pkt);
+    free(c2);
 }

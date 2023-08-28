@@ -24,6 +24,9 @@ SOFTWARE.
 
 import os
 
+from .types import *
+from .api import *
+
 from badges import Tables, Badges
 
 from hatsploit.lib.plugins import Plugins as HatSploitPlugins
@@ -78,11 +81,11 @@ class Plugins(Tables, Badges):
 
         self.print_table("Plugins", headers, *plugins_data)
 
-    def load_plugin(self, plugin: str) -> None:
+    def load_plugin(self, plugin: str) -> Union[int, None]:
         """ Load specified plugin.
 
         :param str plugin: plugin to load
-        :return None: None
+        :return Union[int, None]: plugin ID if success else None
         :raises RuntimeError: with trailing error message
         """
 
@@ -91,7 +94,6 @@ class Plugins(Tables, Badges):
         if plugin not in self.loaded_plugins:
             if plugin in self.imported_plugins:
                 plugin_object = self.imported_plugins[plugin]
-                self.loaded_plugins.update({plugin: plugin_object})
 
                 session = self.imported_plugins[plugin].session
                 details = plugin_object.details
@@ -105,12 +107,25 @@ class Plugins(Tables, Badges):
                     with open(tab_path, 'rb') as f:
                         data = f.read()
 
-                        session.send_command('add_tab', args=[
-                            details['Pool'].to_bytes(4, 'little'), data])
+                        tlv = session.send_command(
+                            tag=API_ADD_TAB,
+                            args={
+                                TLV_TYPE_TAB_SIZE: len(data),
+                                TLV_TYPE_TAB: data
+                            }
+                        )
+
+                    if tlv.get_int(TLV_TYPE_STATUS) != TLV_STATUS_SUCCESS:
+                        raise RuntimeError(f"Failed to load plugin: {plugin}!")
+
+                    tab_id = tlv.get_int(TLV_TYPE_TAB_ID)
+                    self.loaded_plugins[plugin] = {
+                        'ID': tab_id,
+                        'Object': plugin_object
+                    }
 
                     plugin_object.load()
                 else:
-                    self.loaded_plugins.pop(plugin)
                     raise RuntimeError(f"Plugin executable link does not exist at {tab_path}!")
             else:
                 raise RuntimeError(f"Invalid plugin: {plugin}!")
@@ -130,11 +145,18 @@ class Plugins(Tables, Badges):
         self.print_process(f"Unloading plugin {plugin}...")
 
         if plugin in self.imported_plugins:
-            plugin_object = self.loaded_plugins[plugin]
+            plugin_object = self.loaded_plugins[plugin]['Object']
+            session = plugin_object.session
 
-            plugin_object.session.send_command('del_tab', args=[str(
-                plugin_object.details['Pool']
-            )], output=False)
+            tlv = session.send_command(
+                tag=API_DEL_TAB,
+                args={
+                    TLV_TYPE_TAB_ID: self.loaded_plugins[plugin]['ID']
+                }
+            )
+
+            if tlv.get_int(TLV_TYPE_STATUS) != TLV_STATUS_SUCCESS:
+                raise RuntimeError(f"Failed to unload plugin: {plugin}!")
 
             self.loaded_plugins.pop(plugin)
         else:

@@ -37,10 +37,6 @@
 #include <node.h>
 #include <log.h>
 
-/*
- * Thread for traffic forwarder between nodes.
- */
-
 static void *node_thread(void *data)
 {
     nodes_t *node = (nodes_t *)data;
@@ -126,13 +122,9 @@ static void *node_thread(void *data)
     return NULL;
 }
 
-/*
- * Add single net node.
- */
-
-void node_add(nodes_t **nodes, int id,
-              ipv4_t src_host, port_t src_port,
-              ipv4_t dst_host, port_t dst_port)
+int node_add(nodes_t **nodes, int id,
+             ipv4_t src_host, port_t src_port,
+             ipv4_t dst_host, port_t dst_port)
 {
     nodes_t *node;
     HASH_FIND_INT(*nodes, &id, node);
@@ -148,20 +140,19 @@ void node_add(nodes_t **nodes, int id,
             if (pthread_create(&(node_new->handle), NULL, node_thread, (void *)&node_new) != 0)
             {
                 free(node_new);
-                return;
+                return -1;
             }
 
             HASH_ADD_INT(*nodes, id, node_new);
             log_debug("* Added node entry (%d)\n", id);
+            return 0;
         }
     }
+
+    return -1;
 }
 
-/*
- * Delete single net node.
- */
-
-void node_delete(nodes_t **nodes, int id)
+int node_delete(nodes_t **nodes, int id)
 {
     nodes_t *node;
     HASH_FIND_INT(*nodes, &id, node);
@@ -172,12 +163,11 @@ void node_delete(nodes_t **nodes, int id)
         HASH_DEL(*nodes, node);
 
         log_debug("* Deleted node entry (%d)\n", id);
+        return 0;
     }
-}
 
-/*
- * Free single net node.
- */
+    return -1;
+}
 
 void nodes_free(nodes_t *nodes)
 {

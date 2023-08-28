@@ -23,25 +23,28 @@
  */
 
 #include <tab.h>
+#include <api.h>
 #include <c2.h>
 #include <tlv.h>
+#include <tlv_types.h>
 #include <console.h>
 
-#define TEST_POOL 2
+#define TEST TLV_TYPE_TAG | 5001
 
-static tlv_pkt_t *test_test(tlv_pkt_t *tlv_packet)
+static tlv_pkt_t *test_test(c2_t *c2)
 {
-    return craft_c2_tlv_pkt(tlv_packet, API_CALL_SUCCESS, "Test");
+    tlv_pkt_t *result = api_craft_tlv_pkt(API_CALL_SUCCESS);
+    tlv_pkt_add_string(result, TLV_TYPE_STRING, "Test");
+    return result;
 }
 
 int main(void)
 {
-    c2_api_calls_t *c2_api_calls_table = NULL;
+    c2_t *c2 = c2_create(0, STDIN_FILENO, "test");
 
-    c2_register_api_call(&c2_api_calls_table, TAB_API_CALL, test_test, TEST_POOL);
+    api_call_register(&c2->dynamic.api_calls, TEST | 1, test_test);
 
-    tab_console_loop(c2_api_calls_table);
-    c2_api_calls_free(c2_api_calls_table);
+    tab_console_loop(c2);
 
     return 0;
 }

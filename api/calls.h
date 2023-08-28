@@ -25,12 +25,12 @@
 #ifndef _CALLS_H_
 #define _CALLS_H_
 
-#include <c2.h>
-#include <sys.h>
+#include <api.h>
+#include <builtins.h>
 
-void register_api_calls(c2_api_calls_t **c2_api_calls_table)
+void register_api_calls(api_calls_t **api_calls)
 {
-    register_sys_api_calls(c2_api_calls_table);
+    register_builtin_api_calls(api_calls);
 }
 
 #endif /* _CALLS_H_ */

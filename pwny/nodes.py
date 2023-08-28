@@ -22,6 +22,10 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
+from pex.socket import Socket
+
+from .types import *
+
 from hatsploit.lib.session import Session
 
 
@@ -36,7 +40,6 @@ class Nodes(object):
         super().__init__()
 
         self.nodes = {}
-        self.nodes_id = 0
 
     def show_nodes(self) -> None:
         """ Show nodes.
@@ -67,19 +70,30 @@ class Nodes(object):
         :param int dst_port: destination port
         :param Session session: session to add node at
         :return None: None
+        :raises RuntimeError: with trailing error message
         """
 
-        session.send_command('add_node', args=[
-            src_host, str(src_port), dst_host, str(dst_port)],
-                             output=False)
+        tlv = session.send_command(
+            tag=TLV_TAG_ADD_NODE,
+            args={
+                TLV_TYPE_NODE_SRC_ADDR: int.from_bytes(Socket().pack_host(src_host), 'little'),
+                TLV_TYPE_NODE_DST_ADDR: int.from_bytes(Socket().pack_host(dst_host), 'little'),
+                TLV_TYPE_NODE_SRC_PORT: int.from_bytes(Socket().pack_port(src_port), 'little'),
+                TLV_TYPE_NODE_DSR_PORT: int.from_bytes(Socket().pack_port(dst_port), 'little')
+            }
+        )
 
-        self.nodes[self.nodes_id] = {
+        if tlv.get_int(TLV_TYPE_STATUS) != TLV_STATUS_SUCCESS:
+            raise RuntimeError("Failed to add the specified node!")
+
+        node_id = tlv.get_int(TLV_TYPE_NODE_ID)
+
+        self.nodes[node_id] = {
             'src_host': src_host,
             'src_port': src_port,
             'dst_host': dst_host,
             'dst_port': dst_port,
         }
-        self.nodes_id += 1
 
     def delete_node(self, node_id: int, session: Session) -> None:
         """ Delete node.
@@ -87,7 +101,21 @@ class Nodes(object):
         :param int node_id: node ID
         :param Session session: session to delete node from
         :return None: None
+        :raises RuntimeError: with trailing error message
         """
 
-        session.send_command('del_node', args=[str(node_id)], output=False)
-        self.nodes.pop(node_id)
+        if node_id in self.nodes:
+            tlv = session.send_command(
+                tag=API_DEL_NODE,
+                args={
+                    TLV_TYPE_NODE_ID: node_id
+                }
+            )
+
+            if tlv.get_int(TLV_TYPE_STATUS) != TLV_STATUS_SUCCESS:
+                raise RuntimeError(f"Failed to delete node #{str(node_id)}!")
+
+            self.nodes.pop(node_id)
+
+        else:
+            raise RuntimeError(f"Node #{str(node_id)} does not exist!")

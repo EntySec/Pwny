@@ -31,16 +31,14 @@
 #include <signal.h>
 
 #include <tab.h>
-#include <tlv.h>
-#include <log.h>
 #include <c2.h>
+#include <log.h>
+#include <tlv.h>
+#include <tlv_types.h>
+#include <api.h>
 #include <pawn.h>
 
 #include <uthash/uthash.h>
-
-/*
- * Create a tab from buffer. (buffer should be freed here)
- */
 
 static int create_tab(tabs_t *tab, unsigned char *buffer)
 {
@@ -84,97 +82,102 @@ static int create_tab(tabs_t *tab, unsigned char *buffer)
     return 0;
 }
 
-/*
- * Look through the tabs, find the pool and pass TLV packet to it.
- */
-
-int tab_lookup(tabs_t **tabs, int pool, tlv_pkt_t *tlv_pkt)
+tlv_pkt_t *tab_lookup(tabs_t **tabs, int id, c2_t *c2)
 {
-    log_debug("* Searching for tab entry (%d)\n", pool);
+    log_debug("* Searching for tab entry (%d)\n", id);
 
     tabs_t *tab;
-    HASH_FIND_INT(*tabs, &pool, tab);
+    HASH_FIND_INT(*tabs, &id, tab);
 
     if (tab != NULL)
     {
-        log_debug("* Found tab entry (%d)\n", pool);
-        tlv_channel_send_fd(tab->fd, tlv_pkt);
+        log_debug("* Found tab entry (%d)\n", id);
 
-        return 0;
+        if (tlv_pkt_write(tab->fd, c2->tlv_pkt) != 0)
+            return NULL;
+
+        tlv_pkt_t *tlv_pkt = tlv_pkt_create();
+
+        if (tlv_pkt_read(tab->fd, tlv_pkt) != 0)
+        {
+            tlv_pkt_destroy(tlv_pkt);
+            return NULL;
+        }
+
+        return tlv_pkt;
     }
 
-    return -1;
+    log_debug("* Tab was not found (%d)\n", id);
+    return NULL;
 }
 
-/*
- * Add tab with the specific pool from buffer.
- */
-
-void tab_add(tabs_t **tabs, int pool, unsigned char *buffer)
+int tab_add(tabs_t **tabs, int id, unsigned char *buffer)
 {
     tabs_t *tab;
-    HASH_FIND_INT(*tabs, &pool, tab);
+    HASH_FIND_INT(*tabs, &id, tab);
 
     if (tab == NULL)
     {
-        tabs_t *tab_new = calloc(1, sizeof(*tab));
+        tabs_t *tab_new = calloc(1, sizeof(*tab_new));
 
         if (tab_new != NULL)
         {
-            tab_new->pool = pool;
+            tab_new->id = id;
 
             if (create_tab(tab, strdup(buffer)) < 0)
             {
                 free(tab_new);
-                return;
+                return -1;
             }
 
-            HASH_ADD_INT(*tabs, pool, tab_new);
-            log_debug("* Added tab entry (%d)\n", pool);
+            HASH_ADD_INT(*tabs, id, tab_new);
+            log_debug("* Added tab entry (%d)\n", id);
+
+            return 0;
         }
-    }
-}
-
-/*
- * Exit tab and close it's descriptor.
- *
- * NOTE: Sends API_CALL_QUIT to the tab's console.
- */
-
-int tab_exit(tabs_t *tab)
-{
-    tlv_pkt_t *tlv_pkt = tlv_channel_pkt(TLV_NO_CHANNEL);
-
-    tlv_channel_send_fd(tab->fd, tlv_pkt);
-    close(tab->fd);
-
-    tlv_pkt_free(tlv_pkt);
-}
-
-/*
- * Delete a single tab.
- */
-
-int tab_delete(tabs_t **tabs, int pool)
-{
-    tabs_t *tab;
-    HASH_FIND_INT(*tabs, &pool, tab);
-
-    if (tab != NULL)
-    {
-        tab_exit(tab);
-        HASH_DEL(*tabs, tab);
-
-        log_debug("* Deleted tab entry (%d)\n", pool);
-        return 0;
     }
 
     return -1;
 }
 
-/*
- * Free tabs table.
- */
+int tab_exit(tabs_t *tab)
+{
+    tlv_pkt_t *tlv_pkt = tlv_pkt_create();
+
+    if (tlv_pkt_add_int(tlv_pkt, TLV_TYPE_TAG, TAB_TERM) != 0)
+    {
+        tlv_pkt_destroy(tlv_pkt);
+        return -1;
+    }
+
+    if (tlv_pkt_write(tab->fd, tlv_pkt) != 0)
+    {
+        tlv_pkt_destroy(tlv_pkt);
+        return -1;
+    }
+
+    close(tab->fd);
+    return 0;
+}
+
+int tab_delete(tabs_t **tabs, int id)
+{
+    tabs_t *tab;
+    HASH_FIND_INT(*tabs, &id, tab);
+
+    if (tab != NULL)
+    {
+        if (tab_exit(tab) != 0)
+            return -1;
+
+        HASH_DEL(*tabs, tab);
+
+        log_debug("* Deleted tab entry (%d)\n", id);
+        return 0;
+    }
+
+    return -1;
+}
 
 void tabs_free(tabs_t *tabs)
 {
@@ -184,7 +187,7 @@ void tabs_free(tabs_t *tabs)
     {
         tab_exit(tab);
 
-        log_debug("* Freed tab entry (%d)\n", tab->pool);
+        log_debug("* Freed tab entry (%d)\n", tab->id);
         HASH_DEL(tabs, tab);
 
         free(tab);

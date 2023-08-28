@@ -40,10 +40,6 @@ static uint64_t xor_shift_128_plus(uint64_t *seed)
     return seed[1] + seed0;
 }
 
-/*
- * Generate custom UUID v4.
- */
-
 int machine_uuid(char *buffer)
 {
     uint64_t new_seed[2];

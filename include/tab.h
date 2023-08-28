@@ -25,32 +25,31 @@
 #ifndef _TAB_H_
 #define _TAB_H_
 
-#include <tlv.h>
 #include <c2.h>
+#include <api.h>
+#include <tlv.h>
+#include <tlv_types.h>
 
 #include <unistd.h>
 #include <sys/types.h>
 
 #include <uthash/uthash.h>
 
-/* Essential data types definitions */
+#define TAB_TERM TLV_TYPE_TAG | 1001
 
-typedef struct {
-    int pool;
+typedef struct tabs_table
+{
+    int id, fd;
     pid_t pid;
-    int fd;
     UT_hash_handle hh;
 } tabs_t;
 
-/* Tab addition and deletion and lookup */
-
-void tab_add(tabs_t **, int, unsigned char *);
-int tab_delete(tabs_t **, int);
-int tab_lookup(tabs_t **, int, tlv_pkt_t *);
-
-/* Tab clean up */
-
 int tab_exit(tabs_t *);
+int tab_add(tabs_t **, int, unsigned char *);
+int tab_delete(tabs_t **, int);
+
+tlv_pkt_t *tab_lookup(tabs_t **, int, c2_t *);
+
 void tabs_free(tabs_t *);
 
 #endif /* _TAB_H_ */

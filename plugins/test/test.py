@@ -1,9 +1,9 @@
-#!/usr/bin/env python3
+"""
+This plugin requires HatSploit: https://hatsploit.netlify.app
+Current source: https://github.com/EntySec/HatSploit
+"""
 
-#
-# This plugin requires HatSploit: https://hatsploit.netlify.app
-# Current source: https://github.com/EntySec/HatSploit
-#
+from pwny.types import *
 
 from hatsploit.lib.plugin import Plugin
 
@@ -32,15 +32,13 @@ class HatSploitPlugin(Plugin):
             }
         }
 
-        self.pool = {
-            2: {
-                'test': 1
-            }
-        }
-
     def test(self, argc, argv):
-        self.print_empty(self.session.send_command(
-            'test', output=True, pool=self.pool))
+        result = self.session.send_command(
+            pool=self.details['Pool'],
+            tag=1
+        )
+
+        print(result.get_string(TLV_TYPE_STRING))
 
     def load(self):
         pass

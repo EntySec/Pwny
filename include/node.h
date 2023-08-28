@@ -27,14 +27,13 @@
 
 #include <uthash/uthash.h>
 
-/* Essential data types definitions */
-
 #define NODE_CHUNK 4096
 
 typedef uint32_t ipv4_t;
 typedef uint16_t port_t;
 
-typedef struct {
+typedef struct nodes_table
+{
     int id;
     ipv4_t src_host, src_port;
     port_t dst_host, dst_port;
@@ -42,12 +41,8 @@ typedef struct {
     UT_hash_handle hh;
 } nodes_t;
 
-/* Network nodes addition and deletion */
-
-void node_add(nodes_t **, int, ipv4_t, port_t, ipv4_t, port_t);
-void node_delete(nodes_t **, int);
-
-/* Network nodes clean up */
+int node_add(nodes_t **, int, ipv4_t, port_t, ipv4_t, port_t);
+int node_delete(nodes_t **, int);
 
 void nodes_free(nodes_t *);
 

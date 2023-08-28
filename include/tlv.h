@@ -25,72 +25,65 @@
 #ifndef _TLV_H_
 #define _TLV_H_
 
-/* Macro definitions */
+#include <key_list.h>
 
-#define TLV_TRANSPORT_CHUNK_SIZE 1024
+typedef struct
+{
+    int type;
+    int length;
+    unsigned char *value;
+} tlv_t;
 
-#define PACK_SHORT(val, val_pkt) val_pkt[1] = (val >> 8) & 0xff; \
-        val_pkt[0] = val & 0xff
-#define UNPACK_SHORT(val_pkt) val_pkt[0] | val_pkt[1] << 8
-
-#define PACK_INT(val, val_pkt) val_pkt[3] = (val >> 24) & 0xff; \
-        val_pkt[2] = (val >> 16) & 0xff; \
-        val_pkt[1] = (val >> 8) & 0xff; \
-        val_pkt[0] = val & 0xff
-#define UNPACK_INT(val_pkt) val_pkt[0] | val_pkt[1] << 8 | val_pkt[2] << 16 | val_pkt[3] << 24
-
-#define TLV_NULL 1
-#define TLV_NO_NULL 0
-#define TLV_NO_DATA 0
-
-#define TLV_NO_CHANNEL -1
-
-/* Essential data types definitions */
-
-typedef struct {
-    unsigned char pool[2];
-    unsigned char tag[2];
-    unsigned char status[2];
-    unsigned char size[4];
-    char *data;
-} tlv_pkt_raw_t;
-
-typedef struct {
-    int channel;
-    int pool;
-    int tag;
-    int status;
-    int size;
-    char *data;
+typedef struct
+{
+    key_list_t *list;
+    unsigned char *buffer;
+    int bytes;
 } tlv_pkt_t;
 
-/* TLV packet formation */
+tlv_pkt_t *tlv_pkt_create(void);
+tlv_pkt_t *tlv_pkt_parse(unsigned char *, int);
 
-tlv_pkt_t *tlv_channel_pkt(int);
-void tlv_pkt_make(tlv_pkt_raw_t, tlv_pkt_t *);
-tlv_pkt_raw_t tlv_pkt_make_raw(tlv_pkt_t *);
+int tlv_pkt_write(int, tlv_pkt_t *);
+int tlv_pkt_read(int, tlv_pkt_t *);
 
-/* TLV channel I/O methods */
+void tlv_pkt_destroy(tlv_pkt_t *);
+int tlv_pkt_serialize(tlv_pkt_t *);
 
-void tlv_channel_send(tlv_pkt_t *);
-void tlv_channel_send_fd(int, tlv_pkt_t *);
+int tlv_pkt_add_raw(tlv_pkt_t *, int, void *, int);
 
-void tlv_channel_read(tlv_pkt_t *, int);
-void tlv_channel_read_fd(int, tlv_pkt_t *, int);
+int tlv_pkt_add_char(tlv_pkt_t *, int, char);
+int tlv_pkt_add_short(tlv_pkt_t *, int, short);
+int tlv_pkt_add_int(tlv_pkt_t *, int, int);
+int tlv_pkt_add_long(tlv_pkt_t *, int, long);
 
-int tlv_argv_read(tlv_pkt_t *, tlv_pkt_t **[], int, int);
+int tlv_pkt_add_uchar(tlv_pkt_t *, int, unsigned char);
+int tlv_pkt_add_ushort(tlv_pkt_t *, int, unsigned short);
+int tlv_pkt_add_uint(tlv_pkt_t *, int, unsigned int);
+int tlv_pkt_add_ulong(tlv_pkt_t *, int, unsigned long);
 
-/* TLV channel FI/FO methods */
+int tlv_pkt_add_longlong(tlv_pkt_t *, int, long long);
+int tlv_pkt_add_float(tlv_pkt_t *, int, float);
+int tlv_pkt_add_double(tlv_pkt_t *, int, double);
+int tlv_pkt_add_string(tlv_pkt_t *, int, char *);
+int tlv_pkt_add_bytes(tlv_pkt_t *, int, unsigned char *, int);
+int tlv_pkt_add_tlv(tlv_pkt_t *, int, tlv_pkt_t *);
 
-int tlv_channel_send_file(tlv_pkt_t *, char *);
-int tlv_channel_read_file(tlv_pkt_t *, char *);
+int tlv_pkt_get_char(tlv_pkt_t *, int, char *);
+int tlv_pkt_get_short(tlv_pkt_t *, int, short *);
+int tlv_pkt_get_int(tlv_pkt_t *, int, int *);
+int tlv_pkt_get_long(tlv_pkt_t *, int, long *);
 
-void tlv_channel_read_file_fd(tlv_pkt_t *tlv_pkt, int fd);
+int tlv_pkt_get_uchar(tlv_pkt_t *, int, unsigned char *);
+int tlv_pkt_get_ushort(tlv_pkt_t *, int, unsigned short *);
+int tlv_pkt_get_uint(tlv_pkt_t *, int, unsigned int *);
+int tlv_pkt_get_ulong(tlv_pkt_t *, int, unsigned long *);
 
-/* TLV and channel clean up */
-
-void tlv_data_free(tlv_pkt_t *);
-void tlv_pkt_free(tlv_pkt_t *);
-void tlv_argv_free(tlv_pkt_t *[], int);
+int tlv_pkt_get_longlong(tlv_pkt_t *, int, long long *);
+int tlv_pkt_get_float(tlv_pkt_t *, int, float *);
+int tlv_pkt_get_double(tlv_pkt_t *, int, double *);
+int tlv_pkt_get_string(tlv_pkt_t *, int, char *);
+int tlv_pkt_get_bytes(tlv_pkt_t *, int, unsigned char *);
+tlv_pkt_t *tlv_pkt_get_object(tlv_pkt_t *, int);
 
 #endif /* _TLV_H_ */

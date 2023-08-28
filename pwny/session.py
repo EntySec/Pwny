@@ -28,16 +28,16 @@ import socket
 from typing import Union
 
 from . import Pwny
-from .tlv import TLV, TLVPacket
+from .types import *
 from .console import Console
 
 from hatsploit.lib.loot import Loot
 from hatsploit.lib.session import Session
 
-from pex.proto.channel import ChannelClient
+from pex.proto.tlv import TLVClient
 
 
-class PwnySession(Pwny, Session, Console, TLV):
+class PwnySession(Pwny, Session, Console):
     """ Subclass of pwny module.
 
     This subclass of pwny module represents an implementation
@@ -48,7 +48,6 @@ class PwnySession(Pwny, Session, Console, TLV):
         super().__init__()
 
         self.loot = Loot()
-
         self.pwny = f'{os.path.dirname(os.path.dirname(__file__))}/pwny/'
 
         self.pwny_data = self.pwny + 'data/'
@@ -59,6 +58,7 @@ class PwnySession(Pwny, Session, Console, TLV):
 
         self.channel = None
         self.uuid = None
+        self.terminated = False
 
         self.details.update({
             'Type': "pwny"
@@ -77,8 +77,10 @@ class PwnySession(Pwny, Session, Console, TLV):
             arch=self.details['Arch']
         ))
 
-        self.channel = ChannelClient(client)
-        self.uuid = self.tlv_read_packet(self.channel).data
+        self.channel = TLVClient(client)
+        tlv = self.channel.read()
+
+        self.uuid = tlv.get_string(TLV_TYPE_UUID)
 
         if self.uuid:
             self.start_pwny(self)
@@ -92,7 +94,7 @@ class PwnySession(Pwny, Session, Console, TLV):
         :return None: None
         """
 
-        self.channel.disconnect()
+        self.channel.close()
 
     def heartbeat(self) -> bool:
         """ Check the Pwny session heartbeat.
@@ -100,57 +102,23 @@ class PwnySession(Pwny, Session, Console, TLV):
         :return bool: True if the Pwny session is alive
         """
 
-        return not self.channel.terminated
+        return not self.terminated
 
-    def send_command(self, command: str, output: bool = False,
-                     args: list = [], pool: dict = {}, messages: bool = False) -> str:
+    def send_command(self, tag: int, args: dict = {}) -> TLVPacket:
         """ Send command to the Pwny session.
 
-        :param str command: command to send
-        :param bool output: wait for the output or not
-        :param Union[dict, str] args: command arguments
-        :param dict pool: pool
-        :param bool messages: receive messages in loop
-        :return str: command output
+        :param int tag: tag
+        :param dict args: command arguments with their types
+        :return TLVPacket: packets
         """
 
-        if not pool:
-            pool = self.tlv_api_calls
+        tlv = TLVPacket()
 
-        for s in pool:
-            if command in pool[s]:
-                tag = pool[s][command]
+        tlv.add_int(TLV_TYPE_TAG, tag)
+        tlv.add_from_dict(args)
 
-                self.tlv_send_packet(self.channel, TLVPacket(
-                    pool=s,
-                    tag=tag,
-                    status=self.tlv_success,
-                    size=0,
-                    data=b""
-                ))
-
-                for arg in args:
-                    data = arg if isinstance(arg, bytes) else arg.encode()
-
-                    self.tlv_send_packet(self.channel, TLVPacket(
-                        pool=s,
-                        tag=tag,
-                        status=self.tlv_success,
-                        size=len(data),
-                        data=data
-                    ))
-
-                if not messages:
-                    result = self.tlv_read_packet(self.channel)
-                    self.tlv_process_error(result)
-
-                    if output:
-                        return result.data.decode()
-                    return ''
-
-                self.tlv_read_messages(self.channel)
-
-        return ''
+        self.channel.send(tlv)
+        return self.channel.read()
 
     def download(self, remote_file: str, local_path: str) -> bool:
         """ Download file from the Pwny session.
@@ -160,7 +128,7 @@ class PwnySession(Pwny, Session, Console, TLV):
         :return bool: True if download succeed
         """
 
-        return self.tlv_read_file(self.channel, remote_file, local_path)
+        return False
 
     def upload(self, local_file: str, remote_path: str) -> bool:
         """ Upload file to the Pwny session.
@@ -170,7 +138,7 @@ class PwnySession(Pwny, Session, Console, TLV):
         :return bool: True if upload succeed
         """
 
-        return self.tlv_send_file(self.channel, local_file, remote_path)
+        return False
 
     def interact(self) -> None:
         """ Interact with the Pwny session.

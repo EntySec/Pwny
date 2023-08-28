@@ -25,73 +25,44 @@
 #ifndef _C2_H_
 #define _C2_H_
 
+#include <pthread.h>
+#include <stdint.h>
+
 #include <tlv.h>
 
 #include <uthash/uthash.h>
 
-/* Macro definitions */
+#ifndef WINDOWS
+#include <netinet/in.h>
+#else
+#include <winsock2.h>
+#endif
 
-#define TAB_API_CALL 1
+#define PACK_IPV4(o1,o2,o3,o4) (htonl((o1 << 24) | (o2 << 16) | (o3 << 8) | (o4 << 0)))
 
-/* Essential constants definitions */
+typedef struct
+{
+    int id, fd;
+    char *name;
 
-enum c2_api_call_statuses {
-    API_CALL_SUCCESS,
-    API_CALL_FAIL,
-    API_CALL_WAIT,
-    API_CALL_NOT_IMPLEMENTED,
-    API_CALL_USAGE_ERROR,
-    API_CALL_RW_ERROR,
-};
+    struct
+    {
+        int t_count, n_count;
+        struct tabs_table *tabs;
+        struct nodes_table *nodes;
+        struct api_calls_table *api_calls;
+    } dynamic;
 
-enum c2_api_call_builtins {
-    API_QUIT,
-    API_ADD_NODE,
-    API_DEL_NODE,
-    API_ADD_TAB,
-    API_DEL_TAB,
-    API_MIGRATE,
-};
-
-enum c2_api_call_other {
-    API_CALL,
-};
-
-enum c2_api_call_pools {
-    API_POOL_BUILTINS,
-    API_POOL_PEX,
-};
-
-/* Essential data types definitions */
-
-typedef tlv_pkt_t *(*c2_api_t)(tlv_pkt_t *);
-
-typedef struct {
-    int tag;
-    c2_api_t handler;
+    tlv_pkt_t *tlv_pkt;
     UT_hash_handle hh;
-} c2_api_call_handlers_t;
+} c2_t;
 
-typedef struct {
-    int pool;
-    c2_api_call_handlers_t *handlers;
-    UT_hash_handle hh;
-} c2_api_calls_t;
+c2_t *c2_create(int, int, char *);
 
-/* TLV packet formation */
+int c2_write(c2_t *, tlv_pkt_t *);
+int c2_read(c2_t *);
 
-tlv_pkt_t *create_c2_tlv_pkt(tlv_pkt_t *, int);
-void craft_c2_tlv_pkt(tlv_pkt_t *, int, char *);
-
-/* C2 API calls */
-
-tlv_pkt_t *c2_make_api_call(c2_api_calls_t **, tlv_pkt_t *);
-
-void c2_register_api_calls(c2_api_calls_t **);
-void c2_register_api_call(c2_api_calls_t **, int, c2_api_t, int);
-
-/* C2 API clean up */
-
-void c2_api_calls_free(c2_api_calls_t *);
+void c2_add(c2_t **, int, int, char *);
+void c2_init(c2_t *);
 
 #endif /* _C2_H_ */
