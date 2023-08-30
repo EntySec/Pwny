@@ -32,6 +32,9 @@
 
 #define TAB_API_CALL 1
 
+#define API_CALL_STATIC 10000
+#define API_CALL_DYNAMIC 40000
+
 enum api_call_statuses {
     API_CALL_QUIT,
     API_CALL_SUCCESS,

@@ -66,7 +66,7 @@ int main(int argc, char *argv[])
         c2_add(&c2, 0, c2_fd, uuid);
     } else
     {
-        int c2_fd = connect_to("127.0.0.1", 8888);
+        int c2_fd = connect_to("192.168.64.1", 8888);
 
         char uuid[UUID_SIZE];
 

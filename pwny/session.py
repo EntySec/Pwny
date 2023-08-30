@@ -34,7 +34,7 @@ from .console import Console
 from hatsploit.lib.loot import Loot
 from hatsploit.lib.session import Session
 
-from pex.proto.tlv import TLVClient
+from pex.proto.tlv import TLVClient, TLVPacket
 
 
 class PwnySession(Pwny, Session, Console):

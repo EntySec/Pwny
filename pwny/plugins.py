@@ -27,6 +27,7 @@ import os
 from .types import *
 from .api import *
 
+from typing import Union
 from badges import Tables, Badges
 
 from hatsploit.lib.plugins import Plugins as HatSploitPlugins

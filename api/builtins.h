@@ -30,11 +30,57 @@
 #include <tlv_types.h>
 #include <tlv.h>
 
-#define BUILTIN_TAG TLV_TYPE_TAG | 4001
+#define BUILTIN_BASE 0
+
+#define BUILTIN_QUIT \
+        TLV_TYPE_CUSTOM(TLV_TYPE_INT, \
+                        BUILTIN_BASE, \
+                        API_CALL_STATIC + 1)
+#define BUILTIN_ADD_NODE \
+        TLV_TYPE_CUSTOM(TLV_TYPE_INT, \
+                        BUILTIN_BASE, \
+                        API_CALL_STATIC + 2)
+#define BUILTIN_DELETE_NODE \
+        TLV_TYPE_CUSTOM(TLV_TYPE_INT, \
+                        BUILTIN_BASE, \
+                        API_CALL_STATIC + 3)
+#define BUILTIN_ADD_TAB \
+        TLV_TYPE_CUSTOM(TLV_TYPE_INT, \
+                        BUILTIN_BASE, \
+                        API_CALL_STATIC + 4)
+#define BUILTIN_DELETE_TAB \
+        TLV_TYPE_CUSTOM(TLV_TYPE_INT, \
+                        BUILTIN_BASE, \
+                        API_CALL_STATIC + 5)
+#define BUILTIN_MIGRATE \
+        TLV_TYPE_CUSTOM(TLV_TYPE_INT, \
+                        BUILTIN_BASE, \
+                        API_CALL_STATIC + 6)
 
 static tlv_pkt_t *builtin_quit(c2_t *c2)
 {
     return api_craft_tlv_pkt(API_CALL_QUIT);
+}
+
+static tlv_pkt_t *builtin_add_node(c2_t *c2)
+{
+    ipv4_t src_host, dst_host;
+    port_t src_port, dst_port;
+
+    tlv_pkt_get_int(c2->tlv_pkt, TLV_TYPE_NODE_SRC_ADDR, &src_host);
+    tlv_pkt_get_ushort(c2->tlv_pkt, TLV_TYPE_NODE_SRC_PORT, &src_port);
+    tlv_pkt_get_int(c2->tlv_pkt, TLV_TYPE_NODE_DST_ADDR, &dst_host);
+    tlv_pkt_get_ushort(c2->tlv_pkt, TLV_TYPE_NODE_DST_PORT, &dst_port);
+
+    if (node_add(&c2->dynamic.nodes, c2->dynamic.n_count, \
+        src_host, src_port, dst_host, dst_port) == 0)
+    {
+        tlv_pkt_t *result = api_craft_tlv_pkt(API_CALL_SUCCESS);
+        tlv_pkt_add_int(result, TLV_TYPE_NODE_ID, c2->dynamic.n_count);
+        c2->dynamic.n_count++;
+    }
+
+    return api_craft_tlv_pkt(API_CALL_FAIL);
 }
 
 static tlv_pkt_t *builtin_delete_node(c2_t *c2)
@@ -63,7 +109,7 @@ static tlv_pkt_t *builtin_add_tab(c2_t *c2)
             {
                 tlv_pkt_t *result = api_craft_tlv_pkt(API_CALL_SUCCESS);
                 tlv_pkt_add_int(result, TLV_TYPE_TAB_ID, c2->dynamic.t_count);
-                c2->dynamic.t_count += 1;
+                c2->dynamic.t_count++;
                 return result;
             }
         }
@@ -110,20 +156,12 @@ static tlv_pkt_t *builtin_migrate(c2_t *c2)
     return api_craft_tlv_pkt(API_CALL_FAIL);
 }
 
-static tlv_pkt_t *builtin_test(c2_t *c2)
-{
-    tlv_pkt_t *result = api_craft_tlv_pkt(API_CALL_SUCCESS);
-    tlv_pkt_add_string(result, TLV_TYPE_STRING, "Test");
-    return result;
-}
-
 void register_builtin_api_calls(api_calls_t **api_calls)
 {
-    api_call_register(api_calls, BUILTIN_TAG | 1, builtin_quit);
-    api_call_register(api_calls, BUILTIN_TAG | 2, builtin_add_node);
-    api_call_register(api_calls, BUILTIN_TAG | 3, builtin_delete_node);
-    api_call_register(api_calls, BUILTIN_TAG | 4, builtin_add_tab);
-    api_call_register(api_calls, BUILTIN_TAG | 5, builtin_delete_tab);
-    api_call_register(api_calls, BUILTIN_TAG | 6, builtin_migrate);
-    api_call_register(api_calls, BUILTIN_TAG | 7, builtin_test);
+    api_call_register(api_calls, BUILTIN_QUIT, builtin_quit);
+    api_call_register(api_calls, BUILTIN_ADD_NODE, builtin_add_node);
+    api_call_register(api_calls, BUILTIN_DELETE_NODE, builtin_delete_node);
+    api_call_register(api_calls, BUILTIN_ADD_TAB, builtin_add_tab);
+    api_call_register(api_calls, BUILTIN_DELETE_TAB, builtin_delete_tab);
+    api_call_register(api_calls, BUILTIN_MIGRATE, builtin_migrate);
 }

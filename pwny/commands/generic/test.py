@@ -5,7 +5,9 @@ Current source: https://github.com/EntySec/HatSploit
 
 import os
 
+from pwny.api import *
 from pwny.types import *
+
 from hatsploit.lib.command import Command
 
 
@@ -25,5 +27,5 @@ class HatSploitCommand(Command):
         }
 
     def run(self, argc, argv):
-        result = self.session.send_command(pool=TLV_POOL_PEX, tag=0)
+        result = self.session.send_command(tag=API_TEST)
         print(result.get_string(TLV_TYPE_STRING))

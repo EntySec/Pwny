@@ -25,6 +25,8 @@
 #ifndef _TLV_TYPES_H_
 #define _TLV_TYPES_H_
 
+#define TLV_TYPE_CUSTOM(type, base, actual) (base + actual) | type
+
 #define TLV_TYPE_CHAR   (1 << 16)
 #define TLV_TYPE_SHORT  (1 << 17)
 #define TLV_TYPE_INT    (1 << 18)

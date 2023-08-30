@@ -2,7 +2,7 @@ import socket
 from pwny.session import PwnySession
 
 s = socket.socket()
-s.bind(('127.0.0.1', 8888))
+s.bind(('192.168.64.1', 8888))
 s.listen()
 c, a = s.accept()
 

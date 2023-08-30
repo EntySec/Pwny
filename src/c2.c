@@ -59,6 +59,8 @@ c2_t *c2_create(int id, int fd, char *name)
         c2->dynamic.tabs = NULL;
         c2->dynamic.nodes = NULL;
         c2->dynamic.api_calls = NULL;
+
+        return c2;
     }
 
     return NULL;

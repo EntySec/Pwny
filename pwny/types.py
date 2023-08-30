@@ -42,3 +42,7 @@ TLV_TYPE_TAB = (TLV_TYPE_BYTES | 1)
 TLV_TYPE_MIGRATE = (TLV_TYPE_BYTES | 2)
 
 TLV_TYPE_UUID = (TLV_TYPE_STRING | 1)
+
+
+def tlv_custom(type, base, actual):
+    return (base + actual) | type
