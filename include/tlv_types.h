@@ -25,6 +25,7 @@
 #ifndef _TLV_TYPES_H_
 #define _TLV_TYPES_H_
 
+#define TLV_FILE_CHUNK 4096
 #define TLV_TYPE_CUSTOM(type, base, actual) (base + actual) | type
 
 #define TLV_TYPE_CHAR   (1 << 16)
@@ -61,6 +62,7 @@
 
 #define TLV_TYPE_TAB     (TLV_TYPE_BYTES | 1)
 #define TLV_TYPE_MIGRATE (TLV_TYPE_BYTES | 2)
+#define TLV_TYPE_FILE    (TLV_TYPE_BYTES | 3)
 
 #define TLV_TYPE_UUID   (TLV_TYPE_STRING | 1)
 

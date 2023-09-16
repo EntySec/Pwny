@@ -97,3 +97,8 @@ tlv_pkt_t *spy_mic_stop(c2_t *c2)
     return api_craft_tlv_pkt(API_CALL_SUCCESS);
 }
 
+tlv_pkt_t *spy_mic_write(c2_t *c2)
+{
+
+}
+

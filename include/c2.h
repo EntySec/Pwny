@@ -27,6 +27,7 @@
 
 #include <pthread.h>
 #include <stdint.h>
+#include <stdio.h>
 
 #include <tlv.h>
 
@@ -61,6 +62,8 @@ c2_t *c2_create(int, int, char *);
 
 int c2_write(c2_t *, tlv_pkt_t *);
 int c2_read(c2_t *);
+
+int c2_buffer_write(c2_t *, void *buffer, size_t len);
 
 void c2_add(c2_t **, int, int, char *);
 void c2_init(c2_t *);

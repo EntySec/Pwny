@@ -66,6 +66,41 @@ c2_t *c2_create(int id, int fd, char *name)
     return NULL;
 }
 
+int c2_write_file(c2_t *c2, FILE *file, void *buffer)
+{
+    while ((bytes_read = fread(buffer, 1, TLV_FILE_CHUNK, file)) > 0)
+    {
+        tlv_pkt_t *tlv_pkt = tlv_pkt_create();
+
+        if (tlv_pkt_add_bytes(tlv_pkt, TLV_TYPE_FILE, buffer, bytes_read) != 0)
+        {
+            tlv_pkt_destroy(tlv_pkt);
+            return -1;
+        }
+
+        if (tlv_pkt_add_int(tlv_pkt, TLV_TYPE_STATUS, API_CALL_WAIT) != 0)
+        {
+            tlv_pkt_destroy(tlv_pkt);
+            return -1;
+        }
+
+        if (c2_write(c2, tlv_pkt) != 0)
+        {
+            tlv_pkt_destroy(tlv_pkt);
+            return -1;
+        }
+
+        tlv_pkt_destroy(tlv_pkt);
+    }
+
+    return 0;
+}
+
+int c2_read_file(c2_t *c2, FILE *file)
+{
+    while (tlv_pkt->)
+}
+
 int c2_write(c2_t *c2, tlv_pkt_t *tlv_pkt)
 {
     return tlv_pkt_write(c2->fd, tlv_pkt);
