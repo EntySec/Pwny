@@ -98,7 +98,46 @@ int c2_write_file(c2_t *c2, FILE *file, void *buffer)
 
 int c2_read_file(c2_t *c2, FILE *file)
 {
-    while (tlv_pkt->)
+    tlv_pkt_t *tlv_pkt = tlv_pkt_create();
+
+    if (tlv_pkt == NULL)
+        return -1;
+
+    tlv_pkt_read(c2->fd, tlv_pkt);
+
+    int status;
+    unsigned char buffer[TLV_FILE_CHUNK];
+
+    if (tlv_pkt_get_int(tlv_pkt, TLV_TYPE_STATUS, &status) != 0)
+    {
+        tlv_pkt_destroy(tlv_pkt);
+        return -1;
+    }
+
+    while (status == TLV_STATUS_WAIT)
+    {
+        if (tlv_pkt_get_bytes(tlv_pkt, TLV_TYPE_FILE, buffer) != 0)
+        {
+            tlv_pkt_destroy(tlv_pkt);
+            return -1;
+        }
+
+        fwrite(buffer, sizeof(unsigned char), TLV_FILE_CHUNK, file);
+        memset(buffer, 0, TLV_FILE_CHUNK);
+
+        tlv_pkt_destroy(tlv_pkt);
+        tlv_pkt = tlv_pkt_create();
+        tlv_pkt_read(c2->fd, tlv_pkt);
+
+        if (tlv_pkt_get_int(tlv_pkt, TLV_TYPE_STATUS, &status) != 0)
+        {
+            tlv_pkt_destroy(tlv_pkt);
+            return -1;
+        }
+    }
+
+    tlv_pkt_destroy(tlv_pkt);
+    return 0;
 }
 
 int c2_write(c2_t *c2, tlv_pkt_t *tlv_pkt)

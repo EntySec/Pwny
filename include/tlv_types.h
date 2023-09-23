@@ -25,7 +25,7 @@
 #ifndef _TLV_TYPES_H_
 #define _TLV_TYPES_H_
 
-#define TLV_FILE_CHUNK 4096
+#define TLV_FILE_CHUNK 1024
 #define TLV_TYPE_CUSTOM(type, base, actual) (base + actual) | type
 
 #define TLV_TYPE_CHAR   (1 << 16)

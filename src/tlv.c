@@ -424,9 +424,8 @@ int tlv_pkt_get_string(tlv_pkt_t *tlv_pkt, int type, char *value)
 
     tlv_t *tlv = (tlv_t *)tlv_value.value;
 
-    memset(value, 0, tlv->length);
+    memset(value, 0, tlv->length + 1);
     memcpy(value, tlv->value, tlv->length);
-    value[tlv->length + 1] = '\0';
 
     return 0;
 }
