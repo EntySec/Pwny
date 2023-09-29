@@ -26,12 +26,15 @@
 
 static key_list_node_t *key_list_get_node(key_list_t *list, int key)
 {
-    key_list_node_t *current = list->header;
+    key_list_node_t *current;
+
+    current = list->header;
 
     while (current != NULL)
     {
         if (key == current->key)
             return current;
+
         current = current->next;
     }
 
@@ -55,7 +58,9 @@ static void key_list_remove_node(key_list_t *list, key_list_node_t *node)
 
 key_list_t *key_list_create(value_releaser_t releaser)
 {
-    key_list_t *list = (key_list_t *)malloc(sizeof(key_list_t));
+    key_list_t *list;
+
+    list = (key_list_t *)malloc(sizeof(key_list_t));
 
     list->count = 0;
     list->header = NULL;
@@ -66,11 +71,14 @@ key_list_t *key_list_create(value_releaser_t releaser)
 
 void key_list_destroy(key_list_t *list)
 {
-    key_list_node_t *current = list->header;
+    key_list_node_t *current;
+    key_list_node_t *next
+
+    current = list->header;
 
     while (current != NULL)
     {
-        key_list_node_t *next = current->next;
+        next = current->next;
         list->releaser(current->value);
         free(current);
         current = next;
@@ -81,17 +89,20 @@ void key_list_destroy(key_list_t *list)
 
 int key_list_keyset(key_list_t *list, int *array, int array_size)
 {
+    int iter;
+    key_list_node_t *current
+
     if (array_size < list->count)
         return -1;
 
-    int i = 0;
-    key_list_node_t *current = list->header;
+    iter = 0;
+    current = list->header;
 
     while (current != NULL)
     {
-        array[i] = current->key;
+        array[iter] = current->key;
         current = current->next;
-        i++;
+        iter++;
     }
 
     return i;
@@ -108,7 +119,9 @@ int key_list_add(key_list_t *list, int key, value_t value)
         return -1;*/
     /* allow adding duplicates */
 
-    key_list_node_t *node = calloc(1, sizeof(key_list_node_t));
+    key_list_node_t *node;
+
+    node = calloc(1, sizeof(key_list_node_t));
 
     if (node != NULL)
     {
@@ -134,7 +147,9 @@ int key_list_add(key_list_t *list, int key, value_t value)
 
 int key_list_get(key_list_t *list, int key, value_t *value)
 {
-    key_list_node_t *node = key_list_get_node(list, key);
+    key_list_node_t *node;
+
+    node = key_list_get_node(list, key);
 
     if (node != NULL)
     {
@@ -147,7 +162,9 @@ int key_list_get(key_list_t *list, int key, value_t *value)
 
 int key_list_edit(key_list_t *list, int key, value_t value)
 {
-    key_list_node_t *node = key_list_get_node(list, key);
+    key_list_node_t *node;
+
+    node = key_list_get_node(list, key);
 
     if (node != NULL)
     {
@@ -160,7 +177,9 @@ int key_list_edit(key_list_t *list, int key, value_t value)
 
 int key_list_delete(key_list_t *list, int key)
 {
-    key_list_node_t *node = key_list_get_node(list, key);
+    key_list_node_t *node;
+
+    node = key_list_get_node(list, key);
 
     if (node != NULL)
     {

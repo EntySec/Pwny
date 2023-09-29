@@ -43,11 +43,14 @@
 static int create_tab(tabs_t *tab, unsigned char *buffer)
 {
     int pipes[2];
+    char argv[1];
+
+    pid_t pid;
 
     if (pipe(pipes) == -1)
         return -1;
 
-    pid_t pid = fork();
+    pid = fork();
 
     if (pid == -1)
     {
@@ -58,16 +61,13 @@ static int create_tab(tabs_t *tab, unsigned char *buffer)
     else if (pid == 0)
     {
         dup2(pipes[0], STDIN_FILENO);
-        char *argv[] = {"pwny"};
+        argv[0] = {"p"};
 
         #ifdef LINUX
-
-        pawn_exec_fd(buffer, argv, environ);
-
+            pawn_exec_fd(buffer, argv, environ);
         #else
         #ifdef MACOS
-
-        pawn_exec_bundle(buffer, argv, environ);
+            pawn_exec_bundle(buffer, argv, environ);
         #endif
         #endif
     } else
@@ -84,21 +84,23 @@ static int create_tab(tabs_t *tab, unsigned char *buffer)
 
 tlv_pkt_t *tab_lookup(tabs_t **tabs, int id, c2_t *c2)
 {
+    tabs_t *tab;
+    tlv_pkt_t *tlv_pkt;
+
     log_debug("* Searching for tab entry (%d)\n", id);
 
-    tabs_t *tab;
     HASH_FIND_INT(*tabs, &id, tab);
 
     if (tab != NULL)
     {
         log_debug("* Found tab entry (%d)\n", id);
 
-        if (tlv_pkt_write(tab->fd, c2->tlv_pkt) != 0)
+        if (tlv_pkt_write(tab->fd, c2->tlv_pkt) < 0)
             return NULL;
 
-        tlv_pkt_t *tlv_pkt = tlv_pkt_create();
+        tlv_pkt = tlv_pkt_create();
 
-        if (tlv_pkt_read(tab->fd, tlv_pkt) != 0)
+        if (tlv_pkt_read(tab->fd, tlv_pkt) < 0)
         {
             tlv_pkt_destroy(tlv_pkt);
             return NULL;
@@ -114,11 +116,13 @@ tlv_pkt_t *tab_lookup(tabs_t **tabs, int id, c2_t *c2)
 int tab_add(tabs_t **tabs, int id, unsigned char *buffer)
 {
     tabs_t *tab;
+    tabs_t *tab_new;
+
     HASH_FIND_INT(*tabs, &id, tab);
 
     if (tab == NULL)
     {
-        tabs_t *tab_new = calloc(1, sizeof(*tab_new));
+        tab_new = calloc(1, sizeof(*tab_new));
 
         if (tab_new != NULL)
         {
@@ -142,15 +146,17 @@ int tab_add(tabs_t **tabs, int id, unsigned char *buffer)
 
 int tab_exit(tabs_t *tab)
 {
-    tlv_pkt_t *tlv_pkt = tlv_pkt_create();
+    tlv_pkt_t *tlv_pkt;
 
-    if (tlv_pkt_add_int(tlv_pkt, TLV_TYPE_TAG, TAB_TERM) != 0)
+    tlv_pkt = tlv_pkt_create();
+
+    if (tlv_pkt_add_int(tlv_pkt, TLV_TYPE_TAG, TAB_TERM) < 0)
     {
         tlv_pkt_destroy(tlv_pkt);
         return -1;
     }
 
-    if (tlv_pkt_write(tab->fd, tlv_pkt) != 0)
+    if (tlv_pkt_write(tab->fd, tlv_pkt) < 0)
     {
         tlv_pkt_destroy(tlv_pkt);
         return -1;
@@ -163,11 +169,12 @@ int tab_exit(tabs_t *tab)
 int tab_delete(tabs_t **tabs, int id)
 {
     tabs_t *tab;
+
     HASH_FIND_INT(*tabs, &id, tab);
 
     if (tab != NULL)
     {
-        if (tab_exit(tab) != 0)
+        if (tab_exit(tab) < 0)
             return -1;
 
         HASH_DEL(*tabs, tab);

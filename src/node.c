@@ -39,17 +39,32 @@
 
 static void *node_thread(void *data)
 {
-    nodes_t *node = (nodes_t *)data;
+    nodes_t *node;
 
-    int sock_from = socket(AF_INET, SOCK_STREAM, 0);
+    int sock_from;
+    int sock_to;
+    int new_sock;
+    int max_fd;
+
+    struct sockaddr_in addr_from;
+    struct sockaddr_in addr_to;
+    struct sockaddr_in addr_new;
+
+    fd_set set;
+    socklen_t addr_to_len;
+
+    char buffer[NODE_CHUNK];
+    ssize_t bytes_read;
+
+    node = (nodes_t *)data;
+
+    sock_from = socket(AF_INET, SOCK_STREAM, 0);
     if (sock_from == -1)
         return NULL;
 
-    struct sockaddr_in addr_from = {
-        .sin_family = AF_INET,
-        .sin_port = htons(node->src_port),
-        .sin_addr.s_addr = node->src_host
-    };
+    addr_from.sin_family = AF_INET;
+    addr_from.sin_port = htons(node->src_port);
+    addr_from.sin_addr.s_addr = node->src_host;
 
     if (bind(sock_from, (struct sockaddr *)&addr_from, sizeof(addr_from)) == -1)
         return NULL;
@@ -59,21 +74,18 @@ static void *node_thread(void *data)
 
     for (;;)
     {
-        struct sockaddr_in addr_to;
-        socklen_t addr_to_len = sizeof(addr_to);
-        int sock_to = accept(sock_from, (struct sockaddr *)&addr_to, &addr_to_len);
+        addr_to_len = sizeof(addr_to);
+        sock_to = accept(sock_from, (struct sockaddr *)&addr_to, &addr_to_len);
         if (sock_to == -1)
             return NULL;
 
-        int new_sock = socket(AF_INET, SOCK_STREAM, 0);
+        new_sock = socket(AF_INET, SOCK_STREAM, 0);
         if (new_sock == -1)
             return NULL;
 
-        struct sockaddr_in addr_new = {
-            .sin_family = AF_INET,
-            .sin_port = htons(node->dst_port),
-            .sin_addr.s_addr = node->dst_host
-        };
+        addr_new.sin_family = AF_INET;
+        addr_new.sin_port = htons(node->dst_port);
+        addr_new.sin_addr.s_addr = node->dst_host;
 
         if (connect(new_sock, (struct sockaddr *)&addr_new, sizeof(addr_new)) == -1)
         {
@@ -85,9 +97,8 @@ static void *node_thread(void *data)
                   ntohs(addr_to.sin_port), inet_ntoa(addr_from.sin_addr),
                   node->src_port);
 
-        fd_set set;
         FD_ZERO(&set);
-        int max_fd = (sock_to > new_sock) ? sock_to : new_sock;
+        max_fd = (sock_to > new_sock) ? sock_to : new_sock;
 
         for (;;)
         {
@@ -99,8 +110,7 @@ static void *node_thread(void *data)
 
             if (FD_ISSET(sock_to, &set))
             {
-                char buffer[NODE_CHUNK];
-                ssize_t bytes_read = recv(new_sock, buffer, sizeof(buffer), 0);
+                bytes_read = recv(new_sock, buffer, sizeof(buffer), 0);
 
                 if (bytes_read <= 0)
                     break;
@@ -127,11 +137,13 @@ int node_add(nodes_t **nodes, int id,
              ipv4_t dst_host, port_t dst_port)
 {
     nodes_t *node;
+    nodes_t *node_new;
+
     HASH_FIND_INT(*nodes, &id, node);
 
     if (node == NULL)
     {
-        nodes_t *node_new = calloc(1, sizeof(*node_new));
+        node_new = calloc(1, sizeof(*node_new));
 
         if (node_new != NULL)
         {
@@ -155,6 +167,7 @@ int node_add(nodes_t **nodes, int id,
 int node_delete(nodes_t **nodes, int id)
 {
     nodes_t *node;
+
     HASH_FIND_INT(*nodes, &id, node);
 
     if (node != NULL)

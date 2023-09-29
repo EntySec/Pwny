@@ -36,22 +36,23 @@
 
 void tlv_console_loop(c2_t *c2)
 {
-    api_calls_register(&c2->dynamic.api_calls);
+    int tag;
+    int status;
+    int tab_id;
 
-    int tag, status;
     tlv_pkt_t *tlv_pkt;
+
+    api_calls_register(&c2->dynamic.api_calls);
 
     for (;;)
     {
         c2_read(c2);
 
-        log_debug("* Talking to %d for now from base\n", c2->fd);
+        log_debug("* Talking to %d from base\n", c2->fd);
         tlv_pkt_get_int(c2->tlv_pkt, TLV_TYPE_TAG, &tag);
 
         if ((tlv_pkt = api_call_make(&c2->dynamic.api_calls, c2, tag)) == NULL)
         {
-            int tab_id;
-
             if (tlv_pkt_get_int(c2->tlv_pkt, TLV_TYPE_TAB_ID, &tab_id) == 0)
                 if ((tlv_pkt = tab_lookup(&c2->dynamic.tabs, tab_id, c2)) == NULL)
                     tlv_pkt = api_craft_tlv_pkt(API_CALL_NOT_IMPLEMENTED);
@@ -79,14 +80,14 @@ void tlv_console_loop(c2_t *c2)
 
 void tab_console_loop(c2_t *c2)
 {
-    tlv_pkt_t *tlv_pkt;
     int tag;
+    tlv_pkt_t *tlv_pkt;
 
     for (;;)
     {
         c2_read(c2);
 
-        log_debug("* Talking to %d for now from tab\n", c2->fd);
+        log_debug("* Talking to %d from tab\n", c2->fd);
         tlv_pkt_get_int(c2->tlv_pkt, TLV_TYPE_TAG, &tag);
 
         if (tag == TAB_TERM)

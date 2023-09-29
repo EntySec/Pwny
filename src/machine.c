@@ -30,8 +30,11 @@
 
 static uint64_t xor_shift_128_plus(uint64_t *seed)
 {
-    uint64_t seed1 = seed[0];
-    uint64_t seed0 = seed[1];
+    uint64_t seed1;
+    uint64_t seed0;
+
+    seed1 = seed[0];
+    seed0 = seed[1];
 
     seed[0] = seed0;
     seed1 ^= seed1 << 23;
@@ -42,15 +45,24 @@ static uint64_t xor_shift_128_plus(uint64_t *seed)
 
 int machine_uuid(char *buffer)
 {
+    char *uuid;
+
+    seed_t seed;
     uint64_t new_seed[2];
 
+    int bytes_read;
+    int iter;
+    int part;
+
     #if defined(LINUX) || defined(MACOS)
-    FILE *fp = fopen("/dev/urandom", "rb");
+    FILE *fp;
+
+    fp = fopen("/dev/urandom", "rb");
 
     if (!fp)
         return -1;
 
-    int bytes_read = fread(new_seed, 1, sizeof(new_seed), fp);
+    bytes_read = fread(new_seed, 1, sizeof(new_seed), fp);
     fclose(fp);
 
     if (bytes_read != sizeof(new_seed))
@@ -58,7 +70,8 @@ int machine_uuid(char *buffer)
 
     #elif defined(WINDOWS)
     HCRYPTPROV hCryptProv;
-    int bytes_read = CryptAcquireContext(
+
+    bytes_read = CryptAcquireContext(
         &hCryptProv, NULL, NULL, PROV_RSA_FULL, CRYPT_VERIFYCONTEXT);
 
     if (!bytes_read)
@@ -74,29 +87,26 @@ int machine_uuid(char *buffer)
         return -1;
     #endif
 
-    seed_t seed;
-
     seed.word[0] = xor_shift_128_plus(new_seed);
     seed.word[1] = xor_shift_128_plus(new_seed);
 
-    char *uuid = UUID;
-    int i = 0;
-    int j;
+    uuid = UUID;
+    iter = 0;
 
     while (*uuid)
     {
-        j = seed.b[i >> 1];
-        j = (i & 1) ? (j >> 4) : (j & 0xf);
+        part = seed.b[iter >> 1];
+        part = (iter & 1) ? (part >> 4) : (part & 0xf);
 
         switch (*uuid)
         {
             case 'x':
                 *buffer = UUID_CHARS[j];
-                i++;
+                iter++;
                 break;
             case 'y':
                 *buffer = UUID_CHARS[(j & 0x3) + 8];
-                i++;
+                iter++;
                 break;
             default:
                 *buffer = *uuid;
