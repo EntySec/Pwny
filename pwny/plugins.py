@@ -110,10 +110,7 @@ class Plugins(Tables, Badges):
 
                         tlv = session.send_command(
                             tag=API_ADD_TAB,
-                            args={
-                                TLV_TYPE_TAB_SIZE: len(data),
-                                TLV_TYPE_TAB: data
-                            }
+                            args={TLV_TYPE_TAB: data}
                         )
 
                     if tlv.get_int(TLV_TYPE_STATUS) != TLV_STATUS_SUCCESS:

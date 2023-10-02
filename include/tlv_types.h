@@ -26,7 +26,8 @@
 #define _TLV_TYPES_H_
 
 #define TLV_FILE_CHUNK 1024
-#define TLV_TYPE_CUSTOM(type, base, actual) (base + actual) | type
+#define TLV_TYPE_CUSTOM(pool, base, call) \
+                       (pool + base * 1000) + call
 
 #define TLV_TYPE_CHAR   (1 << 16)
 #define TLV_TYPE_SHORT  (1 << 17)
@@ -55,8 +56,6 @@
 #define TLV_TYPE_NODE_DST_ADDR (TLV_TYPE_INT | 7)
 #define TLV_TYPE_NODE_DST_PORT (TLV_TYPE_INT | 8)
 #define TLV_TYPE_TAB_ID        (TLV_TYPE_INT | 9)
-#define TLV_TYPE_TAB_SIZE      (TLV_TYPE_INT | 10)
-#define TLV_TYPE_MIGRATE_SIZE  (TLV_TYPE_INT | 11)
 
 #define TLV_TYPE_MIGRATE_PID   (TLV_TYPE_PID | 1)
 

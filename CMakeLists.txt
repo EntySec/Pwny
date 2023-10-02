@@ -36,10 +36,12 @@ if (DEBUG)
     add_compile_definitions(DEBUG)
 endif()
 
+add_compile_options(-Wall -Wextra -Werror -pedantic-errors)
+
 file(GLOB PWNY_SOURCES src/*.c)
 add_library(pwny STATIC ${PWNY_SOURCES})
 
-set_property(TARGET pwny PROPERTY C_STANDART 99)
+set_property(TARGET pwny PROPERTY C_STANDART 89)
 set_property(TARGET pwny PROPERTY POSITION_INDEPENDENT_CODE ON)
 
 set_target_properties(pwny PROPERTIES OUTPUT_NAME pwny)

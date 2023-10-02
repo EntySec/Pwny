@@ -63,7 +63,7 @@ c2_t *c2_create(int, int, char *);
 int c2_write(c2_t *, tlv_pkt_t *);
 int c2_read(c2_t *);
 
-int c2_write_file(c2_t *, FILE *, void *);
+int c2_write_file(c2_t *, FILE *);
 int c2_read_file(c2_t *, FILE *);
 
 void c2_add(c2_t **, int, int, char *);

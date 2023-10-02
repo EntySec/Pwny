@@ -82,7 +82,7 @@ int tlv_pkt_read(int fd, tlv_pkt_t *tlv_pkt)
     unsigned char type[sizeof(int)];
     unsigned char length[sizeof(int)];
     unsigned char *buffer;
-    unsigned char *temp_buf
+    unsigned char *temp_buf;
 
     total = 0;
     flags = fcntl(fd, F_GETFL, 0);
@@ -113,7 +113,7 @@ int tlv_pkt_read(int fd, tlv_pkt_t *tlv_pkt)
             }
 
             buffer = temp_buf;
-            memset(buffer, '\0', tlv_length);
+            memset(buffer, 0, tlv_length);
             read(fd, buffer, tlv_length);
 
             if (tlv_pkt_add_raw(tlv_pkt, tlv_type, buffer, tlv_length) != 0)
@@ -123,7 +123,8 @@ int tlv_pkt_read(int fd, tlv_pkt_t *tlv_pkt)
             }
 
             total++;
-        } else
+        }
+        else
         {
             if (total > 0)
                 break;
@@ -459,6 +460,10 @@ int tlv_pkt_get_string(tlv_pkt_t *tlv_pkt, int type, char *value)
         return -1;
 
     tlv = (tlv_t *)tlv_value.value;
+    value = malloc(tlv->length + 1);
+
+    if (value == NULL)
+        return -1;
 
     memset(value, 0, tlv->length + 1);
     memcpy(value, tlv->value, tlv->length);
@@ -475,6 +480,10 @@ int tlv_pkt_get_bytes(tlv_pkt_t *tlv_pkt, int type, unsigned char *value)
         return -1;
 
     tlv = (tlv_t *)tlv_value.value;
+    value = malloc(tlv->length);
+
+    if (value == NULL)
+        return -1;
 
     memset(value, 0, tlv->length);
     memcpy(value, tlv->value, tlv->length);
@@ -490,6 +499,6 @@ tlv_pkt_t *tlv_pkt_get_tlv(tlv_pkt_t *tlv_pkt, int type)
     if (key_list_get(tlv_pkt->list, type, &tlv_value) != 0)
         return NULL;
 
-    tlv_t *tlv = (tlv_t *)tlv_value.value;
+    tlv = (tlv_t *)tlv_value.value;
     return (tlv_pkt_t *)tlv_pkt_parse(tlv->value, tlv->length);
 }

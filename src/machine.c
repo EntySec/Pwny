@@ -101,11 +101,11 @@ int machine_uuid(char *buffer)
         switch (*uuid)
         {
             case 'x':
-                *buffer = UUID_CHARS[j];
+                *buffer = UUID_CHARS[part];
                 iter++;
                 break;
             case 'y':
-                *buffer = UUID_CHARS[(j & 0x3) + 8];
+                *buffer = UUID_CHARS[(part & 0x3) + 8];
                 iter++;
                 break;
             default:

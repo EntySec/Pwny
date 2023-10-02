@@ -29,8 +29,6 @@ from .api import *
 
 from badges import Badges
 
-from hatsploit.lib.session import Session
-
 
 class Files(Pwny, Badges):
     """ Subclass of pwny module.
@@ -39,7 +37,7 @@ class Files(Pwny, Badges):
     tools for sending and reading files.
     """
 
-    def __init__(self, session: Session) -> None:
+    def __init__(self, session: Any) -> None:
         """ Initialize files for session.
 
         :param Session session: session to migrate

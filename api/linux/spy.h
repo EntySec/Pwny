@@ -50,7 +50,7 @@
 
 FILE *record;
 
-tlv_pkt_t *spy_mic_list(c2_t *c2)
+static tlv_pkt_t *spy_mic_list(c2_t *c2)
 {
     char *sound_device;
     size_t *length;
@@ -75,7 +75,7 @@ tlv_pkt_t *spy_mic_list(c2_t *c2)
     return result;
 }
 
-tlv_pkt_t *spy_mic_start(c2_t *c2)
+static tlv_pkt_t *spy_mic_start(c2_t *c2)
 {
     int device_id;
     char cmd[128];
@@ -92,7 +92,7 @@ tlv_pkt_t *spy_mic_start(c2_t *c2)
     return api_craft_tlv_pkt(API_CALL_SUCCESS);
 }
 
-tlv_pkt_t *spy_mic_stop(c2_t *c2)
+static tlv_pkt_t *spy_mic_stop(c2_t *c2)
 {
     if (record != NULL)
     {
@@ -103,8 +103,8 @@ tlv_pkt_t *spy_mic_stop(c2_t *c2)
     return api_craft_tlv_pkt(API_CALL_SUCCESS);
 }
 
-tlv_pkt_t *spy_mic_write(c2_t *c2)
+static tlv_pkt_t *spy_mic_write(c2_t *c2)
 {
-
+    return api_craft_tlv_pkt(API_CALL_NOT_IMPLEMENTED);
 }
 

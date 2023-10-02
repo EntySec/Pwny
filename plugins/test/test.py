@@ -3,6 +3,7 @@ This plugin requires HatSploit: https://hatsploit.netlify.app
 Current source: https://github.com/EntySec/HatSploit
 """
 
+from pwny.api import *
 from pwny.types import *
 
 from hatsploit.lib.plugin import Plugin
@@ -18,7 +19,6 @@ class HatSploitPlugin(Plugin):
             'Authors': [
                 'Ivan Nikolsky (enty8080) - plugin developer'
             ],
-            'Pool': 2,
             'Description': ""
         }
 
@@ -32,10 +32,11 @@ class HatSploitPlugin(Plugin):
             }
         }
 
+        self.test_tag = tlv_custom(API_CALL_DYNAMIC, 1, API_CALL)
+
     def test(self, argc, argv):
         result = self.session.send_command(
-            pool=self.details['Pool'],
-            tag=1
+            tag=self.test_tag,
         )
 
         print(result.get_string(TLV_TYPE_STRING))

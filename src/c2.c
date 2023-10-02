@@ -68,9 +68,10 @@ c2_t *c2_create(int id, int fd, char *name)
     return NULL;
 }
 
-int c2_write_file(c2_t *c2, FILE *file, void *buffer)
+int c2_write_file(c2_t *c2, FILE *file)
 {
     int bytes_read;
+    unsigned char *buffer;
     tlv_pkt_t *tlv_pkt;
 
     while ((bytes_read = fread(buffer, 1, TLV_FILE_CHUNK, file)) > 0)
@@ -106,7 +107,7 @@ int c2_read_file(c2_t *c2, FILE *file)
     int status;
     int bytes_read;
 
-    unsigned char buffer[TLV_FILE_CHUNK];
+    unsigned char *buffer;
     tlv_pkt_t *tlv_pkt;
 
     tlv_pkt = tlv_pkt_create();
@@ -122,7 +123,7 @@ int c2_read_file(c2_t *c2, FILE *file)
         return -1;
     }
 
-    while (status == TLV_STATUS_WAIT)
+    while (status == API_CALL_WAIT)
     {
         if ((bytes_read = tlv_pkt_get_bytes(tlv_pkt, TLV_TYPE_FILE, buffer)) < 0)
         {
@@ -204,7 +205,8 @@ void c2_init(c2_t *c2_table)
                 else
                     tlv_console_loop(c2);
 
-            } else
+            }
+            else
                 tlv_pkt_destroy(tlv_pkt);
         }
 

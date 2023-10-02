@@ -74,7 +74,6 @@ class Migrate(Pwny, Badges):
                 tag=API_MIGRATE,
                 args={
                     TLV_TYPE_MIGRATE_PID: pid,
-                    TLV_TYPE_MIGRATE_SIZE: len(loader),
                     TLV_TYPE_MIGRATE: loader
                 }
             )

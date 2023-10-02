@@ -35,8 +35,6 @@ TLV_TYPE_NODE_SRC_PORT = (TLV_TYPE_INT | 6)
 TLV_TYPE_NODE_DST_ADDR = (TLV_TYPE_INT | 7)
 TLV_TYPE_NODE_DST_PORT = (TLV_TYPE_INT | 8)
 TLV_TYPE_TAB_ID = (TLV_TYPE_INT | 9)
-TLV_TYPE_TAB_SIZE = (TLV_TYPE_INT | 10)
-TLV_TYPE_MIGRATE_SIZE = (TLV_TYPE_INT | 11)
 
 TLV_TYPE_MIGRATE_PID = (TLV_TYPE_PID | 1)
 
@@ -47,5 +45,5 @@ TLV_TYPE_FILE = (TLV_TYPE_BYTES | 3)
 TLV_TYPE_UUID = (TLV_TYPE_STRING | 1)
 
 
-def tlv_custom(type, base, actual):
-    return (base + actual) | type
+def tlv_custom(pool, base, call):
+    return (pool + base * 1000) | call

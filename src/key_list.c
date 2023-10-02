@@ -72,7 +72,7 @@ key_list_t *key_list_create(value_releaser_t releaser)
 void key_list_destroy(key_list_t *list)
 {
     key_list_node_t *current;
-    key_list_node_t *next
+    key_list_node_t *next;
 
     current = list->header;
 
@@ -90,7 +90,7 @@ void key_list_destroy(key_list_t *list)
 int key_list_keyset(key_list_t *list, int *array, int array_size)
 {
     int iter;
-    key_list_node_t *current
+    key_list_node_t *current;
 
     if (array_size < list->count)
         return -1;
@@ -105,7 +105,7 @@ int key_list_keyset(key_list_t *list, int *array, int array_size)
         iter++;
     }
 
-    return i;
+    return iter;
 }
 
 int key_list_find_key(key_list_t *list, int key)

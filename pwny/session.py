@@ -29,6 +29,8 @@ from typing import Union
 
 from . import Pwny
 from .types import *
+from .api import *
+from .files import Files
 from .console import Console
 
 from hatsploit.lib.loot import Loot
@@ -59,6 +61,8 @@ class PwnySession(Pwny, Session, Console):
         self.channel = None
         self.uuid = None
         self.terminated = False
+
+        self.files = Files(self)
 
         self.details.update({
             'Type': "pwny"
@@ -118,7 +122,13 @@ class PwnySession(Pwny, Session, Console):
         tlv.add_from_dict(args)
 
         self.channel.send(tlv)
-        return self.channel.read()
+        tlv = self.channel.read()
+
+        while tlv.get_int(TLV_TYPE_STATUS) == TLV_STATUS_WAIT:
+            print(tlv.get_string(TLV_TYPE_STRING))
+            tlv = self.channel.read()
+
+        return tlv
 
     def download(self, remote_file: str, local_path: str) -> bool:
         """ Download file from the Pwny session.
@@ -128,7 +138,12 @@ class PwnySession(Pwny, Session, Console):
         :return bool: True if download succeed
         """
 
-        return False
+        tlv = TLVPacket()
+
+        tlv.add_int(TLV_TYPE_TAG, API_PULL)
+        tlv.add_string(TLV_TYPE_STRING, remote_file)
+
+        return self.files.read_file(local_path)
 
     def upload(self, local_file: str, remote_path: str) -> bool:
         """ Upload file to the Pwny session.
@@ -138,7 +153,12 @@ class PwnySession(Pwny, Session, Console):
         :return bool: True if upload succeed
         """
 
-        return False
+        tlv = TLVPacket()
+
+        tlv.add_int(TLV_TYPE_TAG, API_PUSH)
+        tlv.add_string(TLV_TYPE_STRING, remote_path)
+
+        return self.files.send_file(local_file)
 
     def interact(self) -> None:
         """ Interact with the Pwny session.
