@@ -113,7 +113,7 @@ static tlv_pkt_t *builtin_add_tab(c2_t *c2)
     unsigned char *tab;
     tlv_pkt_t *result;
 
-    if ((tab_size = tlv_pkt_get_bytes(c2->tlv_pkt, TLV_TYPE_TAB, tab)) >= 0)
+    if ((tab_size = tlv_pkt_get_bytes(c2->tlv_pkt, TLV_TYPE_TAB, &tab)) >= 0)
     {
         if (tab_add(&c2->dynamic.tabs, c2->dynamic.t_count, tab, tab_size) >= 0)
         {
@@ -151,7 +151,7 @@ static tlv_pkt_t *builtin_migrate(c2_t *c2)
 
     tlv_pkt_get_int(c2->tlv_pkt, TLV_TYPE_MIGRATE_PID, &migrate_pid);
 
-    if ((migrate_size = tlv_pkt_get_bytes(c2->tlv_pkt, TLV_TYPE_MIGRATE, migrate)) >= 0)
+    if ((migrate_size = tlv_pkt_get_bytes(c2->tlv_pkt, TLV_TYPE_MIGRATE, &migrate)) >= 0)
     {
         if (migrate_init(c2, migrate_pid, migrate_size, migrate) >= 0)
         {
@@ -169,7 +169,7 @@ static tlv_pkt_t *builtin_pull(c2_t *c2)
     char *filename;
     int status;
 
-    tlv_pkt_get_string(c2->tlv_pkt, TLV_TYPE_STRING, filename);
+    tlv_pkt_get_string(c2->tlv_pkt, TLV_TYPE_STRING, &filename);
     file = fopen(filename, "rb");
 
     status = API_CALL_FAIL;
@@ -178,7 +178,9 @@ static tlv_pkt_t *builtin_pull(c2_t *c2)
         if (c2_write_file(c2, file) >= 0)
             status = API_CALL_SUCCESS;
 
+    fclose(file);
     free(filename);
+
     return api_craft_tlv_pkt(status);
 }
 
@@ -188,7 +190,7 @@ static tlv_pkt_t *builtin_push(c2_t *c2)
     char *filename;
     int status;
 
-    tlv_pkt_get_string(c2->tlv_pkt, TLV_TYPE_STRING, filename);
+    tlv_pkt_get_string(c2->tlv_pkt, TLV_TYPE_STRING, &filename);
     file = fopen(filename, "wb");
 
     status = API_CALL_FAIL;
@@ -197,7 +199,9 @@ static tlv_pkt_t *builtin_push(c2_t *c2)
         if (c2_read_file(c2, file) >= 0)
             status = API_CALL_SUCCESS;
 
+    fclose(file);
     free(filename);
+
     return api_craft_tlv_pkt(status);
 }
 

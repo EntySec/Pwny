@@ -82,8 +82,8 @@ int tlv_pkt_get_ulong(tlv_pkt_t *, int, unsigned long *);
 int tlv_pkt_get_longlong(tlv_pkt_t *, int, long long *);
 int tlv_pkt_get_float(tlv_pkt_t *, int, float *);
 int tlv_pkt_get_double(tlv_pkt_t *, int, double *);
-int tlv_pkt_get_string(tlv_pkt_t *, int, char *);
-int tlv_pkt_get_bytes(tlv_pkt_t *, int, unsigned char *);
+int tlv_pkt_get_string(tlv_pkt_t *, int, char **);
+int tlv_pkt_get_bytes(tlv_pkt_t *, int, unsigned char **);
 tlv_pkt_t *tlv_pkt_get_object(tlv_pkt_t *, int);
 
 #endif /* _TLV_H_ */

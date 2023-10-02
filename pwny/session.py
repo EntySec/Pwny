@@ -76,10 +76,10 @@ class PwnySession(Pwny, Session, Console):
         :raises RuntimeError: with trailing error message
         """
 
-        client.send(self.get_implant(
-            platform=self.details['Platform'],
-            arch=self.details['Arch']
-        ))
+        #client.send(self.get_implant(
+        #    platform=self.details['Platform'],
+        #    arch=self.details['Arch']
+        #))
 
         self.channel = TLVClient(client)
         tlv = self.channel.read()
@@ -143,6 +143,8 @@ class PwnySession(Pwny, Session, Console):
         tlv.add_int(TLV_TYPE_TAG, API_PULL)
         tlv.add_string(TLV_TYPE_STRING, remote_file)
 
+        self.channel.send(tlv)
+
         return self.files.read_file(local_path)
 
     def upload(self, local_file: str, remote_path: str) -> bool:
@@ -157,6 +159,8 @@ class PwnySession(Pwny, Session, Console):
 
         tlv.add_int(TLV_TYPE_TAG, API_PUSH)
         tlv.add_string(TLV_TYPE_STRING, remote_path)
+
+        self.channel.send(tlv)
 
         return self.files.send_file(local_file)
 

@@ -53,7 +53,12 @@ c2_t *c2_create(int id, int fd, char *name)
     {
         c2->id = id;
         c2->fd = fd;
-        c2->name = strdup(name);
+
+        if (name == NULL)
+            c2->name = strdup(name);
+        else
+            c2->name = NULL;
+
         c2->tlv_pkt = NULL;
 
         c2->dynamic.t_count = 0;
@@ -74,6 +79,11 @@ int c2_write_file(c2_t *c2, FILE *file)
     unsigned char *buffer;
     tlv_pkt_t *tlv_pkt;
 
+    buffer = malloc(TLV_FILE_CHUNK);
+
+    if (buffer == NULL)
+        return -1;
+
     while ((bytes_read = fread(buffer, 1, TLV_FILE_CHUNK, file)) > 0)
     {
         tlv_pkt = tlv_pkt_create();
@@ -81,21 +91,25 @@ int c2_write_file(c2_t *c2, FILE *file)
         if (tlv_pkt_add_bytes(tlv_pkt, TLV_TYPE_FILE, buffer, bytes_read) < 0)
         {
             tlv_pkt_destroy(tlv_pkt);
+            free(buffer);
             return -1;
         }
 
         if (tlv_pkt_add_int(tlv_pkt, TLV_TYPE_STATUS, API_CALL_WAIT) < 0)
         {
             tlv_pkt_destroy(tlv_pkt);
+            free(buffer);
             return -1;
         }
 
         if (c2_write(c2, tlv_pkt) < 0)
         {
             tlv_pkt_destroy(tlv_pkt);
+            free(buffer);
             return -1;
         }
 
+        memset(buffer, 0, TLV_FILE_CHUNK);
         tlv_pkt_destroy(tlv_pkt);
     }
 
@@ -125,14 +139,14 @@ int c2_read_file(c2_t *c2, FILE *file)
 
     while (status == API_CALL_WAIT)
     {
-        if ((bytes_read = tlv_pkt_get_bytes(tlv_pkt, TLV_TYPE_FILE, buffer)) < 0)
+        if ((bytes_read = tlv_pkt_get_bytes(tlv_pkt, TLV_TYPE_FILE, &buffer)) < 0)
         {
             tlv_pkt_destroy(tlv_pkt);
             return -1;
         }
 
         fwrite(buffer, sizeof(unsigned char), bytes_read, file);
-        memset(buffer, 0, TLV_FILE_CHUNK);
+        free(buffer);
 
         tlv_pkt_destroy(tlv_pkt);
         tlv_pkt = tlv_pkt_create();
@@ -216,7 +230,8 @@ void c2_init(c2_t *c2_table)
         nodes_free(c2->dynamic.nodes);
         api_calls_free(c2->dynamic.api_calls);
 
-        free(c2->name);
+        if (c2->name != NULL)
+            free(c2->name);
         free(c2);
     }
 

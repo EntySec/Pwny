@@ -50,7 +50,7 @@ int main(void)
 {
     c2_t *c2;
 
-    c2 = c2_create(0, STDIN_FILENO, "test");
+    c2 = c2_create(TEST_BASE, STDIN_FILENO, NULL);
     api_call_register(&c2->dynamic.api_calls, TEST_TEST, test_test);
     tab_console_loop(c2);
 

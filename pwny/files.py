@@ -22,6 +22,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
+from typing import Any
+
 from .__main__ import Pwny
 
 from .types import *
@@ -56,15 +58,26 @@ class Files(Pwny, Badges):
         :raises RuntimeError: with trailing error message
         """
 
+        self.print_process(f"Saving to {local_path}...")
+
         with open(local_path, 'wb') as f:
-            packet = self.session.channel.read()
-
-            while packet.get_int(TLV_TYPE_STATUS) == TLV_STATUS_WAIT:
-                f.write(packet.get_bytes(TLV_TYPE_FILE))
+            while True:
                 packet = self.session.channel.read()
+                print(packet.buffer)
+                statuses = packet.get_int(TLV_TYPE_STATUS)
+                offset = 0
 
-            if packet.get_int(TLV_TYPE_STATUS) != TLV_STATUS_SUCCESS:
-                raise RuntimeError("Failed to receive file data!")
+                for status in statuses:
+                    if status == TLV_STATUS_WAIT:
+                        f.write(packet.get_raw(TLV_TYPE_FILE)[offset])
+                        offset += 1
+
+                    if status == TLV_STATUS_SUCCESS:
+                        self.print_success(f"Saved to {local_path}!")
+                        return
+
+                    if status == TLV_STATUS_FAIL:
+                        raise RuntimeError("Failed to receive file!")
 
     def send_file(self, local_path: str) -> None:
         """ Send file to session.
@@ -83,6 +96,6 @@ class Files(Pwny, Badges):
 
                 tlv = TLVPacket()
                 tlv.add_int(TLV_TYPE_STATUS, TLV_STATUS_WAIT)
-                tlv.add_bytes(TLV_TYPE_FILE, chunk)
+                tlv.add_raw(TLV_TYPE_FILE, chunk)
 
                 self.session.channel.send(tlv)

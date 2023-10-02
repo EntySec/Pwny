@@ -53,7 +53,7 @@ void tlv_console_loop(c2_t *c2)
 
         if ((tlv_pkt = api_call_make(&c2->dynamic.api_calls, c2, tag)) == NULL)
         {
-            if (tlv_pkt_get_int(c2->tlv_pkt, TLV_TYPE_TAB_ID, &tab_id) == 0)
+            if (tlv_pkt_get_int(c2->tlv_pkt, TLV_TYPE_TAB_ID, &tab_id) >= 0)
                 if ((tlv_pkt = tab_lookup(&c2->dynamic.tabs, tab_id, c2)) == NULL)
                     tlv_pkt = api_craft_tlv_pkt(API_CALL_NOT_IMPLEMENTED);
             else
@@ -62,7 +62,7 @@ void tlv_console_loop(c2_t *c2)
 
         c2_write(c2, tlv_pkt);
 
-        if (tlv_pkt_get_int(tlv_pkt, TLV_TYPE_STATUS, &status) == 0)
+        if (tlv_pkt_get_int(tlv_pkt, TLV_TYPE_STATUS, &status) >= 0)
         {
             if (status == API_CALL_QUIT)
             {
