@@ -61,23 +61,20 @@ class Files(Pwny, Badges):
         self.print_process(f"Saving to {local_path}...")
 
         with open(local_path, 'wb') as f:
-            while True:
-                packet = self.session.channel.read()
-                print(packet.buffer)
-                statuses = packet.get_int(TLV_TYPE_STATUS)
-                offset = 0
+            tlv = self.session.channel.read()
+            size = tlv.get_int(TLV_TYPE_INT)
 
-                for status in statuses:
-                    if status == TLV_STATUS_WAIT:
-                        f.write(packet.get_raw(TLV_TYPE_FILE)[offset])
-                        offset += 1
+            if size:
+                while size > 0:
+                    f.write(self.session.channel.read_raw(TLV_FILE_CHUNK))
+                    size -= TLV_FILE_CHUNK
 
-                    if status == TLV_STATUS_SUCCESS:
-                        self.print_success(f"Saved to {local_path}!")
-                        return
+                self.print_success(f"Saved to {local_path}...")
+            else:
+                error = tlv.get_int(TLV_TYPE_STATUS)
 
-                    if status == TLV_STATUS_FAIL:
-                        raise RuntimeError("Failed to receive file!")
+                if error == TLV_STATUS_FAIL:
+                    raise RuntimeError("Failed to read file!")
 
     def send_file(self, local_path: str) -> None:
         """ Send file to session.
@@ -99,3 +96,8 @@ class Files(Pwny, Badges):
                 tlv.add_raw(TLV_TYPE_FILE, chunk)
 
                 self.session.channel.send(tlv)
+
+            tlv = TLVPacket()
+            tlv.add_int(TLV_TYPE_STATUS, TLV_STATUS_SUCCESS)
+
+            self.session.channel.send(tlv)
