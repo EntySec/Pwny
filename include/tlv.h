@@ -39,6 +39,7 @@ typedef struct
     key_list_t *list;
     unsigned char *buffer;
     int bytes;
+    int count;
 } tlv_pkt_t;
 
 tlv_pkt_t *tlv_pkt_create(void);

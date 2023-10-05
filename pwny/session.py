@@ -30,6 +30,7 @@ from typing import Union
 from . import Pwny
 from .types import *
 from .api import *
+from .tlv import TLV
 from .files import Files
 from .console import Console
 
@@ -76,12 +77,13 @@ class PwnySession(Pwny, Session, Console):
         :raises RuntimeError: with trailing error message
         """
 
-        #client.send(self.get_implant(
-        #    platform=self.details['Platform'],
-        #    arch=self.details['Arch']
-        #))
+        # client.send(self.get_implant(
+        #     platform=self.details['Platform'],
+        #     arch=self.details['Arch']
+        # ))
 
-        self.channel = TLVClient(client)
+        self.channel = TLV(
+            TLVClient(client))
         tlv = self.channel.read()
 
         self.uuid = tlv.get_string(TLV_TYPE_UUID)
@@ -122,13 +124,7 @@ class PwnySession(Pwny, Session, Console):
         tlv.add_from_dict(args)
 
         self.channel.send(tlv)
-        tlv = self.channel.read()
-
-        while tlv.get_int(TLV_TYPE_STATUS) == TLV_STATUS_WAIT:
-            print(tlv.get_string(TLV_TYPE_STRING))
-            tlv = self.channel.read()
-
-        return tlv
+        return self.channel.read()
 
     def download(self, remote_file: str, local_path: str) -> bool:
         """ Download file from the Pwny session.

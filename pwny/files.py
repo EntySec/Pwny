@@ -58,23 +58,14 @@ class Files(Pwny, Badges):
         :raises RuntimeError: with trailing error message
         """
 
-        self.print_process(f"Saving to {local_path}...")
-
         with open(local_path, 'wb') as f:
-            tlv = self.session.channel.read()
-            size = tlv.get_int(TLV_TYPE_INT)
+            while True:
+                tlv = self.session.channel.read()
 
-            if size:
-                while size > 0:
-                    f.write(self.session.channel.read_raw(TLV_FILE_CHUNK))
-                    size -= TLV_FILE_CHUNK
+                if tlv.get_int(TLV_TYPE_STATUS) != TLV_STATUS_WAIT:
+                    break
 
-                self.print_success(f"Saved to {local_path}...")
-            else:
-                error = tlv.get_int(TLV_TYPE_STATUS)
-
-                if error == TLV_STATUS_FAIL:
-                    raise RuntimeError("Failed to read file!")
+                f.write(tlv.get_raw(TLV_TYPE_FILE))
 
     def send_file(self, local_path: str) -> None:
         """ Send file to session.

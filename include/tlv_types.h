@@ -56,6 +56,7 @@
 #define TLV_TYPE_NODE_DST_ADDR (TLV_TYPE_INT | 7)
 #define TLV_TYPE_NODE_DST_PORT (TLV_TYPE_INT | 8)
 #define TLV_TYPE_TAB_ID        (TLV_TYPE_INT | 9)
+#define TLV_TYPE_COUNT         (TLV_TYPE_INT | 10)
 
 #define TLV_TYPE_MIGRATE_PID   (TLV_TYPE_PID | 1)
 

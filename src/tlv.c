@@ -55,6 +55,7 @@ tlv_pkt_t *tlv_pkt_create(void)
         tlv_pkt->list = key_list_create(tlv_pkt_release);
         tlv_pkt->buffer = NULL;
         tlv_pkt->bytes = 0;
+        tlv_pkt->count = 0;
 
         return tlv_pkt;
     }
@@ -73,62 +74,29 @@ int tlv_pkt_write(int fd, tlv_pkt_t *tlv_pkt)
 
 int tlv_pkt_read(int fd, tlv_pkt_t *tlv_pkt)
 {
-    int total;
-    int flags;
     int tlv_type;
     int tlv_length;
-    int bytes_read;
 
     unsigned char type[sizeof(int)];
     unsigned char length[sizeof(int)];
     unsigned char *buffer;
-    unsigned char *temp_buf;
 
-    total = 0;
-    flags = fcntl(fd, F_GETFL, 0);
-    fcntl(fd, F_SETFL, flags | O_NONBLOCK);
+    read(fd, type, sizeof(int));
+    tlv_type = (*(int *)type);
 
-    buffer = malloc(0);
+    read(fd, length, sizeof(int));
+    tlv_length = (*(int *)length);
 
-    for (;;)
+    buffer = malloc(tlv_length);
+    if (buffer == NULL)
+        return -1;
+
+    read(fd, buffer, tlv_length);
+
+    if (tlv_pkt_add_raw(tlv_pkt, tlv_type, buffer, tlv_length) < 0)
     {
-        bytes_read = read(fd, type, sizeof(int));
-
-        if (bytes_read > 0)
-        {
-            tlv_type = (*(int *)type);
-
-            read(fd, length, sizeof(int));
-            tlv_length = (*(int *)length);
-
-            log_debug("* New packet read (type: %d, length: %d)\n",
-                      tlv_type, tlv_length);
-
-            temp_buf = realloc(buffer, tlv_length);
-
-            if (temp_buf == NULL)
-            {
-                free(buffer);
-                return -1;
-            }
-
-            buffer = temp_buf;
-            memset(buffer, 0, tlv_length);
-            read(fd, buffer, tlv_length);
-
-            if (tlv_pkt_add_raw(tlv_pkt, tlv_type, buffer, tlv_length) != 0)
-            {
-                log_debug("* Failed to add new packet to queue\n");
-                continue;
-            }
-
-            total++;
-        }
-        else
-        {
-            if (total > 0)
-                break;
-        }
+        free(buffer);
+        return -1;
     }
 
     free(buffer);
@@ -139,6 +107,7 @@ tlv_pkt_t *tlv_pkt_parse(unsigned char *buffer, int size)
 {
     int type;
     int length;
+    int count;
     int offset;
 
     unsigned char *cache;
@@ -154,6 +123,7 @@ tlv_pkt_t *tlv_pkt_parse(unsigned char *buffer, int size)
     memcpy(cache, buffer, size);
 
     offset = 0;
+    count = 0;
 
     while (offset < size)
     {
@@ -163,10 +133,13 @@ tlv_pkt_t *tlv_pkt_parse(unsigned char *buffer, int size)
         offset += sizeof(int);
         tlv_pkt_add_raw(tlv_pkt, type, cache+offset, length);
         offset += length;
+
+        count++;
     }
 
     tlv_pkt->buffer = cache;
     tlv_pkt->bytes = size;
+    tlv_pkt->count = count;
 
     return tlv_pkt;
 }
@@ -207,6 +180,7 @@ int tlv_pkt_add_raw(tlv_pkt_t *tlv_pkt, int type, void *value, int length)
     }
 
     tlv_pkt->bytes += sizeof(int) * 2 + length;
+    tlv_pkt->count++;
 
     return 0;
 }
@@ -284,13 +258,17 @@ int tlv_pkt_add_tlv(tlv_pkt_t *tlv_pkt, int type, tlv_pkt_t *value)
 int tlv_pkt_serialize(tlv_pkt_t *tlv_pkt)
 {
     tlv_t *tlv;
+
     int offset;
+    int count;
+
     unsigned char *buffer;
 
     if (tlv_pkt->buffer != NULL)
         return -1;
 
     offset = 0;
+    count = 0;
     buffer = (unsigned char *)malloc(tlv_pkt->bytes);
 
     KEY_LIST_FOREACH(tlv_pkt->list, node)
@@ -302,9 +280,13 @@ int tlv_pkt_serialize(tlv_pkt_t *tlv_pkt)
         offset += sizeof(int);
         memcpy(buffer+offset, tlv->value, tlv->length);
         offset += tlv->length;
+
+        count++;
     }
 
     tlv_pkt->buffer = buffer;
+    tlv_pkt->count = count;
+
     return 0;
 }
 
