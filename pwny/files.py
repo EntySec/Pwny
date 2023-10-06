@@ -30,6 +30,7 @@ from .types import *
 from .api import *
 
 from badges import Badges
+from pex.proto.tlv import TLVPacket
 
 
 class Files(Pwny, Badges):
@@ -59,13 +60,19 @@ class Files(Pwny, Badges):
         """
 
         with open(local_path, 'wb') as f:
+            status = TLV_STATUS_FAIL
+
             while True:
                 tlv = self.session.channel.read()
+                status = tlv.get_int(TLV_TYPE_STATUS)
 
-                if tlv.get_int(TLV_TYPE_STATUS) != TLV_STATUS_WAIT:
+                if status != TLV_STATUS_WAIT:
                     break
 
                 f.write(tlv.get_raw(TLV_TYPE_FILE))
+
+            if status != TLV_STATUS_SUCCESS:
+                raise RuntimeError("File read failed!")
 
     def send_file(self, local_path: str) -> None:
         """ Send file to session.
@@ -92,3 +99,7 @@ class Files(Pwny, Badges):
             tlv.add_int(TLV_TYPE_STATUS, TLV_STATUS_SUCCESS)
 
             self.session.channel.send(tlv)
+            tlv = self.session.channel.read()
+
+            if tlv.get_int(TLV_TYPE_STATUS) != TLV_STATUS_SUCCESS:
+                raise RuntimeError("File write failed!")
