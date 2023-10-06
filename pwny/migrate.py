@@ -82,7 +82,7 @@ class Migrate(Pwny, Badges):
                 raise RuntimeError(f"Failed to migrate to {str(pid)}!")
 
             self.print_process("Waiting for the migration to complete...")
-            self.session.open(session.channel.client)
+            self.session.open(self.session.channel.client)
         else:
             raise RuntimeError(f"Loader was not found for {platform}/{arch}!")
 

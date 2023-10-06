@@ -25,6 +25,7 @@ SOFTWARE.
 from pex.socket import Socket
 
 from .types import *
+from .api import *
 
 from hatsploit.lib.session import Session
 
@@ -56,7 +57,7 @@ class Nodes(object):
             src_pair = current_node['src_host'] + ':' + str(current_node['src_port'])
             dst_pair = current_node['dst_host'] + ':' + str(current_node['dst_port'])
 
-            nodes_data.append((src(node), src_pair + ' -> ' + dst_pair))
+            nodes_data.append((str(node), src_pair + ' -> ' + dst_pair))
 
         self.print_table("Nodes", headers, *nodes_data)
 
@@ -74,12 +75,12 @@ class Nodes(object):
         """
 
         tlv = session.send_command(
-            tag=TLV_TAG_ADD_NODE,
+            tag=API_ADD_NODE,
             args={
                 TLV_TYPE_NODE_SRC_ADDR: int.from_bytes(Socket().pack_host(src_host), 'little'),
                 TLV_TYPE_NODE_DST_ADDR: int.from_bytes(Socket().pack_host(dst_host), 'little'),
                 TLV_TYPE_NODE_SRC_PORT: int.from_bytes(Socket().pack_port(src_port), 'little'),
-                TLV_TYPE_NODE_DSR_PORT: int.from_bytes(Socket().pack_port(dst_port), 'little')
+                TLV_TYPE_NODE_DST_PORT: int.from_bytes(Socket().pack_port(dst_port), 'little')
             }
         )
 

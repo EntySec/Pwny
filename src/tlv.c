@@ -144,6 +144,11 @@ tlv_pkt_t *tlv_pkt_parse(unsigned char *buffer, int size)
     return tlv_pkt;
 }
 
+int tlv_pkt_delete(tlv_pkt_t *tlv_pkt, int type)
+{
+    return key_list_delete(tlv_pkt->list, type);
+}
+
 void tlv_pkt_destroy(tlv_pkt_t *tlv_pkt)
 {
     key_list_destroy(tlv_pkt->list);
@@ -300,6 +305,9 @@ int tlv_pkt_get_char(tlv_pkt_t *tlv_pkt, int type, char *value)
 
     tlv = (tlv_t *)tlv_value.value;
     *value = (*(char *)(tlv->value));
+
+    key_list_delete(tlv_pkt->list, type);
+
     return 0;
 }
 
@@ -313,6 +321,9 @@ int tlv_pkt_get_short(tlv_pkt_t *tlv_pkt, int type, short *value)
 
     tlv = (tlv_t *)tlv_value.value;
     *value = (*(short *)(tlv->value));
+
+    key_list_delete(tlv_pkt->list, type);
+
     return 0;
 }
 
@@ -326,6 +337,9 @@ int tlv_pkt_get_int(tlv_pkt_t *tlv_pkt, int type, int *value)
 
     tlv = (tlv_t *)tlv_value.value;
     *value = (*(int *)(tlv->value));
+
+    key_list_delete(tlv_pkt->list, type);
+
     return 0;
 }
 
@@ -339,6 +353,9 @@ int tlv_pkt_get_long(tlv_pkt_t *tlv_pkt, int type, long *value)
 
     tlv = (tlv_t *)tlv_value.value;
     *value = (*(long *)(tlv->value));
+
+    key_list_delete(tlv_pkt->list, type);
+
     return 0;
 }
 
@@ -352,6 +369,9 @@ int tlv_pkt_get_uchar(tlv_pkt_t *tlv_pkt, int type, unsigned char *value)
 
     tlv = (tlv_t *)tlv_value.value;
     *value = (*(unsigned char *)(tlv->value));
+
+    key_list_delete(tlv_pkt->list, type);
+
     return 0;
 }
 
@@ -365,6 +385,9 @@ int tlv_pkt_get_ushort(tlv_pkt_t *tlv_pkt, int type, unsigned short *value)
 
     tlv = (tlv_t *)tlv_value.value;
     *value = (*(unsigned short *)(tlv->value));
+
+    key_list_delete(tlv_pkt->list, type);
+
     return 0;
 }
 
@@ -378,6 +401,9 @@ int tlv_pkt_get_uint(tlv_pkt_t *tlv_pkt, int type, unsigned int *value)
 
     tlv = (tlv_t *)tlv_value.value;
     *value = (*(unsigned int *)(tlv->value));
+
+    key_list_delete(tlv_pkt->list, type);
+
     return 0;
 }
 
@@ -391,6 +417,9 @@ int tlv_pkt_get_ulong(tlv_pkt_t *tlv_pkt, int type, unsigned long *value)
 
     tlv = (tlv_t *)tlv_value.value;
     *value = (*(unsigned long *)(tlv->value));
+
+    key_list_delete(tlv_pkt->list, type);
+
     return 0;
 }
 
@@ -404,6 +433,9 @@ int tlv_pkt_get_longlong(tlv_pkt_t *tlv_pkt, int type, long long *value)
 
     tlv = (tlv_t *)tlv_value.value;
     *value = (*(long long *)(tlv->value));
+
+    key_list_delete(tlv_pkt->list, type);
+
     return 0;
 }
 
@@ -417,6 +449,9 @@ int tlv_pkt_get_float(tlv_pkt_t *tlv_pkt, int type, float *value)
 
     tlv = (tlv_t *)tlv_value.value;
     *value = (*(float *)(tlv->value));
+
+    key_list_delete(tlv_pkt->list, type);
+
     return 0;
 }
 
@@ -430,6 +465,9 @@ int tlv_pkt_get_double(tlv_pkt_t *tlv_pkt, int type, double *value)
 
     tlv = (tlv_t *)tlv_value.value;
     *value = (*(double *)(tlv->value));
+
+    key_list_delete(tlv_pkt->list, type);
+
     return 0;
 }
 
@@ -449,6 +487,8 @@ int tlv_pkt_get_string(tlv_pkt_t *tlv_pkt, int type, char **value)
 
     memset(*value, 0, tlv->length + 1);
     memcpy(*value, tlv->value, tlv->length);
+
+    key_list_delete(tlv_pkt->list, type);
 
     return tlv->length;
 }
@@ -470,6 +510,8 @@ int tlv_pkt_get_bytes(tlv_pkt_t *tlv_pkt, int type, unsigned char **value)
     memset(*value, 0, tlv->length);
     memcpy(*value, tlv->value, tlv->length);
 
+    key_list_delete(tlv_pkt->list, type);
+
     return tlv->length;
 }
 
@@ -482,5 +524,8 @@ tlv_pkt_t *tlv_pkt_get_tlv(tlv_pkt_t *tlv_pkt, int type)
         return NULL;
 
     tlv = (tlv_t *)tlv_value.value;
+
+    key_list_delete(tlv_pkt->list, type);
+
     return (tlv_pkt_t *)tlv_pkt_parse(tlv->value, tlv->length);
 }

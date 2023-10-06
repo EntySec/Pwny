@@ -80,14 +80,13 @@ int c2_write_file(c2_t *c2, FILE *file)
     tlv_pkt_t *tlv_pkt;
 
     buffer = malloc(TLV_FILE_CHUNK);
+    tlv_pkt = tlv_pkt_create();
 
-    if (buffer == NULL)
+    if (buffer == NULL || tlv_pkt = NULL)
         return -1;
 
     while ((bytes_read = fread(buffer, 1, TLV_FILE_CHUNK, file)) > 0)
     {
-        tlv_pkt = tlv_pkt_create();
-
         if (tlv_pkt_add_bytes(tlv_pkt, TLV_TYPE_FILE, buffer, bytes_read) < 0)
         {
             tlv_pkt_destroy(tlv_pkt);
@@ -110,7 +109,9 @@ int c2_write_file(c2_t *c2, FILE *file)
         }
 
         memset(buffer, 0, TLV_FILE_CHUNK);
-        tlv_pkt_destroy(tlv_pkt);
+
+        tlv_pkt_delete(tlv_pkt, TLV_TYPE_FILE);
+        tlv_pkt_delete(tlv_pkt, TLV_TYPE_STATUS);
     }
 
     return 0;
@@ -129,15 +130,7 @@ int c2_read_file(c2_t *c2, FILE *file)
     if (tlv_pkt == NULL)
         return -1;
 
-    tlv_pkt_read(c2->fd, tlv_pkt);
-
-    if (tlv_pkt_get_int(tlv_pkt, TLV_TYPE_STATUS, &status) < 0)
-    {
-        tlv_pkt_destroy(tlv_pkt);
-        return -1;
-    }
-
-    while (status == API_CALL_WAIT)
+    for (;;)
     {
         if ((bytes_read = tlv_pkt_get_bytes(tlv_pkt, TLV_TYPE_FILE, &buffer)) < 0)
         {
@@ -148,8 +141,6 @@ int c2_read_file(c2_t *c2, FILE *file)
         fwrite(buffer, sizeof(unsigned char), bytes_read, file);
         free(buffer);
 
-        tlv_pkt_destroy(tlv_pkt);
-        tlv_pkt = tlv_pkt_create();
         tlv_pkt_read(c2->fd, tlv_pkt);
 
         if (tlv_pkt_get_int(tlv_pkt, TLV_TYPE_STATUS, &status) < 0)
@@ -157,6 +148,9 @@ int c2_read_file(c2_t *c2, FILE *file)
             tlv_pkt_destroy(tlv_pkt);
             return -1;
         }
+
+        if (status != API_CALL_WAIT)
+            break;
     }
 
     tlv_pkt_destroy(tlv_pkt);
@@ -169,7 +163,7 @@ int c2_write(c2_t *c2, tlv_pkt_t *tlv_pkt)
 
     tlv_count = tlv_pkt_create();
 
-    if (tlv_pkt_add_int(tlv_size, TLV_TYPE_COUNT, tlv_pkt->count) < 0)
+    if (tlv_pkt_add_int(tlv_count, TLV_TYPE_COUNT, tlv_pkt->count) < 0)
     {
         tlv_pkt_destroy(tlv_count);
         return -1;
@@ -180,6 +174,8 @@ int c2_write(c2_t *c2, tlv_pkt_t *tlv_pkt)
         tlv_pkt_destroy(tlv_count);
         return -1;
     }
+
+    log_debug("* Writing TLV packets (%d)\n", tlv_pkt->count);
 
     return tlv_pkt_write(c2->fd, tlv_pkt);
 }
@@ -198,6 +194,8 @@ int c2_read(c2_t *c2)
 
     if (tlv_pkt_get_int(c2->tlv_pkt, TLV_TYPE_COUNT, &count) < 0)
         return -1;
+
+    log_debug("* Reading TLV packets (%d)\n", count);
 
     for (iter = 0; iter < count; iter++)
         if (tlv_pkt_read(c2->fd, c2->tlv_pkt) < 0)
