@@ -79,9 +79,9 @@ static tlv_pkt_t *builtin_add_node(c2_t *c2)
 
     tlv_pkt_t *result;
 
-    tlv_pkt_get_int(c2->tlv_pkt, TLV_TYPE_NODE_SRC_ADDR, &src_host);
+    tlv_pkt_get_uint(c2->tlv_pkt, TLV_TYPE_NODE_SRC_ADDR, &src_host);
     tlv_pkt_get_ushort(c2->tlv_pkt, TLV_TYPE_NODE_SRC_PORT, &src_port);
-    tlv_pkt_get_int(c2->tlv_pkt, TLV_TYPE_NODE_DST_ADDR, &dst_host);
+    tlv_pkt_get_uint(c2->tlv_pkt, TLV_TYPE_NODE_DST_ADDR, &dst_host);
     tlv_pkt_get_ushort(c2->tlv_pkt, TLV_TYPE_NODE_DST_PORT, &dst_port);
 
     if (node_add(&c2->dynamic.nodes, c2->dynamic.n_count, \
@@ -174,11 +174,12 @@ static tlv_pkt_t *builtin_pull(c2_t *c2)
 
     status = API_CALL_FAIL;
 
-    if (file != NULL)
-        if (c2_write_file(c2, file) >= 0)
-            status = API_CALL_SUCCESS;
+    if (c2_write_file(c2, file) >= 0)
+        status = API_CALL_SUCCESS;
 
-    fclose(file);
+    if (file != NULL)
+        fclose(file);
+
     free(filename);
 
     return api_craft_tlv_pkt(status);
@@ -195,11 +196,12 @@ static tlv_pkt_t *builtin_push(c2_t *c2)
 
     status = API_CALL_FAIL;
 
-    if (file != NULL)
-        if (c2_read_file(c2, file) >= 0)
-            status = API_CALL_SUCCESS;
+    if (c2_read_file(c2, file) >= 0)
+        status = API_CALL_SUCCESS;
 
-    fclose(file);
+    if (file != NULL)
+        fclose(file);
+
     free(filename);
 
     return api_craft_tlv_pkt(status);

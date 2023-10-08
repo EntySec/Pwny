@@ -59,8 +59,8 @@ class TLV(object):
 
         return tlv
 
-    def write(self, packet: TLVPacket) -> None:
-        """ Write TLV packet.
+    def send(self, packet: TLVPacket) -> None:
+        """ Send TLV packet.
 
         :param TLVPacket packet: TLV packet
         :return None: None

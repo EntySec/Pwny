@@ -62,13 +62,13 @@ int migrate_inject(c2_t *c2, pid_t migrate_pid, char *image)
 
     handle = NULL;
 
-    if (injector_attach(&injector, migrate_pid) != 0)
+    if (injector_attach(&injector, migrate_pid) < 0)
         return -1;
 
-    if (injector_inject(injector, image, &handle) != 0)
+    if (injector_inject(injector, image, &handle) < 0)
         return -1;
 
-    if (injector_call(injector, handle, "init", c2->fd) != 0)
+    if (injector_call(injector, handle, "init", c2->fd) < 0)
         return -1;
 
     injector_detach(injector);

@@ -43,7 +43,7 @@
 static int create_tab(tabs_t *tab, unsigned char *buffer, int size)
 {
     int pipes[2];
-    char argv[1];
+    char *argv[1];
     unsigned char *frame;
 
     pid_t pid;
@@ -66,7 +66,7 @@ static int create_tab(tabs_t *tab, unsigned char *buffer, int size)
     else if (pid == 0)
     {
         dup2(pipes[0], STDIN_FILENO);
-        argv[0] = 'p';
+        argv[0] = "m4r1n4";
 
         #ifdef LINUX
             pawn_exec_fd(buffer, argv, environ);

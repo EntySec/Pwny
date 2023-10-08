@@ -36,7 +36,7 @@ if (DEBUG)
     add_compile_definitions(DEBUG)
 endif()
 
-add_compile_options(-Wall -Wextra -Werror -pedantic-errors)
+add_compile_options(-pedantic-errors)
 
 file(GLOB PWNY_SOURCES src/*.c)
 add_library(pwny STATIC ${PWNY_SOURCES})

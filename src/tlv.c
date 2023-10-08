@@ -144,19 +144,17 @@ tlv_pkt_t *tlv_pkt_parse(unsigned char *buffer, int size)
     return tlv_pkt;
 }
 
-int tlv_pkt_delete(tlv_pkt_t *tlv_pkt, int type)
-{
-    return key_list_delete(tlv_pkt->list, type);
-}
-
 void tlv_pkt_destroy(tlv_pkt_t *tlv_pkt)
 {
-    key_list_destroy(tlv_pkt->list);
+    if (tlv_pkt != NULL)
+    {
+        key_list_destroy(tlv_pkt->list);
 
-    if (tlv_pkt->buffer != NULL)
-        free(tlv_pkt->buffer);
+        if (tlv_pkt->buffer != NULL)
+            free(tlv_pkt->buffer);
 
-    free(tlv_pkt);
+        free(tlv_pkt);
+    }
 }
 
 int tlv_pkt_add_raw(tlv_pkt_t *tlv_pkt, int type, void *value, int length)
@@ -247,7 +245,7 @@ int tlv_pkt_add_double(tlv_pkt_t *tlv_pkt, int type, double value)
 
 int tlv_pkt_add_string(tlv_pkt_t *tlv_pkt, int type, char *value)
 {
-    return tlv_pkt_add_raw(tlv_pkt, type, value, strlen(value) + 1);
+    return tlv_pkt_add_raw(tlv_pkt, type, value, strlen(value));
 }
 
 int tlv_pkt_add_bytes(tlv_pkt_t *tlv_pkt, int type, unsigned char *value, int length)
@@ -265,6 +263,7 @@ int tlv_pkt_serialize(tlv_pkt_t *tlv_pkt)
     tlv_t *tlv;
 
     int offset;
+    int bytes;
     int count;
 
     unsigned char *buffer;
@@ -273,7 +272,9 @@ int tlv_pkt_serialize(tlv_pkt_t *tlv_pkt)
         return -1;
 
     offset = 0;
+    bytes = 0;
     count = 0;
+
     buffer = (unsigned char *)malloc(tlv_pkt->bytes);
 
     KEY_LIST_FOREACH(tlv_pkt->list, node)
@@ -287,9 +288,11 @@ int tlv_pkt_serialize(tlv_pkt_t *tlv_pkt)
         offset += tlv->length;
 
         count++;
+        bytes += sizeof(int) * 2 + tlv->length;
     }
 
     tlv_pkt->buffer = buffer;
+    tlv_pkt->bytes = bytes;
     tlv_pkt->count = count;
 
     return 0;
@@ -306,8 +309,6 @@ int tlv_pkt_get_char(tlv_pkt_t *tlv_pkt, int type, char *value)
     tlv = (tlv_t *)tlv_value.value;
     *value = (*(char *)(tlv->value));
 
-    key_list_delete(tlv_pkt->list, type);
-
     return 0;
 }
 
@@ -321,8 +322,6 @@ int tlv_pkt_get_short(tlv_pkt_t *tlv_pkt, int type, short *value)
 
     tlv = (tlv_t *)tlv_value.value;
     *value = (*(short *)(tlv->value));
-
-    key_list_delete(tlv_pkt->list, type);
 
     return 0;
 }
@@ -338,8 +337,6 @@ int tlv_pkt_get_int(tlv_pkt_t *tlv_pkt, int type, int *value)
     tlv = (tlv_t *)tlv_value.value;
     *value = (*(int *)(tlv->value));
 
-    key_list_delete(tlv_pkt->list, type);
-
     return 0;
 }
 
@@ -353,8 +350,6 @@ int tlv_pkt_get_long(tlv_pkt_t *tlv_pkt, int type, long *value)
 
     tlv = (tlv_t *)tlv_value.value;
     *value = (*(long *)(tlv->value));
-
-    key_list_delete(tlv_pkt->list, type);
 
     return 0;
 }
@@ -370,8 +365,6 @@ int tlv_pkt_get_uchar(tlv_pkt_t *tlv_pkt, int type, unsigned char *value)
     tlv = (tlv_t *)tlv_value.value;
     *value = (*(unsigned char *)(tlv->value));
 
-    key_list_delete(tlv_pkt->list, type);
-
     return 0;
 }
 
@@ -385,8 +378,6 @@ int tlv_pkt_get_ushort(tlv_pkt_t *tlv_pkt, int type, unsigned short *value)
 
     tlv = (tlv_t *)tlv_value.value;
     *value = (*(unsigned short *)(tlv->value));
-
-    key_list_delete(tlv_pkt->list, type);
 
     return 0;
 }
@@ -402,8 +393,6 @@ int tlv_pkt_get_uint(tlv_pkt_t *tlv_pkt, int type, unsigned int *value)
     tlv = (tlv_t *)tlv_value.value;
     *value = (*(unsigned int *)(tlv->value));
 
-    key_list_delete(tlv_pkt->list, type);
-
     return 0;
 }
 
@@ -417,8 +406,6 @@ int tlv_pkt_get_ulong(tlv_pkt_t *tlv_pkt, int type, unsigned long *value)
 
     tlv = (tlv_t *)tlv_value.value;
     *value = (*(unsigned long *)(tlv->value));
-
-    key_list_delete(tlv_pkt->list, type);
 
     return 0;
 }
@@ -434,8 +421,6 @@ int tlv_pkt_get_longlong(tlv_pkt_t *tlv_pkt, int type, long long *value)
     tlv = (tlv_t *)tlv_value.value;
     *value = (*(long long *)(tlv->value));
 
-    key_list_delete(tlv_pkt->list, type);
-
     return 0;
 }
 
@@ -450,8 +435,6 @@ int tlv_pkt_get_float(tlv_pkt_t *tlv_pkt, int type, float *value)
     tlv = (tlv_t *)tlv_value.value;
     *value = (*(float *)(tlv->value));
 
-    key_list_delete(tlv_pkt->list, type);
-
     return 0;
 }
 
@@ -465,8 +448,6 @@ int tlv_pkt_get_double(tlv_pkt_t *tlv_pkt, int type, double *value)
 
     tlv = (tlv_t *)tlv_value.value;
     *value = (*(double *)(tlv->value));
-
-    key_list_delete(tlv_pkt->list, type);
 
     return 0;
 }
@@ -488,8 +469,6 @@ int tlv_pkt_get_string(tlv_pkt_t *tlv_pkt, int type, char **value)
     memset(*value, 0, tlv->length + 1);
     memcpy(*value, tlv->value, tlv->length);
 
-    key_list_delete(tlv_pkt->list, type);
-
     return tlv->length;
 }
 
@@ -510,8 +489,6 @@ int tlv_pkt_get_bytes(tlv_pkt_t *tlv_pkt, int type, unsigned char **value)
     memset(*value, 0, tlv->length);
     memcpy(*value, tlv->value, tlv->length);
 
-    key_list_delete(tlv_pkt->list, type);
-
     return tlv->length;
 }
 
@@ -524,8 +501,6 @@ tlv_pkt_t *tlv_pkt_get_tlv(tlv_pkt_t *tlv_pkt, int type)
         return NULL;
 
     tlv = (tlv_t *)tlv_value.value;
-
-    key_list_delete(tlv_pkt->list, type);
 
     return (tlv_pkt_t *)tlv_pkt_parse(tlv->value, tlv->length);
 }

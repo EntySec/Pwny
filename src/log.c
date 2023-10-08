@@ -27,7 +27,7 @@
 
 #include <log.h>
 
-void log_debug(const char* fmt, ...)
+void log_debug(const char *fmt, ...)
 {
     #ifdef DEBUG
     va_list args;

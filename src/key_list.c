@@ -115,10 +115,6 @@ int key_list_find_key(key_list_t *list, int key)
 
 int key_list_add(key_list_t *list, int key, value_t value)
 {
-    /*if (key_list_find_key(list, key))
-        return -1;*/
-    /* allow adding duplicates */
-
     key_list_node_t *node;
 
     node = calloc(1, sizeof(key_list_node_t));

@@ -50,7 +50,6 @@ int tlv_pkt_read(int, tlv_pkt_t *);
 
 void tlv_pkt_destroy(tlv_pkt_t *);
 int tlv_pkt_serialize(tlv_pkt_t *);
-int tlv_pkt_delete(tlv_pkt_t *, int);
 
 int tlv_pkt_add_raw(tlv_pkt_t *, int, void *, int);
 

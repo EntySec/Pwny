@@ -46,7 +46,7 @@ void tlv_console_loop(c2_t *c2)
 
     for (;;)
     {
-        if (c2_read(c2) >= 0)
+        if (c2_read(c2, &c2->tlv_pkt) >= 0)
         {
             log_debug("* Talking to %d from base\n", c2->fd);
             tlv_pkt_get_int(c2->tlv_pkt, TLV_TYPE_TAG, &tag);
@@ -87,7 +87,7 @@ void tab_console_loop(c2_t *c2)
 
     for (;;)
     {
-        if (c2_read(c2) >= 0)
+        if (c2_read(c2, &c2->tlv_pkt) >= 0)
         {
             log_debug("* Talking to %d from tab\n", c2->fd);
             tlv_pkt_get_int(c2->tlv_pkt, TLV_TYPE_TAG, &tag);

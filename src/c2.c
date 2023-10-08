@@ -54,7 +54,7 @@ c2_t *c2_create(int id, int fd, char *name)
         c2->id = id;
         c2->fd = fd;
 
-        if (name == NULL)
+        if (name != NULL)
             c2->name = strdup(name);
         else
             c2->name = NULL;
@@ -73,48 +73,97 @@ c2_t *c2_create(int id, int fd, char *name)
     return NULL;
 }
 
+int c2_write_status(c2_t *c2, int status)
+{
+    tlv_pkt_t *tlv_pkt;
+
+    tlv_pkt = tlv_pkt_create();
+    if (tlv_pkt == NULL)
+        return -1;
+
+    tlv_pkt_add_int(tlv_pkt, TLV_TYPE_STATUS, status);
+    if (c2_write(c2, tlv_pkt) < 0)
+        goto fail;
+
+    tlv_pkt_destroy(tlv_pkt);
+    return 0;
+
+fail:
+    tlv_pkt_destroy(tlv_pkt);
+    return -1;
+}
+
+int c2_read_status(c2_t *c2, int *status)
+{
+    tlv_pkt_t *tlv_pkt;
+
+    if (c2_read(c2, &tlv_pkt) < 0)
+        goto fail;
+
+    if (tlv_pkt_get_int(tlv_pkt, TLV_TYPE_STATUS, status) < 0)
+        goto fail;
+
+    tlv_pkt_destroy(tlv_pkt);
+    return 0;
+
+fail:
+    tlv_pkt_destroy(tlv_pkt);
+    return -1;
+}
+
 int c2_write_file(c2_t *c2, FILE *file)
 {
     int bytes_read;
+    int status;
+
     unsigned char *buffer;
     tlv_pkt_t *tlv_pkt;
 
     buffer = malloc(TLV_FILE_CHUNK);
-    tlv_pkt = tlv_pkt_create();
 
-    if (buffer == NULL || tlv_pkt = NULL)
+    if (file == NULL || buffer == NULL)
+    {
+        c2_write_status(c2, API_CALL_ENOENT);
         return -1;
+    }
+
+    if (c2_write_status(c2, API_CALL_SUCCESS) < 0)
+        return -1;
+
+    if (c2_read_status(c2, &status) < 0)
+        return -1;
+
+    if (status == API_CALL_ENOENT)
+    {
+        tlv_pkt_destroy(tlv_pkt);
+        return -1;
+    }
 
     while ((bytes_read = fread(buffer, 1, TLV_FILE_CHUNK, file)) > 0)
     {
+        tlv_pkt = tlv_pkt_create();
+
         if (tlv_pkt_add_bytes(tlv_pkt, TLV_TYPE_FILE, buffer, bytes_read) < 0)
-        {
-            tlv_pkt_destroy(tlv_pkt);
-            free(buffer);
-            return -1;
-        }
+            goto fail;
 
         if (tlv_pkt_add_int(tlv_pkt, TLV_TYPE_STATUS, API_CALL_WAIT) < 0)
-        {
-            tlv_pkt_destroy(tlv_pkt);
-            free(buffer);
-            return -1;
-        }
+            goto fail;
 
         if (c2_write(c2, tlv_pkt) < 0)
-        {
-            tlv_pkt_destroy(tlv_pkt);
-            free(buffer);
-            return -1;
-        }
+            goto fail;
 
         memset(buffer, 0, TLV_FILE_CHUNK);
 
-        tlv_pkt_delete(tlv_pkt, TLV_TYPE_FILE);
-        tlv_pkt_delete(tlv_pkt, TLV_TYPE_STATUS);
+        tlv_pkt_destroy(tlv_pkt);
     }
 
+    free(buffer);
     return 0;
+
+fail:
+    tlv_pkt_destroy(tlv_pkt);
+    free(buffer);
+    return -1;
 }
 
 int c2_read_file(c2_t *c2, FILE *file)
@@ -125,36 +174,51 @@ int c2_read_file(c2_t *c2, FILE *file)
     unsigned char *buffer;
     tlv_pkt_t *tlv_pkt;
 
-    tlv_pkt = tlv_pkt_create();
+    if (c2_read_status(c2, &status) < 0)
+        return -1;
 
-    if (tlv_pkt == NULL)
+    if (status == API_CALL_ENOENT)
+        return -1;
+
+    if (file == NULL)
+    {
+        c2_write_status(c2, API_CALL_ENOENT);
+        return -1;
+    }
+
+    if (c2_write_status(c2, API_CALL_SUCCESS) < 0)
         return -1;
 
     for (;;)
     {
-        if ((bytes_read = tlv_pkt_get_bytes(tlv_pkt, TLV_TYPE_FILE, &buffer)) < 0)
-        {
-            tlv_pkt_destroy(tlv_pkt);
-            return -1;
-        }
+        tlv_pkt = tlv_pkt_create();
 
-        fwrite(buffer, sizeof(unsigned char), bytes_read, file);
-        free(buffer);
-
-        tlv_pkt_read(c2->fd, tlv_pkt);
+        if (c2_read(c2, &tlv_pkt) < 0)
+            goto fail;
 
         if (tlv_pkt_get_int(tlv_pkt, TLV_TYPE_STATUS, &status) < 0)
-        {
-            tlv_pkt_destroy(tlv_pkt);
-            return -1;
-        }
+            goto fail;
 
         if (status != API_CALL_WAIT)
+        {
+            tlv_pkt_destroy(tlv_pkt);
             break;
+        }
+
+        if ((bytes_read = tlv_pkt_get_bytes(tlv_pkt, TLV_TYPE_FILE, &buffer)) < 0)
+            goto fail;
+
+        fwrite(buffer, 1, bytes_read, file);
+
+        free(buffer);
+        tlv_pkt_destroy(tlv_pkt);
     }
 
-    tlv_pkt_destroy(tlv_pkt);
     return 0;
+
+fail:
+    tlv_pkt_destroy(tlv_pkt);
+    return -1;
 }
 
 int c2_write(c2_t *c2, tlv_pkt_t *tlv_pkt)
@@ -180,25 +244,25 @@ int c2_write(c2_t *c2, tlv_pkt_t *tlv_pkt)
     return tlv_pkt_write(c2->fd, tlv_pkt);
 }
 
-int c2_read(c2_t *c2)
+int c2_read(c2_t *c2, tlv_pkt_t **tlv_pkt)
 {
     int iter;
     int count;
 
-    c2->tlv_pkt = tlv_pkt_create();
-    if (c2->tlv_pkt == NULL)
+    *tlv_pkt = tlv_pkt_create();
+    if (*tlv_pkt == NULL)
         return -1;
 
-    if (tlv_pkt_read(c2->fd, c2->tlv_pkt) < 0)
+    if (tlv_pkt_read(c2->fd, *tlv_pkt) < 0)
         return -1;
 
-    if (tlv_pkt_get_int(c2->tlv_pkt, TLV_TYPE_COUNT, &count) < 0)
+    if (tlv_pkt_get_int(*tlv_pkt, TLV_TYPE_COUNT, &count) < 0)
         return -1;
 
     log_debug("* Reading TLV packets (%d)\n", count);
 
     for (iter = 0; iter < count; iter++)
-        if (tlv_pkt_read(c2->fd, c2->tlv_pkt) < 0)
+        if (tlv_pkt_read(c2->fd, *tlv_pkt) < 0)
             return -1;
 
     return 0;
@@ -235,20 +299,11 @@ void c2_init(c2_t *c2_table)
         tlv_pkt = tlv_pkt_create();
 
         if (tlv_pkt != NULL)
-        {
             if (tlv_pkt_add_string(tlv_pkt, TLV_TYPE_UUID, c2->name) >= 0)
-            {
-                log_debug("* Writing net C2 server name (%s)\n", c2->name);
-
-                if (c2_write(c2, tlv_pkt) < 0)
-                    tlv_pkt_destroy(tlv_pkt);
-                else
+                if (c2_write(c2, tlv_pkt) >= 0)
                     tlv_console_loop(c2);
 
-            }
-            else
-                tlv_pkt_destroy(tlv_pkt);
-        }
+        tlv_pkt_destroy(tlv_pkt);
 
         HASH_DEL(c2_table, c2);
 
@@ -258,6 +313,7 @@ void c2_init(c2_t *c2_table)
 
         if (c2->name != NULL)
             free(c2->name);
+
         free(c2);
     }
 
