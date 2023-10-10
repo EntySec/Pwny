@@ -9,5 +9,7 @@ c, a = s.accept()
 print(a)
 
 p = PwnySession()
+p.details['Platform'] = 'linux'
+p.details['Arch'] = 'aarch64'
 p.open(c)
 p.interact()

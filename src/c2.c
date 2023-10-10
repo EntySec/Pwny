@@ -226,22 +226,22 @@ int c2_write(c2_t *c2, tlv_pkt_t *tlv_pkt)
     tlv_pkt_t *tlv_count;
 
     tlv_count = tlv_pkt_create();
+    if (tlv_count == NULL)
+        return -1;
 
     if (tlv_pkt_add_int(tlv_count, TLV_TYPE_COUNT, tlv_pkt->count) < 0)
-    {
-        tlv_pkt_destroy(tlv_count);
-        return -1;
-    }
+        goto fail;
 
     if (tlv_pkt_write(c2->fd, tlv_count) < 0)
-    {
-        tlv_pkt_destroy(tlv_count);
-        return -1;
-    }
+        goto fail;
 
     log_debug("* Writing TLV packets (%d)\n", tlv_pkt->count);
 
     return tlv_pkt_write(c2->fd, tlv_pkt);
+
+fail:
+    tlv_pkt_destroy(tlv_count);
+    return -1;
 }
 
 int c2_read(c2_t *c2, tlv_pkt_t **tlv_pkt)
@@ -254,18 +254,24 @@ int c2_read(c2_t *c2, tlv_pkt_t **tlv_pkt)
         return -1;
 
     if (tlv_pkt_read(c2->fd, *tlv_pkt) < 0)
-        return -1;
+        goto fail;
+
+    log_debug("* Processing read TLV count\n");
 
     if (tlv_pkt_get_int(*tlv_pkt, TLV_TYPE_COUNT, &count) < 0)
-        return -1;
+        goto fail;
 
     log_debug("* Reading TLV packets (%d)\n", count);
 
     for (iter = 0; iter < count; iter++)
         if (tlv_pkt_read(c2->fd, *tlv_pkt) < 0)
-            return -1;
+            goto fail;
 
     return 0;
+
+fail:
+    tlv_pkt_destroy(*tlv_pkt);
+    return -1;
 }
 
 void c2_add(c2_t **c2_table, int id, int fd, char *name)

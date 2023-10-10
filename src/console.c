@@ -74,9 +74,8 @@ void tlv_console_loop(c2_t *c2)
             }
 
             tlv_pkt_destroy(tlv_pkt);
+            tlv_pkt_destroy(c2->tlv_pkt);
         }
-
-        tlv_pkt_destroy(c2->tlv_pkt);
     }
 }
 
@@ -104,10 +103,10 @@ void tab_console_loop(c2_t *c2)
                 tlv_pkt = api_craft_tlv_pkt(API_CALL_NOT_IMPLEMENTED);
 
             c2_write(c2, tlv_pkt);
-            tlv_pkt_destroy(tlv_pkt);
-        }
 
-        tlv_pkt_destroy(c2->tlv_pkt);
+            tlv_pkt_destroy(tlv_pkt);
+            tlv_pkt_destroy(c2->tlv_pkt);
+        }
     }
 
     free(c2);

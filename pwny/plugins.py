@@ -48,6 +48,7 @@ class Plugins(Tables, Badges):
 
         self.imported_plugins = {}
         self.loaded_plugins = {}
+        self.plugin_ids = {}
 
     def import_plugins(self, path: str, session: Session) -> None:
         """ Import plugins for the specified session.
@@ -117,10 +118,9 @@ class Plugins(Tables, Badges):
                         raise RuntimeError(f"Failed to load plugin: {plugin}!")
 
                     tab_id = tlv.get_int(TLV_TYPE_TAB_ID)
-                    self.loaded_plugins[plugin] = {
-                        'ID': tab_id,
-                        'Object': plugin_object
-                    }
+
+                    self.loaded_plugins[plugin] = plugin_object
+                    self.plugin_ids[plugin] = tab_id
 
                     plugin_object.load()
                 else:
@@ -143,13 +143,13 @@ class Plugins(Tables, Badges):
         self.print_process(f"Unloading plugin {plugin}...")
 
         if plugin in self.imported_plugins:
-            plugin_object = self.loaded_plugins[plugin]['Object']
+            plugin_object = self.loaded_plugins[plugin]
             session = plugin_object.session
 
             tlv = session.send_command(
                 tag=API_DEL_TAB,
                 args={
-                    TLV_TYPE_TAB_ID: self.loaded_plugins[plugin]['ID']
+                    TLV_TYPE_TAB_ID: self.plugin_ids[plugin]
                 }
             )
 
@@ -157,6 +157,7 @@ class Plugins(Tables, Badges):
                 raise RuntimeError(f"Failed to unload plugin: {plugin}!")
 
             self.loaded_plugins.pop(plugin)
+            self.plugin_ids.pop(plugin)
         else:
             raise RuntimeError(f"Plugin is not loaded: {plugin}!")
 
