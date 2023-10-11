@@ -44,26 +44,30 @@
         TLV_TYPE_CUSTOM(API_CALL_STATIC, \
                         BUILTIN_BASE, \
                         API_CALL + 2)
-#define BUILTIN_ADD_TAB \
+#define BUILTIN_ADD_TAB_DISK \
         TLV_TYPE_CUSTOM(API_CALL_STATIC, \
                         BUILTIN_BASE, \
                         API_CALL + 3)
-#define BUILTIN_DELETE_TAB \
+#define BUILTIN_ADD_TAB_BUFFER \
         TLV_TYPE_CUSTOM(API_CALL_STATIC, \
                         BUILTIN_BASE, \
                         API_CALL + 4)
-#define BUILTIN_MIGRATE \
+#define BUILTIN_DELETE_TAB \
         TLV_TYPE_CUSTOM(API_CALL_STATIC, \
                         BUILTIN_BASE, \
                         API_CALL + 5)
-#define BUILTIN_PULL \
+#define BUILTIN_MIGRATE \
         TLV_TYPE_CUSTOM(API_CALL_STATIC, \
                         BUILTIN_BASE, \
                         API_CALL + 6)
-#define BUILTIN_PUSH \
+#define BUILTIN_PULL \
         TLV_TYPE_CUSTOM(API_CALL_STATIC, \
                         BUILTIN_BASE, \
                         API_CALL + 7)
+#define BUILTIN_PUSH \
+        TLV_TYPE_CUSTOM(API_CALL_STATIC, \
+                        BUILTIN_BASE, \
+                        API_CALL + 8)
 
 static tlv_pkt_t *builtin_quit(c2_t *c2)
 {
@@ -107,7 +111,27 @@ static tlv_pkt_t *builtin_delete_node(c2_t *c2)
     return api_craft_tlv_pkt(API_CALL_FAIL);
 }
 
-static tlv_pkt_t *builtin_add_tab(c2_t *c2)
+static tlv_pkt_t *builtin_add_tab_disk(c2_t *c2)
+{
+    char filename[128];
+    tlv_pkt_t *result;
+
+    if (tlv_pkt_get_string(c2->tlv_pkt, TLV_TYPE_FILENAME, filename) >= 0)
+    {
+        if (tab_add_disk(&c2->dynamic.tabs, c2->dynamic.t_count, filename) >= 0)
+        {
+            result = api_craft_tlv_pkt(API_CALL_SUCCESS);
+            tlv_pkt_add_int(result, TLV_TYPE_TAB_ID, c2->dynamic.t_count);
+            c2->dynamic.t_count++;
+
+            return result;
+        }
+    }
+
+    return api_craft_tlv_pkt(API_CALL_FAIL);
+}
+
+static tlv_pkt_t *builtin_add_tab_buffer(c2_t *c2)
 {
     int tab_size;
     unsigned char *tab;
@@ -115,7 +139,7 @@ static tlv_pkt_t *builtin_add_tab(c2_t *c2)
 
     if ((tab_size = tlv_pkt_get_bytes(c2->tlv_pkt, TLV_TYPE_TAB, &tab)) >= 0)
     {
-        if (tab_add(&c2->dynamic.tabs, c2->dynamic.t_count, tab, tab_size) >= 0)
+        if (tab_add_buffer(&c2->dynamic.tabs, c2->dynamic.t_count, tab, tab_size) >= 0)
         {
             result = api_craft_tlv_pkt(API_CALL_SUCCESS);
             tlv_pkt_add_int(result, TLV_TYPE_TAB_ID, c2->dynamic.t_count);
@@ -212,7 +236,8 @@ void register_builtin_api_calls(api_calls_t **api_calls)
     api_call_register(api_calls, BUILTIN_QUIT, builtin_quit);
     api_call_register(api_calls, BUILTIN_ADD_NODE, builtin_add_node);
     api_call_register(api_calls, BUILTIN_DELETE_NODE, builtin_delete_node);
-    api_call_register(api_calls, BUILTIN_ADD_TAB, builtin_add_tab);
+    api_call_register(api_calls, BUILTIN_ADD_TAB_DISK, builtin_add_tab_disk)
+    api_call_register(api_calls, BUILTIN_ADD_TAB_BUFFER, builtin_add_tab_buffer);
     api_call_register(api_calls, BUILTIN_DELETE_TAB, builtin_delete_tab);
     api_call_register(api_calls, BUILTIN_MIGRATE, builtin_migrate);
     api_call_register(api_calls, BUILTIN_PULL, builtin_pull);

@@ -45,7 +45,8 @@ typedef struct tabs_table
 } tabs_t;
 
 int tab_exit(tabs_t *);
-int tab_add(tabs_t **, int, unsigned char *, int);
+int tab_add_disk(tabs_t **, int, char *);
+int tab_add_buffer(tabs_t **, int, unsigned char *, int);
 int tab_delete(tabs_t **, int);
 
 tlv_pkt_t *tab_lookup(tabs_t **, int, c2_t *);

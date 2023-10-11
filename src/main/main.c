@@ -72,10 +72,7 @@ int main(int argc, char *argv[])
     }
     else
     {
-        if (argc >= 3)
-            fd = connect_to(argv[1], (int)argv[2]);
-        else
-            fd = connect_to("192.168.64.1", 8888);
+        fd = connect_to("192.168.64.1", 8888);
 
         if (fd < 0)
             return 1;
