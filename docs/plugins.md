@@ -71,3 +71,7 @@ If you have one or more functions available, you should replace `/* Your C2 API 
 ```
 
 Where `TEST` is a function TLV tag and `test` is a function.
+
+## How it works?
+
+![diagram](https://github.com/EntySec/Pwny/tree/main/docs/tabs.png)
