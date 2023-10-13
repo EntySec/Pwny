@@ -17,24 +17,16 @@ Firstly, include these headers:
 #include <console.h>
 ```
 
-Then you should specify you plugin base number.
-
-**NOTE:** Base number should be a positive unique number greater than `0`. It should be different from the base numbers of other plugins.
-
-```c
-#define BASE 1
-```
-
-After you specified the base number of your plugin, you should specify TLV tag for each of the plugin functions.
+Then you should specify TLV tag for each of the plugin functions.
 
 ```
 #define TEST \
         TLV_TYPE_CUSTOM(API_CALL_DYNAMIC, \
-                        TEST_BASE, \
+                        TAB_BASE, \
                         API_CALL)
 ```
 
-**NOTE:** For all further tags you should write `API_CALL + N` where `N` is a number of function starting with `1` (e.g. `API_CALL + 1`, `API_CALL + 2` and so on)
+`API_CALL_DYNAMIC` and `TAB_BASE` should be left unchanged. However, for all further tags you should write `API_CALL + N` where `N` is a number of function starting with `1` (e.g. `API_CALL + 1`, `API_CALL + 2` and so on)
 
 Then declare your function. You can find all the necessary constants and tools in `include/` or you can refer to the TLV and C2 docs.
 
@@ -54,11 +46,12 @@ int main(void)
 {
     c2_t *c2;
 
-    c2 = c2_create(TEST_BASE, STDIN_FILENO, NULL);
+    c2 = c2_create(0, STDIN_FILENO, NULL);
 
     /* Your C2 API calls registration */
 
     tab_console_loop(c2);
+    c2_destroy(c2);
 
     return 0;
 }
