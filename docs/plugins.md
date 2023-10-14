@@ -19,7 +19,7 @@ Firstly, include these headers:
 
 Then you should specify TLV tag for each of the plugin functions.
 
-```
+```c
 #define TEST \
         TLV_TYPE_CUSTOM(API_CALL_DYNAMIC, \
                         TAB_BASE, \
@@ -31,15 +31,15 @@ Then you should specify TLV tag for each of the plugin functions.
 Then declare your function. You can find all the necessary constants and tools in `include/` or you can refer to the TLV and C2 docs.
 
 ```c
-static tlv_pkt_t test(c2_t *c2)
+static tlv_pkt_t *test(c2_t *c2)
 {
     return api_craft_tlv_pkt(API_CALL_SUCCESS);
 }
 ```
 
-**NOTE:** All functions should return `tlv_pkt_t` and have `c2_t` as an argument (`c2_t` is an instance of the C2 handler).
+**NOTE:** All functions should return `tlv_pkt_t *` and have `c2_t *` as an argument (`c2_t *` is an instance of the C2 handler).
 
-All Pwny plugins should have this code as a `main()` function.
+All Pwny plugins should have this code as a `main(void)` function.
 
 ```c
 int main(void)
