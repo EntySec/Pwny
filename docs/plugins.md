@@ -46,9 +46,7 @@ int main(void)
 {
     c2_t *c2;
 
-    c2 = c2_create(0, STDIN_FILENO, NULL);
-
-    if (c2 != NULL)
+    if ((c2 = c2_create(0, STDIN_FILENO, NULL)) != NULL)
     {
         /* Your C2 API calls registration */
 
