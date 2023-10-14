@@ -48,12 +48,17 @@ int main(void)
 
     c2 = c2_create(0, STDIN_FILENO, NULL);
 
-    /* Your C2 API calls registration */
+    if (c2 != NULL)
+    {
+        /* Your C2 API calls registration */
 
-    tab_console_loop(c2);
-    c2_destroy(c2);
+        tab_console_loop(c2);
+        c2_destroy(c2, FD_CLOSE);
 
-    return 0;
+        return 0;
+    }
+
+    return 1;
 }
 ```
 
