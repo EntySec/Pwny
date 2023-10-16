@@ -64,6 +64,7 @@
 #define TLV_TYPE_MIGRATE (TLV_TYPE_BYTES | 2)
 #define TLV_TYPE_FILE    (TLV_TYPE_BYTES | 3)
 
-#define TLV_TYPE_UUID   (TLV_TYPE_STRING | 1)
+#define TLV_TYPE_UUID     (TLV_TYPE_STRING | 1)
+#define TLV_TYPE_FILENAME (TLV_TYPE_STRING | 2)
 
-#endif /* _TLV_TYPES_H_ */
+#endif

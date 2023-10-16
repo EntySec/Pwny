@@ -41,6 +41,11 @@
 
 #define PACK_IPV4(o1,o2,o3,o4) (htonl((o1 << 24) | (o2 << 16) | (o3 << 8) | (o4 << 0)))
 
+#define NULL_FD -1
+
+#define FD_CLOSE 0
+#define FD_LEAVE 1
+
 typedef struct
 {
     int id, fd;
@@ -58,18 +63,20 @@ typedef struct
     UT_hash_handle hh;
 } c2_t;
 
-c2_t *c2_create(int, int, char *);
+c2_t *c2_create(int id, int fd, char *name);
 
-int c2_write_status(c2_t *, int);
-int c2_read_status(c2_t *, int *);
+int c2_write_status(c2_t *c2, int status);
+int c2_read_status(c2_t *c2, int *status);
 
-int c2_write(c2_t *, tlv_pkt_t *);
-int c2_read(c2_t *, tlv_pkt_t **);
+int c2_write(c2_t *c2, tlv_pkt_t *tlv_pkt);
+int c2_read(c2_t *c2, tlv_pkt_t **tlv_pkt);
 
-int c2_write_file(c2_t *, FILE *);
-int c2_read_file(c2_t *, FILE *);
+int c2_write_file(c2_t *c2, FILE *file);
+int c2_read_file(c2_t *c2, FILE *file);
 
-void c2_add(c2_t **, int, int, char *);
-void c2_init(c2_t *);
+void c2_add(c2_t **c2_table, int id, int fd, char *name);
+void c2_init(c2_t *c2_table);
 
-#endif /* _C2_H_ */
+void c2_destroy(c2_t *c2, int flags);
+
+#endif

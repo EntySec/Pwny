@@ -25,6 +25,6 @@
 #ifndef _LOG_H_
 #define _LOG_H_
 
-void log_debug(const char *, ...);
+void log_debug(const char *fmt __attribute__((unused)), ...);
 
-#endif /* _LOG_H_ */
+#endif

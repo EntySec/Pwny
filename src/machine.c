@@ -54,38 +54,46 @@ int machine_uuid(char *buffer)
     int iter;
     int part;
 
-    #if defined(LINUX) || defined(MACOS)
+#if defined(LINUX) || defined(MACOS)
     FILE *fp;
 
     fp = fopen("/dev/urandom", "rb");
 
     if (!fp)
+    {
         return -1;
+    }
 
     bytes_read = fread(new_seed, 1, sizeof(new_seed), fp);
     fclose(fp);
 
     if (bytes_read != sizeof(new_seed))
+    {
         return -1;
+    }
 
-    #elif defined(WINDOWS)
+#elif defined(WINDOWS)
     HCRYPTPROV hCryptProv;
 
     bytes_read = CryptAcquireContext(
         &hCryptProv, NULL, NULL, PROV_RSA_FULL, CRYPT_VERIFYCONTEXT);
 
     if (!bytes_read)
+    {
         return -1;
+    }
 
     bytes_read = CryptGenRandom(hCryptProv, (DWORD) sizeof(seed), (PBYTE) new_seed);
     CryptReleaseContext(hCryptProv, 0);
 
     if (!bytes_read)
+    {
         return -1;
+    }
 
-    #else
+#else
         return -1;
-    #endif
+#endif
 
     seed.word[0] = xor_shift_128_plus(new_seed);
     seed.word[1] = xor_shift_128_plus(new_seed);

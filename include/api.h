@@ -35,7 +35,8 @@
 #define API_CALL_STATIC 10000
 #define API_CALL_DYNAMIC 40000
 
-enum api_call_statuses {
+enum api_call_statuses
+{
     API_CALL_QUIT,
     API_CALL_SUCCESS,
     API_CALL_FAIL,
@@ -55,12 +56,12 @@ typedef struct api_calls_table
     UT_hash_handle hh;
 } api_calls_t;
 
-tlv_pkt_t *api_craft_tlv_pkt(int);
-tlv_pkt_t *api_call_make(api_calls_t **, c2_t *, int);
+tlv_pkt_t *api_craft_tlv_pkt(int status);
+tlv_pkt_t *api_call_make(api_calls_t **api_calls, c2_t *c2, int tag);
 
-void api_calls_register(api_calls_t **);
-void api_call_register(api_calls_t **, int, api_t);
+void api_calls_register(api_calls_t **api_calls);
+void api_call_register(api_calls_t **api_calls, int tag, api_t handler);
 
-void api_calls_free(api_calls_t *);
+void api_calls_free(api_calls_t *api_calls);
 
-#endif /* _API_H_ */
+#endif

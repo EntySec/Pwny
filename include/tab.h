@@ -39,18 +39,21 @@
 
 typedef struct tabs_table
 {
-    int id, fd;
+    int id;
+    c2_t *c2;
     pid_t pid;
     UT_hash_handle hh;
 } tabs_t;
 
-int tab_exit(tabs_t *);
-int tab_add_disk(tabs_t **, int, char *);
-int tab_add_buffer(tabs_t **, int, unsigned char *, int);
-int tab_delete(tabs_t **, int);
+void tab_wait(tabs_t *tab);
 
-tlv_pkt_t *tab_lookup(tabs_t **, int, c2_t *);
+int tab_exit(tabs_t *tab);
+int tab_add_disk(tabs_t **tabs, int id, char *filename);
+int tab_add_buffer(tabs_t **tabs, int id, unsigned char *buffer, int size);
+int tab_delete(tabs_t **tabs, int id);
 
-void tabs_free(tabs_t *);
+tlv_pkt_t *tab_lookup(tabs_t **tabs, int id, c2_t *c2);
 
-#endif /* _TAB_H_ */
+void tabs_free(tabs_t *tabs);
+
+#endif

@@ -23,8 +23,8 @@
 #
 
 CC = gcc
-CFLAGS = -std=c99 -Wall -Wextra -Werror -pedantic-errors -I$(PWNY)
-LDFLAGS = -lpwny -lpawn -pthread
+CFLAGS = -std=c99 -pedantic-errors -I$(PWNY)
+LDFLAGS = -lpwny -lpawn -linjector -pthread
 
 all: test
 

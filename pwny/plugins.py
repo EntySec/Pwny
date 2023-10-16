@@ -97,7 +97,7 @@ class Plugins(Tables, Badges):
             if plugin in self.imported_plugins:
                 plugin_object = self.imported_plugins[plugin]
 
-                session = self.imported_plugins[plugin].session
+                session = plugin_object.session
                 details = plugin_object.details
 
                 tab_path = (session.pwny_libs +
@@ -110,7 +110,7 @@ class Plugins(Tables, Badges):
                         data = f.read()
 
                         tlv = session.send_command(
-                            tag=API_ADD_TAB,
+                            tag=API_ADD_TAB_BUFFER,
                             args={TLV_TYPE_TAB: data}
                         )
 
@@ -118,6 +118,8 @@ class Plugins(Tables, Badges):
                         raise RuntimeError(f"Failed to load plugin: {plugin}!")
 
                     tab_id = tlv.get_int(TLV_TYPE_TAB_ID)
+
+                    plugin_object.plugin = tab_id
 
                     self.loaded_plugins[plugin] = plugin_object
                     self.plugin_ids[plugin] = tab_id

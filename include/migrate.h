@@ -25,7 +25,7 @@
 #ifndef _MIGRATE_H_
 #define _MIGRATE_H_
 
-int migrate_init(c2_t *, pid_t, int, unsigned char *);
-int migrate_inject(c2_t *, pid_t, char *);
+int migrate_init(c2_t *c2, pid_t pid, int length, unsigned char *buffer);
+int migrate_inject(c2_t *, pid_t pid, char *image);
 
-#endif /* _MIGRATE_H_ */
+#endif

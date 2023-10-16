@@ -32,14 +32,15 @@ class HatSploitPlugin(Plugin):
             }
         }
 
-        self.test_tag = tlv_custom(API_CALL_DYNAMIC, 1, API_CALL)
+        self.test_tag = tlv_custom(API_CALL_DYNAMIC, TAB_BASE, API_CALL)
 
     def test(self, argc, argv):
         result = self.session.send_command(
             tag=self.test_tag,
+            plugin=self.plugin
         )
 
-        print(result.get_string(TLV_TYPE_STRING))
+        self.print_information(result.get_string(TLV_TYPE_STRING))
 
     def load(self):
-        pass
+        self.print_success("Hello from test!")

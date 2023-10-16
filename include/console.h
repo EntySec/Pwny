@@ -28,7 +28,7 @@
 #include <api.h>
 #include <c2.h>
 
-void tlv_console_loop(c2_t *);
-void tab_console_loop(c2_t *);
+void tlv_console_loop(c2_t *c2);
+void tab_console_loop(c2_t *c2);
 
-#endif /* _CONSOLE_H_ */
+#endif

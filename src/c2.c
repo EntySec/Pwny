@@ -55,9 +55,13 @@ c2_t *c2_create(int id, int fd, char *name)
         c2->fd = fd;
 
         if (name != NULL)
+        {
             c2->name = strdup(name);
+        }
         else
+        {
             c2->name = NULL;
+        }
 
         c2->tlv_pkt = NULL;
 
@@ -78,12 +82,18 @@ int c2_write_status(c2_t *c2, int status)
     tlv_pkt_t *tlv_pkt;
 
     tlv_pkt = tlv_pkt_create();
+
     if (tlv_pkt == NULL)
+    {
         return -1;
+    }
 
     tlv_pkt_add_int(tlv_pkt, TLV_TYPE_STATUS, status);
+
     if (c2_write(c2, tlv_pkt) < 0)
+    {
         goto fail;
+    }
 
     tlv_pkt_destroy(tlv_pkt);
     return 0;
@@ -98,10 +108,14 @@ int c2_read_status(c2_t *c2, int *status)
     tlv_pkt_t *tlv_pkt;
 
     if (c2_read(c2, &tlv_pkt) < 0)
+    {
         goto fail;
+    }
 
     if (tlv_pkt_get_int(tlv_pkt, TLV_TYPE_STATUS, status) < 0)
+    {
         goto fail;
+    }
 
     tlv_pkt_destroy(tlv_pkt);
     return 0;
@@ -128,10 +142,14 @@ int c2_write_file(c2_t *c2, FILE *file)
     }
 
     if (c2_write_status(c2, API_CALL_SUCCESS) < 0)
+    {
         return -1;
+    }
 
     if (c2_read_status(c2, &status) < 0)
+    {
         return -1;
+    }
 
     if (status == API_CALL_ENOENT)
     {
@@ -144,13 +162,19 @@ int c2_write_file(c2_t *c2, FILE *file)
         tlv_pkt = tlv_pkt_create();
 
         if (tlv_pkt_add_bytes(tlv_pkt, TLV_TYPE_FILE, buffer, bytes_read) < 0)
+        {
             goto fail;
+        }
 
         if (tlv_pkt_add_int(tlv_pkt, TLV_TYPE_STATUS, API_CALL_WAIT) < 0)
+        {
             goto fail;
+        }
 
         if (c2_write(c2, tlv_pkt) < 0)
+        {
             goto fail;
+        }
 
         memset(buffer, 0, TLV_FILE_CHUNK);
 
@@ -175,10 +199,14 @@ int c2_read_file(c2_t *c2, FILE *file)
     tlv_pkt_t *tlv_pkt;
 
     if (c2_read_status(c2, &status) < 0)
+    {
         return -1;
+    }
 
     if (status == API_CALL_ENOENT)
+    {
         return -1;
+    }
 
     if (file == NULL)
     {
@@ -187,17 +215,23 @@ int c2_read_file(c2_t *c2, FILE *file)
     }
 
     if (c2_write_status(c2, API_CALL_SUCCESS) < 0)
+    {
         return -1;
+    }
 
     for (;;)
     {
         tlv_pkt = tlv_pkt_create();
 
         if (c2_read(c2, &tlv_pkt) < 0)
+        {
             goto fail;
+        }
 
         if (tlv_pkt_get_int(tlv_pkt, TLV_TYPE_STATUS, &status) < 0)
+        {
             goto fail;
+        }
 
         if (status != API_CALL_WAIT)
         {
@@ -206,7 +240,9 @@ int c2_read_file(c2_t *c2, FILE *file)
         }
 
         if ((bytes_read = tlv_pkt_get_bytes(tlv_pkt, TLV_TYPE_FILE, &buffer)) < 0)
+        {
             goto fail;
+        }
 
         fwrite(buffer, 1, bytes_read, file);
 
@@ -226,14 +262,21 @@ int c2_write(c2_t *c2, tlv_pkt_t *tlv_pkt)
     tlv_pkt_t *tlv_count;
 
     tlv_count = tlv_pkt_create();
+
     if (tlv_count == NULL)
+    {
         return -1;
+    }
 
     if (tlv_pkt_add_int(tlv_count, TLV_TYPE_COUNT, tlv_pkt->count) < 0)
+    {
         goto fail;
+    }
 
     if (tlv_pkt_write(c2->fd, tlv_count) < 0)
+    {
         goto fail;
+    }
 
     log_debug("* Writing TLV packets (%d)\n", tlv_pkt->count);
 
@@ -250,22 +293,33 @@ int c2_read(c2_t *c2, tlv_pkt_t **tlv_pkt)
     int count;
 
     *tlv_pkt = tlv_pkt_create();
+
     if (*tlv_pkt == NULL)
+    {
         return -1;
+    }
 
     if (tlv_pkt_read(c2->fd, *tlv_pkt) < 0)
+    {
         goto fail;
+    }
 
     log_debug("* Processing read TLV count\n");
 
     if (tlv_pkt_get_int(*tlv_pkt, TLV_TYPE_COUNT, &count) < 0)
+    {
         goto fail;
+    }
 
     log_debug("* Reading TLV packets (%d)\n", count);
 
     for (iter = 0; iter < count; iter++)
+    {
         if (tlv_pkt_read(c2->fd, *tlv_pkt) < 0)
+        {
             goto fail;
+        }
+    }
 
     return 0;
 
@@ -293,6 +347,25 @@ void c2_add(c2_t **c2_table, int id, int fd, char *name)
     }
 }
 
+void c2_destroy(c2_t *c2, int flags)
+{
+    tabs_free(c2->dynamic.tabs);
+    nodes_free(c2->dynamic.nodes);
+    api_calls_free(c2->dynamic.api_calls);
+
+    if (flags != FD_LEFTOPEN)
+    {
+        close(c2->fd);
+    }
+
+    if (c2->name != NULL)
+    {
+        free(c2->name);
+    }
+
+    free(c2);
+}
+
 void c2_init(c2_t *c2_table)
 {
     c2_t *c2;
@@ -305,22 +378,20 @@ void c2_init(c2_t *c2_table)
         tlv_pkt = tlv_pkt_create();
 
         if (tlv_pkt != NULL)
+        {
             if (tlv_pkt_add_string(tlv_pkt, TLV_TYPE_UUID, c2->name) >= 0)
+            {
                 if (c2_write(c2, tlv_pkt) >= 0)
+                {
                     tlv_console_loop(c2);
-
-        tlv_pkt_destroy(tlv_pkt);
+                }
+            }
+        }
 
         HASH_DEL(c2_table, c2);
 
-        tabs_free(c2->dynamic.tabs);
-        nodes_free(c2->dynamic.nodes);
-        api_calls_free(c2->dynamic.api_calls);
-
-        if (c2->name != NULL)
-            free(c2->name);
-
-        free(c2);
+        tlv_pkt_destroy(tlv_pkt);
+        c2_destroy(c2, FD_LEAVE);
     }
 
     free(c2_table);

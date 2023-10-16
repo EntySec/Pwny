@@ -25,11 +25,13 @@ SOFTWARE.
 import os
 import socket
 
-from typing import Union
+from typing import Union, Optional
 
 from . import Pwny
+
 from .types import *
 from .api import *
+
 from .tlv import TLV
 from .files import Files
 from .console import Console
@@ -110,15 +112,19 @@ class PwnySession(Pwny, Session, Console):
 
         return not self.terminated
 
-    def send_command(self, tag: int, args: dict = {}) -> TLVPacket:
+    def send_command(self, tag: int, args: dict = {}, plugin: Optional[int] = None) -> TLVPacket:
         """ Send command to the Pwny session.
 
         :param int tag: tag
         :param dict args: command arguments with their types
+        :param Optional[int] plugin: plugin ID if tag is presented within the plugin
         :return TLVPacket: packets
         """
 
         tlv = TLVPacket()
+
+        if plugin is not None:
+            tlv.add_int(TLV_TYPE_TAB_ID, plugin)
 
         tlv.add_int(TLV_TYPE_TAG, tag)
         tlv.add_from_dict(args)

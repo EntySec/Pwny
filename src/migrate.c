@@ -34,7 +34,7 @@
 #include <c2.h>
 #include <migrate.h>
 
-int migrate_init(c2_t *c2, pid_t migrate_pid, int buffer_len, unsigned char *buffer)
+int migrate_init(c2_t *c2, pid_t pid, int length, unsigned char *buffer)
 {
     #ifdef LINUX
     int fd;
@@ -44,10 +44,10 @@ int migrate_init(c2_t *c2, pid_t migrate_pid, int buffer_len, unsigned char *buf
 
     if (fd >= 0)
     {
-        write(fd, buffer, buffer_len);
+        write(fd, buffer, length);
         sprintf(image, "/proc/self/fd/%d", fd);
 
-        migrate_inject(c2, migrate_pid, image);
+        migrate_inject(c2, pid, image);
         return 0;
     }
     #endif
@@ -55,22 +55,32 @@ int migrate_init(c2_t *c2, pid_t migrate_pid, int buffer_len, unsigned char *buf
     return -1;
 }
 
-int migrate_inject(c2_t *c2, pid_t migrate_pid, char *image)
+int migrate_inject(c2_t *c2, pid_t pid, char *image)
 {
     injector_t *injector;
     void *handle;
 
     handle = NULL;
 
-    if (injector_attach(&injector, migrate_pid) < 0)
+    if (injector_attach(&injector, pid) < 0)
+    {
         return -1;
+    }
 
     if (injector_inject(injector, image, &handle) < 0)
-        return -1;
+    {
+        goto fail;
+    }
 
     if (injector_call(injector, handle, "init", c2->fd) < 0)
-        return -1;
+    {
+        goto fail;
+   }
 
     injector_detach(injector);
     return 0;
+
+fail:
+    injector_detach(injector);
+    return -1;
 }

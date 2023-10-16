@@ -53,15 +53,15 @@ typedef struct
     value_releaser_t releaser;
 } key_list_t;
 
-key_list_t *key_list_create(value_releaser_t);
-void key_list_destroy(key_list_t *);
+key_list_t *key_list_create(value_releaser_t releaser);
+void key_list_destroy(key_list_t *list);
 
-int key_list_keyset(key_list_t *, int *, int);
-int key_list_find_key(key_list_t *, int);
+int key_list_keyset(key_list_t *list, int *array, int array_size);
+int key_list_find_key(key_list_t *list, int key);
 
-int key_list_add(key_list_t *, int, value_t);
-int key_list_get(key_list_t *, int, value_t *);
-int key_list_edit(key_list_t *, int, value_t);
-int key_list_delete(key_list_t *, int);
+int key_list_add(key_list_t *list, int key, value_t value);
+int key_list_get(key_list_t *list, int key, value_t *value);
+int key_list_edit(key_list_t *list, int key, value_t value);
+int key_list_delete(key_list_t *list, int key);
 
-#endif /* _KEY_LIST_H_ */
+#endif

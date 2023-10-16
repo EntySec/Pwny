@@ -106,7 +106,9 @@ static tlv_pkt_t *builtin_delete_node(c2_t *c2)
     tlv_pkt_get_int(c2->tlv_pkt, TLV_TYPE_NODE_ID, &node_id);
 
     if (node_delete(&c2->dynamic.nodes, node_id) >= 0)
+    {
         return api_craft_tlv_pkt(API_CALL_SUCCESS);
+    }
 
     return api_craft_tlv_pkt(API_CALL_FAIL);
 }
@@ -149,7 +151,9 @@ static tlv_pkt_t *builtin_add_tab_buffer(c2_t *c2)
             return result;
         }
         else
+        {
             free(tab);
+        }
     }
 
     return api_craft_tlv_pkt(API_CALL_FAIL);
@@ -162,7 +166,9 @@ static tlv_pkt_t *builtin_delete_tab(c2_t *c2)
     tlv_pkt_get_int(c2->tlv_pkt, TLV_TYPE_TAB_ID, &tab_id);
 
     if (tab_delete(&c2->dynamic.tabs, tab_id) >= 0)
+    {
         return api_craft_tlv_pkt(API_CALL_SUCCESS);
+    }
 
     return api_craft_tlv_pkt(API_CALL_FAIL);
 }
@@ -190,21 +196,23 @@ static tlv_pkt_t *builtin_migrate(c2_t *c2)
 static tlv_pkt_t *builtin_pull(c2_t *c2)
 {
     FILE *file;
-    char *filename;
+    char filename[128];
     int status;
 
-    tlv_pkt_get_string(c2->tlv_pkt, TLV_TYPE_STRING, &filename);
+    tlv_pkt_get_string(c2->tlv_pkt, TLV_TYPE_STRING, filename);
     file = fopen(filename, "rb");
 
     status = API_CALL_FAIL;
 
     if (c2_write_file(c2, file) >= 0)
+    {
         status = API_CALL_SUCCESS;
+    }
 
     if (file != NULL)
+    {
         fclose(file);
-
-    free(filename);
+    }
 
     return api_craft_tlv_pkt(status);
 }
@@ -212,21 +220,23 @@ static tlv_pkt_t *builtin_pull(c2_t *c2)
 static tlv_pkt_t *builtin_push(c2_t *c2)
 {
     FILE *file;
-    char *filename;
+    char filename[128];
     int status;
 
-    tlv_pkt_get_string(c2->tlv_pkt, TLV_TYPE_STRING, &filename);
+    tlv_pkt_get_string(c2->tlv_pkt, TLV_TYPE_STRING, filename);
     file = fopen(filename, "wb");
 
     status = API_CALL_FAIL;
 
     if (c2_read_file(c2, file) >= 0)
+    {
         status = API_CALL_SUCCESS;
+    }
 
     if (file != NULL)
+    {
         fclose(file);
-
-    free(filename);
+    }
 
     return api_craft_tlv_pkt(status);
 }
@@ -236,7 +246,7 @@ void register_builtin_api_calls(api_calls_t **api_calls)
     api_call_register(api_calls, BUILTIN_QUIT, builtin_quit);
     api_call_register(api_calls, BUILTIN_ADD_NODE, builtin_add_node);
     api_call_register(api_calls, BUILTIN_DELETE_NODE, builtin_delete_node);
-    api_call_register(api_calls, BUILTIN_ADD_TAB_DISK, builtin_add_tab_disk)
+    api_call_register(api_calls, BUILTIN_ADD_TAB_DISK, builtin_add_tab_disk);
     api_call_register(api_calls, BUILTIN_ADD_TAB_BUFFER, builtin_add_tab_buffer);
     api_call_register(api_calls, BUILTIN_DELETE_TAB, builtin_delete_tab);
     api_call_register(api_calls, BUILTIN_MIGRATE, builtin_migrate);

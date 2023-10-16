@@ -29,14 +29,12 @@
 #include <tlv_types.h>
 #include <console.h>
 
-#define TEST_BASE 1
-
-#define TEST_TEST \
+#define TEST \
         TLV_TYPE_CUSTOM(API_CALL_DYNAMIC, \
-                        TEST_BASE, \
+                        TAB_BASE, \
                         API_CALL)
 
-static tlv_pkt_t *test_test(c2_t *c2)
+static tlv_pkt_t *test(c2_t *c2)
 {
     tlv_pkt_t *result;
 
@@ -50,9 +48,15 @@ int main(void)
 {
     c2_t *c2;
 
-    c2 = c2_create(TEST_BASE, STDIN_FILENO, NULL);
-    api_call_register(&c2->dynamic.api_calls, TEST_TEST, test_test);
-    tab_console_loop(c2);
+    if ((c2 = c2_create(0, STDIN_FILENO, NULL)) != NULL)
+    {
+        api_call_register(&c2->dynamic.api_calls, TEST, test);
 
-    return 0;
+        tab_console_loop(c2);
+        c2_destroy(c2, FD_CLOSE);
+
+        return 0;
+    }
+
+    return 1;
 }

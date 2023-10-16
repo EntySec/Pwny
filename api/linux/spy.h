@@ -64,13 +64,19 @@ static tlv_pkt_t *spy_mic_list(c2_t *c2)
     asound_pcm = fopen("/proc/asound/pcm", "r");
 
     if (asound_pcm == NULL)
+    {
         return api_craft_tlv_pkt(API_CALL_FAIL);
+    }
 
     result = api_craft_tlv_pkt(API_CALL_SUCCESS);
 
     while ((read = getline(&sound_device, &length, sound_pcm)) != -1)
+    {
         if (strstr(sound_device, "capture") != NULL)
+        {
             tlv_pkt_add_string(tlv_pkt, TLV_TYPE_STRING, sound_device);
+        }
+    }
 
     return result;
 }
@@ -86,8 +92,11 @@ static tlv_pkt_t *spy_mic_start(c2_t *c2)
     sprintf(cmd, "arecord -D plughw:%d -q -f cd -t raw -r 11025 -c 1", device_id);
 
     record = popen(cmd, "r");
+
     if (record == NULL)
+    {
         return api_craft_tlv_pkt(API_CALL_FAIL);
+    }
 
     return api_craft_tlv_pkt(API_CALL_SUCCESS);
 }

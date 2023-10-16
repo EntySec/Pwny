@@ -41,9 +41,10 @@ typedef struct nodes_table
     UT_hash_handle hh;
 } nodes_t;
 
-int node_add(nodes_t **, int, ipv4_t, port_t, ipv4_t, port_t);
-int node_delete(nodes_t **, int);
+int node_add(nodes_t **nodes, int id, ipv4_t src_host, port_t src_port, \
+             ipv4_t dst_host, port_t dst_port);
+int node_delete(nodes_t **nodes, int id);
 
-void nodes_free(nodes_t *);
+void nodes_free(nodes_t *nodes);
 
-#endif /* _NODE_H_ */
+#endif

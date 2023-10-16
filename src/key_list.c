@@ -33,7 +33,9 @@ static key_list_node_t *key_list_get_node(key_list_t *list, int key)
     while (current != NULL)
     {
         if (key == current->key)
+        {
             return current;
+        }
 
         current = current->next;
     }
@@ -44,12 +46,18 @@ static key_list_node_t *key_list_get_node(key_list_t *list, int key)
 static void key_list_remove_node(key_list_t *list, key_list_node_t *node)
 {
     if (node == list->header)
+    {
         list->header = node->next;
+    }
     else
+    {
         node->prev->next = node->next;
+    }
 
     if (node->next != NULL)
+    {
         node->next->prev = node->prev;
+    }
 
     list->releaser(node->value);
     free(node);
@@ -93,7 +101,9 @@ int key_list_keyset(key_list_t *list, int *array, int array_size)
     key_list_node_t *current;
 
     if (array_size < list->count)
+    {
         return -1;
+    }
 
     iter = 0;
     current = list->header;
