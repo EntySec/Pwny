@@ -128,14 +128,12 @@ static int create_tab_buffer(tabs_t *tab, unsigned char *buffer, int size)
         dup2(pipes[0], STDIN_FILENO);
         argv[0] = "pwny";
 
-#if defined(MACOS)
+#if defined(__APPLE__)
         pawn_exec_bundle(frame, argv, NULL);
-#elif defined(LINUX)
-#if defined(PAWN_MEMFD)
+#elif defined(__linux__) || defined(__unix__)
         pawn_exec_fd(frame, argv, environ);
-#else
+#elif defined(_WIN32)
         pawn_exec(frame, argv, environ);
-#endif
 #endif
 
         free(frame);

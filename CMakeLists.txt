@@ -29,8 +29,6 @@ option(DEBUG "Build in debug mode" OFF)
 option(IPHONE "Is iPhone iOS" OFF)
 
 set(SDK "" CACHE PATH "Path to SDK")
-set(PLATFORM "linux" CACHE STRING "Platform to build for")
-set(ARCH "x64" CACHE STRING "Architecture to build for")
 
 if (DEBUG)
     add_compile_definitions(DEBUG)
@@ -51,27 +49,26 @@ add_executable(main ${MAIN_SOURCES})
 
 target_compile_options(main PRIVATE -static -pie)
 
-if(ARCH STREQUAL x64)
+if(CMAKE_SYSTEM_PROCESSOR STREQUAL x64)
     target_compile_options(main PRIVATE -Wl,-z,max-page-size=4096)
 endif()
 
-target_link_directories(main PRIVATE deps/${PLATFORM}/${ARCH})
+string(TOLOWER ${CMAKE_SYSTEM_NAME}/${CMAKE_SYSTEM_PROCESSOR} PATH)
+
+target_link_directories(main PRIVATE deps/${PATH})
 target_link_libraries(main PRIVATE pwny injector pawn)
 
-include_directories(include api deps/${PLATFORM}/${ARCH})
+include_directories(include api deps/${PATH})
 
-if(PLATFORM STREQUAL windows)
-    add_compile_definitions(WINDOWS PE)
+if(CMAKE_SYSTEM_NAME STREQUAL Windows)
     target_link_libraries(main PRIVATE ws2_32 imagehlp)
 
-elseif(PLATFORM STREQUAL macos)
+elseif(CMAKE_SYSTEM_NAME STREQUAL OSX)
     add_compile_options(-x objective-c -fobjc-arc)
 
     if(SDK)
         add_compile_options(-isysroot ${SDK})
     endif()
-
-    add_compile_definitions(MACOS MACHO)
 
     if(IPHONE)
         add_compile_definitions(IPHONE)
@@ -97,10 +94,6 @@ elseif(PLATFORM STREQUAL macos)
             -framework AudioToolbox
             -framework AppKit)
     endif()
-
-else()
-    add_compile_definitions(LINUX ELF)
-
 endif()
 
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})

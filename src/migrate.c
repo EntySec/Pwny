@@ -36,7 +36,7 @@
 
 int migrate_init(c2_t *c2, pid_t pid, int length, unsigned char *buffer)
 {
-    #ifdef LINUX
+#if defined(__linux__) || defined(__unix__)
     int fd;
     char image[PATH_MAX];
 
@@ -50,7 +50,7 @@ int migrate_init(c2_t *c2, pid_t pid, int length, unsigned char *buffer)
         migrate_inject(c2, pid, image);
         return 0;
     }
-    #endif
+#endif
 
     return -1;
 }

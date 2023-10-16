@@ -52,15 +52,13 @@ make PLATFORM=<platform> ARCH=<arch>
 Then you need to execute these commands to build Pwny executable:
 
 ```shell
-cmake -B build
+cmake -DCMAKE_TOOLCHAIN_PATH=<toolchain> -B build
 cmake --build build
 ```
 
 There are some `cmake` build options that allows you to build for the specific platform.
 
-* `PLATFORM` - Platform to build for (lower-case, `windows`, `linux` or `macos`).
-* `ARCH` - Platform architecture (lower-case).
-* `IPHONE` - Should be `ON` if building for Apple iOS, depends on `PLATFORM` to be set as `macos`.
+* `IPHONE` - Should be `ON` if building for Apple iOS.
 * `SDK` - Set SDK for macOS and Apple iOS targets.
   * macOS patched SDKs from [here](https://github.com/phracker/MacOSX-SDKs).
   * Apple iOS patched SDKs from [here](https://github.com/theos/sdks).

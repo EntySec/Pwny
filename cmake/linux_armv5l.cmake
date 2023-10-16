@@ -1,4 +1,6 @@
 set(CMAKE_SYSTEM_NAME Linux)
+set(CMAKE_SYSTEM_PROCESSOR armv5l)
+
 set(TOOLCHAIN_PREFIX /etc/cross/armv5l/bin/armv5l-linux-musleabi)
 
 set(CMAKE_C_COMPILER ${TOOLCHAIN_PREFIX}-gcc)

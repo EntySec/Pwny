@@ -1,4 +1,6 @@
 set(CMAKE_SYSTEM_NAME Linux)
+set(CMAKE_SYSTEM_PROCESSOR powerpc64le)
+
 set(TOOLCHAIN_PREFIX /etc/cross/powerpc64le/bin/powerpc64le-linux-musl)
 
 set(CMAKE_C_COMPILER ${TOOLCHAIN_PREFIX}-gcc)

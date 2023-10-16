@@ -1,4 +1,6 @@
 set(CMAKE_SYSTEM_NAME Linux)
+set(CMAKE_SYSTEM_PROCESSOR x64)
+
 set(TOOLCHAIN_PREFIX /etc/cross/x86_64/bin/x86_64-linux-musl)
 
 set(CMAKE_C_COMPILER ${TOOLCHAIN_PREFIX}-gcc)
