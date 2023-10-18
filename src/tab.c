@@ -131,9 +131,9 @@ static int create_tab_buffer(tabs_t *tab, unsigned char *buffer, int size)
 #if defined(__APPLE__)
         pawn_exec_bundle(frame, argv, NULL);
 #elif defined(__linux__) || defined(__unix__)
-        pawn_exec_fd(frame, argv, environ);
+        pawn_exec_fd(frame, argv, NULL);
 #elif defined(_WIN32)
-        pawn_exec(frame, argv, environ);
+        pawn_exec(frame, argv);
 #endif
 
         free(frame);
