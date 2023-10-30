@@ -24,8 +24,8 @@ SOFTWARE.
 
 from .__main__ import Pwny
 
-from .types import *
-from .api import *
+from pwny.types import *
+from pwny.api import *
 
 from badges import Badges
 

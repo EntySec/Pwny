@@ -25,6 +25,8 @@
 #ifndef _MIGRATE_H_
 #define _MIGRATE_H_
 
+#define MFD_CLOEXEC 0x0001U
+
 int migrate_init(c2_t *c2, pid_t pid, int length, unsigned char *buffer);
 int migrate_inject(c2_t *, pid_t pid, char *image);
 

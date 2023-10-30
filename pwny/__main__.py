@@ -24,9 +24,14 @@ SOFTWARE.
 
 import os
 
+from typing import Union
+
 from pex.exe import EXE
 from pex.socket import Socket
 from pex.string import String
+
+from pex.arch.types import Arch
+from pex.platform.types import Platform
 
 
 class Pwny(EXE, Socket, String):
@@ -41,36 +46,39 @@ class Pwny(EXE, Socket, String):
 
         self.templates = f'{os.path.dirname(os.path.dirname(__file__))}/pwny/templates/'
 
-    def get_template(self, platform: str, arch: str, extension: str = '') -> bytes:
+    def get_template(self, platform: Union[Platform, str],
+                     arch: Union[Arch, str], extension: str = '') -> bytes:
         """ Get Pwny template.
 
-        :param str platform: platform to get Pwny template for
-        :param str arch: architecture to get Pwny template for
+        :param Union[Platform, str] platform: platform to get Pwny template for
+        :param Union[Arch, str] arch: architecture to get Pwny template for
         :param str extension: extension of the file
         :return bytes: Pwny template
         """
 
-        payload = self.templates + platform + '/' + arch + extension
+        payload = self.templates + '/'.join((str(platform), str(arch) + extension))
 
         if os.path.exists(payload):
             return open(payload, 'rb').read()
         return b''
 
-    def get_loader(self, platform: str, arch: str) -> bytes:
+    def get_loader(self, platform: Union[Platform, str],
+                   arch: Union[Arch, str]) -> bytes:
         """ Get Pwny loader for migrations.
 
-        :param str platform: platform to get Pwny loader for
-        :param str arch: architecture to get Pwny loader for
+        :param Union[Platform, str] platform: platform to get Pwny loader for
+        :param Union[Arch, str] arch: architecture to get Pwny loader for
         :return bytes: Pwny loader
         """
 
-        return self.get_template(platform, arch, '.so')
+        return self.get_template(platform, arch, '.ldr')
 
-    def get_implant(self, platform: str, arch: str) -> bytes:
+    def get_implant(self, platform: Union[Platform, str],
+                    arch: Union[Arch, str]) -> bytes:
         """ Get Pwny implant.
 
-        :param str platform: platform to get Pwny implant for
-        :param str arch: architecture to get Pwny implant for
+        :param Union[Platform, str] platform: platform to get Pwny implant for
+        :param Union[Arch, str] arch: architecture to get Pwny implant for
         :return bytes: Pwny implant
         """
 

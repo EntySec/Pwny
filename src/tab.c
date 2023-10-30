@@ -171,7 +171,7 @@ tlv_pkt_t *tab_lookup(tabs_t **tabs, int id, c2_t *c2)
 
         tlv_pkt = tlv_pkt_create();
 
-        if (c2_read(tab->c2, tlv_pkt) < 0)
+        if (c2_read(tab->c2, &tlv_pkt) < 0)
         {
             tlv_pkt_destroy(tlv_pkt);
             return NULL;

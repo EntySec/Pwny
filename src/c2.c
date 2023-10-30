@@ -353,7 +353,7 @@ void c2_destroy(c2_t *c2, int flags)
     nodes_free(c2->dynamic.nodes);
     api_calls_free(c2->dynamic.api_calls);
 
-    if (flags != FD_LEFTOPEN)
+    if (flags != FD_LEAVE)
     {
         close(c2->fd);
     }

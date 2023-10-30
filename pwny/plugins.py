@@ -24,8 +24,8 @@ SOFTWARE.
 
 import os
 
-from .types import *
-from .api import *
+from pwny.types import *
+from pwny.api import *
 
 from typing import Union
 from badges import Tables, Badges

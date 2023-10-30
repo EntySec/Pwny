@@ -24,11 +24,11 @@ SOFTWARE.
 
 import cmd
 
-from .types import *
-from .api import *
+from pwny.types import *
+from pwny.api import *
 
-from .plugins import Plugins
-from .migrate import Migrate
+from pwny.plugins import Plugins
+from pwny.migrate import Migrate
 
 from hatsploit.lib.session import Session
 
@@ -243,7 +243,7 @@ class Console(cmd.Cmd):
         :return None: None
         """
 
-        commands = session.pwny_commands + session.details['Platform'].lower()
+        commands = session.pwny_commands + str(session.details['Platform']).lower()
         exists, is_dir = self.fs.exists(commands)
 
         if exists and is_dir:
@@ -262,7 +262,7 @@ class Console(cmd.Cmd):
         for command in self.custom_commands:
             self.custom_commands[command].session = session
 
-        plugins = session.pwny_plugins + session.details['Platform'].lower()
+        plugins = session.pwny_plugins + str(session.details['Platform']).lower()
         exists, is_dir = self.fs.exists(plugins)
 
         if exists and is_dir:

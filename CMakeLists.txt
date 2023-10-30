@@ -44,10 +44,15 @@ set_property(TARGET pwny PROPERTY POSITION_INDEPENDENT_CODE ON)
 
 set_target_properties(pwny PROPERTIES OUTPUT_NAME pwny)
 
-file(GLOB MAIN_SOURCES src/main/*.c)
+if(CMAKE_SYSTEM_NAME STREQUAL Windows)
+    file(GLOB MAIN_SOURCES src/main/dll.c)
+else()
+    file(GLOB MAIN_SOURCES src/main/main.c)
+endif()
+
 add_executable(main ${MAIN_SOURCES})
 
-target_compile_options(main PRIVATE -static -pie)
+target_compile_options(main PRIVATE -static -no-pie)
 
 if(CMAKE_SYSTEM_PROCESSOR STREQUAL x64)
     target_compile_options(main PRIVATE -Wl,-z,max-page-size=4096)

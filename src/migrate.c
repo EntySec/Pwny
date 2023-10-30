@@ -27,8 +27,6 @@
 #include <stdio.h>
 #include <syscall.h>
 
-#include <linux/memfd.h>
-
 #include <injector.h>
 
 #include <c2.h>

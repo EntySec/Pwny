@@ -66,7 +66,9 @@ int main(int argc, char *argv[])
         fd = (int)((long *)argv)[1];
 
         if (machine_uuid(uuid) < 0)
+        {
             return 1;
+        }
 
         c2_add(&c2, 0, fd, uuid);
     }
@@ -75,10 +77,14 @@ int main(int argc, char *argv[])
         fd = connect_to("192.168.64.1", 8888);
 
         if (fd < 0)
+        {
             return 1;
+        }
 
         if (machine_uuid(uuid) < 0)
+        {
             return 1;
+        }
 
         c2_add(&c2, 0, fd, uuid);
     }

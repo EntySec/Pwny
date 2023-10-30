@@ -22,7 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-from .types import *
+from pwny.types import *
 
 from pex.proto.tlv import TLVPacket, TLVClient
 

@@ -27,14 +27,14 @@ import socket
 
 from typing import Union, Optional
 
-from . import Pwny
+from pwny import Pwny
 
-from .types import *
-from .api import *
+from pwny.types import *
+from pwny.api import *
 
-from .tlv import TLV
-from .files import Files
-from .console import Console
+from pwny.tlv import TLV
+from pwny.files import Files
+from pwny.console import Console
 
 from hatsploit.lib.loot import Loot
 from hatsploit.lib.session import Session
@@ -79,10 +79,10 @@ class PwnySession(Pwny, Session, Console):
         :raises RuntimeError: with trailing error message
         """
 
-        # client.send(self.get_implant(
-        #     platform=self.details['Platform'],
-        #     arch=self.details['Arch']
-        # ))
+        client.send(self.get_implant(
+             platform=self.details['Platform'],
+             arch=self.details['Arch']
+        ))
 
         self.channel = TLV(
             TLVClient(client))

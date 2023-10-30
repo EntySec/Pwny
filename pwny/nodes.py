@@ -24,8 +24,8 @@ SOFTWARE.
 
 from pex.socket import Socket
 
-from .types import *
-from .api import *
+from pwny.types import *
+from pwny.api import *
 
 from hatsploit.lib.session import Session
 
