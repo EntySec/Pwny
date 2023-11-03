@@ -1,0 +1,10 @@
+injector:
+	@echo "[Building sigar]"
+	@cd ../deps/$(PLATFORM)/$(ARCH); \
+	git clone https://github.com/enty8080/sigar; \
+	cd sigar; \
+	sh autogen.sh; ./configure; \
+	make $(shell sh ../../../../toolchain/make/$(PLATFORM)/$(ARCH)); \
+	cp src/.libs/libsigar.a ../; \
+	cp include/sigar.h ../
+	@echo "[Done building sigar]"

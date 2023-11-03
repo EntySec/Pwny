@@ -55,7 +55,7 @@ add_executable(main ${MAIN_SOURCES})
 string(TOLOWER ${CMAKE_SYSTEM_NAME}/${CMAKE_SYSTEM_PROCESSOR} PATH)
 
 target_link_directories(main PRIVATE deps/${PATH})
-target_link_libraries(main PRIVATE pwny injector pawn)
+target_link_libraries(main PRIVATE pwny injector pawn sigar)
 
 include_directories(include api deps/${PATH})
 
