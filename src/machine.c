@@ -54,7 +54,7 @@ int machine_uuid(char *buffer)
     int iter;
     int part;
 
-#if defined(LINUX) || defined(MACOS)
+#if defined(__linux__) || defined(__unix__) || defined(__APPLE__)
     FILE *fp;
 
     fp = fopen("/dev/urandom", "rb");
@@ -72,7 +72,7 @@ int machine_uuid(char *buffer)
         return -1;
     }
 
-#elif defined(WINDOWS)
+#elif defined(_WIN32)
     HCRYPTPROV hCryptProv;
 
     bytes_read = CryptAcquireContext(

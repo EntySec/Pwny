@@ -52,12 +52,6 @@ endif()
 
 add_executable(main ${MAIN_SOURCES})
 
-target_compile_options(main PRIVATE -static -no-pie)
-
-if(CMAKE_SYSTEM_PROCESSOR STREQUAL x64)
-    target_compile_options(main PRIVATE -Wl,-z,max-page-size=4096)
-endif()
-
 string(TOLOWER ${CMAKE_SYSTEM_NAME}/${CMAKE_SYSTEM_PROCESSOR} PATH)
 
 target_link_directories(main PRIVATE deps/${PATH})
@@ -99,6 +93,10 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL OSX)
             -framework AudioToolbox
             -framework AppKit)
     endif()
+
+elseif(CMAKE_SYSTEM_NAME STREQUAL Linux)
+    target_compile_options(main PRIVATE -static -no-pie -Wl,-Ttext-section=0x1000000)
+
 endif()
 
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})
