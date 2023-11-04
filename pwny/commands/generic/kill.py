@@ -18,26 +18,24 @@ class HatSploitCommand(Command):
         super().__init__()
 
         self.details = {
-            'Category': "gather",
-            'Name': "sysinfo",
+            'Category': "manage",
+            'Name': "kill",
             'Authors': [
                 'Ivan Nikolsky (enty8080) - command developer'
             ],
-            'Description': "Get session system properties.",
-            'Usage': "sysinfo",
-            'MinArgs': 0
+            'Description': "Kill process by ID.",
+            'Usage': "kill",
+            'MinArgs': 1
         }
 
     def run(self, argc, argv):
-        result = self.session.send_command(tag=API_SYSINFO)
+        result = self.session.send_command(
+            tag=API_PROCESS_KILL,
+            args={
+                TLV_TYPE_PID: argv[1]
+            }
+        )
 
         if result.get_int(TLV_TYPE_STATUS) != TLV_STATUS_SUCCESS:
-            self.print_error("Failed to fetch system information!")
+            self.print_error("Failed to kill desired process!")
             return
-
-        self.print_empty(dedent(f"""\
-        * Name:    {result.get_string(TLV_TYPE_PLATFORM)}
-        * Arch:    {result.get_string(TLV_TYPE_ARCH)}
-        * Version: {result.get_string(TLV_TYPE_VERSION)}
-        * Vendor:  {result.get_string(TLV_TYPE_VENDOR)}\
-        """))

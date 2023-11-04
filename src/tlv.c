@@ -291,6 +291,11 @@ int tlv_pkt_add_bytes(tlv_pkt_t *tlv_pkt, int type, unsigned char *value, int le
 
 int tlv_pkt_add_tlv(tlv_pkt_t *tlv_pkt, int type, tlv_pkt_t *value)
 {
+    if (tlv_pkt_serialize(value) != 0)
+    {
+        return -1;
+    }
+
     return tlv_pkt_add_raw(tlv_pkt, type, value->buffer, value->bytes);
 }
 

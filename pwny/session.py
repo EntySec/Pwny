@@ -79,10 +79,12 @@ class PwnySession(Pwny, Session, Console):
         :raises RuntimeError: with trailing error message
         """
 
+        """
         client.send(self.get_implant(
              platform=self.details['Platform'],
              arch=self.details['Arch']
         ))
+        """
 
         self.channel = TLV(
             TLVClient(client))

@@ -1,4 +1,4 @@
-injector:
+sigar:
 	@echo "[Building sigar]"
 	@cd ../deps/$(PLATFORM)/$(ARCH); \
 	git clone https://github.com/enty8080/sigar; \

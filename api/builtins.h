@@ -22,6 +22,8 @@
  * SOFTWARE.
  */
 
+#include <sigar.h>
+
 #include <api.h>
 #include <c2.h>
 #include <node.h>
@@ -33,41 +35,66 @@
 #define BUILTIN_BASE 1
 
 #define BUILTIN_QUIT \
-        TLV_TYPE_CUSTOM(API_CALL_STATIC, \
-                        BUILTIN_BASE, \
-                        API_CALL)
+        TLV_TAG_CUSTOM(API_CALL_STATIC, \
+                       BUILTIN_BASE, \
+                       API_CALL)
 #define BUILTIN_ADD_NODE \
-        TLV_TYPE_CUSTOM(API_CALL_STATIC, \
-                        BUILTIN_BASE, \
-                        API_CALL + 1)
+        TLV_TAG_CUSTOM(API_CALL_STATIC, \
+                       BUILTIN_BASE, \
+                       API_CALL + 1)
 #define BUILTIN_DELETE_NODE \
-        TLV_TYPE_CUSTOM(API_CALL_STATIC, \
-                        BUILTIN_BASE, \
-                        API_CALL + 2)
+        TLV_TAG_CUSTOM(API_CALL_STATIC, \
+                       BUILTIN_BASE, \
+                       API_CALL + 2)
 #define BUILTIN_ADD_TAB_DISK \
-        TLV_TYPE_CUSTOM(API_CALL_STATIC, \
-                        BUILTIN_BASE, \
-                        API_CALL + 3)
+        TLV_TAG_CUSTOM(API_CALL_STATIC, \
+                       BUILTIN_BASE, \
+                       API_CALL + 3)
 #define BUILTIN_ADD_TAB_BUFFER \
-        TLV_TYPE_CUSTOM(API_CALL_STATIC, \
-                        BUILTIN_BASE, \
-                        API_CALL + 4)
+        TLV_TAG_CUSTOM(API_CALL_STATIC, \
+                       BUILTIN_BASE, \
+                       API_CALL + 4)
 #define BUILTIN_DELETE_TAB \
-        TLV_TYPE_CUSTOM(API_CALL_STATIC, \
-                        BUILTIN_BASE, \
-                        API_CALL + 5)
+        TLV_TAG_CUSTOM(API_CALL_STATIC, \
+                       BUILTIN_BASE, \
+                       API_CALL + 5)
 #define BUILTIN_MIGRATE \
-        TLV_TYPE_CUSTOM(API_CALL_STATIC, \
-                        BUILTIN_BASE, \
-                        API_CALL + 6)
+        TLV_TAG_CUSTOM(API_CALL_STATIC, \
+                       BUILTIN_BASE, \
+                       API_CALL + 6)
 #define BUILTIN_PULL \
-        TLV_TYPE_CUSTOM(API_CALL_STATIC, \
-                        BUILTIN_BASE, \
-                        API_CALL + 7)
+        TLV_TAG_CUSTOM(API_CALL_STATIC, \
+                       BUILTIN_BASE, \
+                       API_CALL + 7)
 #define BUILTIN_PUSH \
-        TLV_TYPE_CUSTOM(API_CALL_STATIC, \
-                        BUILTIN_BASE, \
-                        API_CALL + 8)
+        TLV_TAG_CUSTOM(API_CALL_STATIC, \
+                       BUILTIN_BASE, \
+                       API_CALL + 8)
+#define BUILTIN_SYSINFO \
+        TLV_TAG_CUSTOM(API_CALL_STATIC, \
+                       BUILTIN_BASE, \
+                       API_CALL + 9)
+#define BUILTIN_PROCESS_LIST \
+        TLV_TAG_CUSTOM(API_CALL_STATIC, \
+                       BUILTIN_BASE, \
+                       API_CALL + 10)
+#define BUILTIN_PROCESS_KILL \
+        TLV_TAG_CUSTOM(API_CALL_STATIC, \
+                       BUILTIN_BASE, \
+                       API_CALL + 11)
+#define BUILTIN_GET_PID \
+        TLV_TAG_CUSTOM(API_CALL_STATIC, \
+                       BUILTIN_BASE, \
+                       API_CALL + 12)
+
+#define TLV_TYPE_PLATFORM TLV_TYPE_CUSTOM(TLV_TYPE_STRING, API_TYPE)
+#define TLV_TYPE_VERSION  TLV_TYPE_CUSTOM(TLV_TYPE_STRING, API_TYPE + 1)
+#define TLV_TYPE_ARCH     TLV_TYPE_CUSTOM(TLV_TYPE_STRING, API_TYPE + 2)
+#define TLV_TYPE_MACHINE  TLV_TYPE_CUSTOM(TLV_TYPE_STRING, API_TYPE + 3)
+#define TLV_TYPE_VENDOR   TLV_TYPE_CUSTOM(TLV_TYPE_STRING, API_TYPE + 4)
+
+#define TLV_TYPE_PID_STATE TLV_TYPE_CUSTOM(TLV_TYPE_PID, API_TYPE)
+#define TLV_TYPE_PID_CPU   TLV_TYPE_CUSTOM(TLV_TYPE_PID, API_TYPE + 1)
 
 static tlv_pkt_t *builtin_quit(c2_t *c2)
 {
@@ -179,7 +206,7 @@ static tlv_pkt_t *builtin_migrate(c2_t *c2)
     unsigned char *migrate;
     pid_t migrate_pid;
 
-    tlv_pkt_get_int(c2->tlv_pkt, TLV_TYPE_MIGRATE_PID, &migrate_pid);
+    tlv_pkt_get_int(c2->tlv_pkt, TLV_TYPE_PID, &migrate_pid);
 
     if ((migrate_size = tlv_pkt_get_bytes(c2->tlv_pkt, TLV_TYPE_MIGRATE, &migrate)) >= 0)
     {
@@ -241,6 +268,113 @@ static tlv_pkt_t *builtin_push(c2_t *c2)
     return api_craft_tlv_pkt(status);
 }
 
+static tlv_pkt_t *builtin_sysinfo(c2_t *c2)
+{
+    int status;
+    tlv_pkt_t *result;
+    sigar_sys_info_t sysinfo;
+
+    if ((status = sigar_sys_info_get(c2->sigar, &sysinfo)) != SIGAR_OK)
+    {
+        log_debug("* Failed to sigar sysinfo (%s)\n",
+                  sigar_strerror(c2->sigar, status));
+        return api_craft_tlv_pkt(API_CALL_FAIL);
+    }
+
+    result = api_craft_tlv_pkt(API_CALL_SUCCESS);
+
+    tlv_pkt_add_string(result, TLV_TYPE_PLATFORM, sysinfo.name);
+    tlv_pkt_add_string(result, TLV_TYPE_VERSION, sysinfo.version);
+    tlv_pkt_add_string(result, TLV_TYPE_ARCH, sysinfo.arch);
+    tlv_pkt_add_string(result, TLV_TYPE_MACHINE, sysinfo.machine);
+    tlv_pkt_add_string(result, TLV_TYPE_VENDOR, sysinfo.vendor);
+
+    return result;
+}
+
+static tlv_pkt_t *builtin_process_list(c2_t *c2)
+{
+    int iter;
+    int status;
+
+    tlv_pkt_t *result;
+    tlv_pkt_t *proc_info;
+
+    sigar_pid_t proc_pid;
+    sigar_proc_state_t proc_state;
+    sigar_proc_exe_t proc_exec;
+    sigar_proc_list_t proc_list;
+
+    if ((status = sigar_proc_list_get(c2->sigar, &proc_list)) != SIGAR_OK)
+    {
+        log_debug("* Failed to sigar process list (%s)\n",
+                  sigar_strerror(c2->sigar, status));
+        return api_craft_tlv_pkt(API_CALL_FAIL);
+    }
+
+    result = api_craft_tlv_pkt(API_CALL_SUCCESS);
+
+    for (iter = 0; iter < proc_list.number; iter++)
+    {
+        proc_pid = proc_list.data[iter];
+        proc_info = tlv_pkt_create();
+
+        tlv_pkt_add_int(proc_info, TLV_TYPE_PID, (int)proc_pid);
+
+        if ((status = sigar_proc_state_get(c2->sigar, proc_pid, &proc_state)) != SIGAR_OK)
+        {
+            tlv_pkt_add_string(proc_info, TLV_TYPE_PID_STATE, "unknown");
+        }
+        else
+        {
+            tlv_pkt_add_string(proc_info, TLV_TYPE_PID_STATE, proc_state.name);
+        }
+
+        if ((status = sigar_proc_exe_get(c2->sigar, proc_pid, &proc_exec)) != SIGAR_OK)
+        {
+            tlv_pkt_add_string(proc_info, TLV_TYPE_PID_CPU, "unknown");
+        }
+        else
+        {
+            tlv_pkt_add_string(proc_info, TLV_TYPE_PID_CPU, (char *)proc_exec.arch);
+        }
+
+        tlv_pkt_add_tlv(result, TLV_TYPE_TLV, proc_info);
+        tlv_pkt_destroy(proc_info);
+    }
+
+    sigar_proc_list_destroy(c2->sigar, &proc_list);
+
+    return result;
+}
+
+static tlv_pkt_t *builtin_process_kill(c2_t *c2)
+{
+    int pid;
+    int status;
+
+    tlv_pkt_get_int(c2->tlv_pkt, TLV_TYPE_PID, &pid);
+
+    if ((status = sigar_proc_kill(pid, 9)) != SIGAR_OK)
+    {
+        log_debug("* Failed to sigar process kill (%s)\n",
+                  sigar_strerror(c2->sigar, status));
+        return api_craft_tlv_pkt(API_CALL_FAIL);
+    }
+
+    return api_craft_tlv_pkt(API_CALL_SUCCESS);
+}
+
+static tlv_pkt_t *builtin_get_pid(c2_t *c2)
+{
+    tlv_pkt_t *result;
+
+    result = api_craft_tlv_pkt(API_CALL_SUCCESS);
+    tlv_pkt_add_int(result, TLV_TYPE_PID, sigar_pid_get(c2->sigar));
+
+    return result;
+}
+
 void register_builtin_api_calls(api_calls_t **api_calls)
 {
     api_call_register(api_calls, BUILTIN_QUIT, builtin_quit);
@@ -252,4 +386,8 @@ void register_builtin_api_calls(api_calls_t **api_calls)
     api_call_register(api_calls, BUILTIN_MIGRATE, builtin_migrate);
     api_call_register(api_calls, BUILTIN_PULL, builtin_pull);
     api_call_register(api_calls, BUILTIN_PUSH, builtin_push);
+    api_call_register(api_calls, BUILTIN_SYSINFO, builtin_sysinfo);
+    api_call_register(api_calls, BUILTIN_PROCESS_LIST, builtin_process_list);
+    api_call_register(api_calls, BUILTIN_PROCESS_KILL, builtin_process_kill);
+    api_call_register(api_calls, BUILTIN_GET_PID, builtin_get_pid);
 }

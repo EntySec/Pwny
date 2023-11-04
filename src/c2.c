@@ -27,6 +27,7 @@
 #include <stdlib.h>
 #include <signal.h>
 #include <unistd.h>
+#include <sigar.h>
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -70,6 +71,8 @@ c2_t *c2_create(int id, int fd, char *name)
         c2->dynamic.tabs = NULL;
         c2->dynamic.nodes = NULL;
         c2->dynamic.api_calls = NULL;
+
+        sigar_open(&c2->sigar);
 
         return c2;
     }
@@ -352,6 +355,8 @@ void c2_destroy(c2_t *c2, int flags)
     tabs_free(c2->dynamic.tabs);
     nodes_free(c2->dynamic.nodes);
     api_calls_free(c2->dynamic.api_calls);
+
+    sigar_close(c2->sigar);
 
     if (flags != FD_LEAVE)
     {

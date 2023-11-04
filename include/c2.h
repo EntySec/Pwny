@@ -28,6 +28,7 @@
 #include <pthread.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <sigar.h>
 
 #include <tlv.h>
 
@@ -58,6 +59,8 @@ typedef struct
         struct nodes_table *nodes;
         struct api_calls_table *api_calls;
     } dynamic;
+
+    sigar_t *sigar;
 
     tlv_pkt_t *tlv_pkt;
     UT_hash_handle hh;

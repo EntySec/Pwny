@@ -73,7 +73,7 @@ class Migrate(Pwny, Badges):
             tlv = self.session.send_command(
                 tag=API_MIGRATE,
                 args={
-                    TLV_TYPE_MIGRATE_PID: pid,
+                    TLV_TYPE_PID: pid,
                     TLV_TYPE_MIGRATE: loader
                 }
             )
