@@ -20,11 +20,11 @@
 
 Pwny is an implementation of an advanced payload written in pure C and designed for portability and extensibility.
 
-That repository contains Pwny, which is supposed to work on `macOS`, `Linux`, `Windows` and `Apple iOS`, but can be ported to almost every Posix system. Note that `Android` app will come soon with generic support of this native Pwny codebase and will be optimized to work with HatSploit Framework as well as with Ghost Framework.
+That repository contains Pwny, which is supposed to work on `macOS`, `Linux`, `Windows` and `Apple iOS`, but can be ported to almost every Posix system. Pwny is optimized to work with or without [HatSploit Framework](https://github.com/EntySec/HatSploit).
 
 ## Features
 
-* Portable C code, that can be compiled for a big range of CPUs.
+* Portable C code, that can be compiled for a big range of CPUs and platforms.
 * Support for `macOS`, `Linux`, `Windows` and `Apple iOS` targets.
 * Small executable with low resource utilization which is good on embedded systems.
 * Dynamically-extendable, might load plugins which will extend its functions.
@@ -32,15 +32,13 @@ That repository contains Pwny, which is supposed to work on `macOS`, `Linux`, `W
 
 ## Installing
 
-You should install HatSploit to get Pwny, because Pwny depends on HatSploit Framework.
+To install Pwny you simply need to install [HatSploit Framework](https://github.com/EntySec/HatSploit) and this will make Pwny available automatically.
 
 ```
 pip3 install git+https://github.com/EntySec/HatSploit
 ```
 
 ## Building Pwny
-
-These are platforms which are supported by Pwny.
 
 First, you need to build dependencies for your platform, so do this:
 
@@ -56,7 +54,9 @@ cmake -DCMAKE_TOOLCHAIN_PATH=<toolchain> -B build
 cmake --build build
 ```
 
-There are some `cmake` build options that allows you to build for the specific platform.
+**NOTE:** Toolchains are located at `toolchains/cmake/`.
+
+There are `cmake` build options that allows you to build for the specific platform.
 
 * `IPHONE` - Should be `ON` if building for Apple iOS.
 * `SDK` - Set SDK for macOS and Apple iOS targets.
@@ -69,11 +69,18 @@ There are some `cmake` build options that allows you to build for the specific p
 To use Pwny and build payloads you should import it to your source.
 
 ```python3
+from pwny import Pwny
 from pwny.session import PwnySession
 ```
 
 * `Pwny` - Pwny utilities, mostly for generating payloads and encoding arguments.
 * `PwnySession` - Wrapper for `HatSploitSession` for Pwny, HatSploit should use it with Pwny payload.
+
+## Executing Pwny
+
+Pwny is an advanced payload that may be loaded in-memory, so all you need to do is to build Pwny, place the DLL (for Windows) or executable (for other OS) to `pwny/templates/<platform>/<arch>.bin` and then generate the loader from `payloads/`. After this, all you need to do is to set up the listener on attacker's machine and execute the generated loader on the target.
+
+You can find examples of listeners at `examples/`.
 
 ## Caveats
 
