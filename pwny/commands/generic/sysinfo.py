@@ -29,15 +29,16 @@ class HatSploitCommand(Command):
         }
 
     def run(self, argc, argv):
-        result = self.session.send_command(tag=API_SYSINFO)
+        result = self.session.send_command(tag=BUILTIN_SYSINFO)
 
         if result.get_int(TLV_TYPE_STATUS) != TLV_STATUS_SUCCESS:
             self.print_error("Failed to fetch system information!")
             return
 
         self.print_empty(dedent(f"""\
-        * Name:    {result.get_string(TLV_TYPE_PLATFORM)}
-        * Arch:    {result.get_string(TLV_TYPE_ARCH)}
-        * Version: {result.get_string(TLV_TYPE_VERSION)}
-        * Vendor:  {result.get_string(TLV_TYPE_VENDOR)}\
+        * Name:    {result.get_string(BUILTIN_TYPE_PLATFORM)}
+        * Arch:    {result.get_string(BUILTIN_TYPE_ARCH)}
+        * Version: {result.get_string(BUILTIN_TYPE_VERSION)}
+        * Vendor:  {result.get_string(BUILTIN_TYPE_VENDOR)}
+        * UUID:    {self.session.uuid}\
         """))

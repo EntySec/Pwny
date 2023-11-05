@@ -71,20 +71,20 @@ class PwnySession(Pwny, Session, Console):
             'Type': "pwny"
         })
 
-    def open(self, client: socket.socket) -> None:
+    def open(self, client: socket.socket, loader: bool = True) -> None:
         """ Open the Pwny session.
 
         :param socket.socket client: client to open session with
+        :param bool loader: True if executed from loader else False
         :return None: None
         :raises RuntimeError: with trailing error message
         """
 
-        """
-        client.send(self.get_implant(
-             platform=self.details['Platform'],
-             arch=self.details['Arch']
-        ))
-        """
+        if loader:
+            client.send(self.get_implant(
+                platform=self.details['Platform'],
+                arch=self.details['Arch']
+            ))
 
         self.channel = TLV(
             TLVClient(client))

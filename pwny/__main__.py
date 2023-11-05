@@ -33,6 +33,8 @@ from pex.string import String
 from pex.arch.types import Arch
 from pex.platform.types import Platform
 
+from hatsploit.lib.payload import Payload
+
 
 class Pwny(EXE, Socket, String):
     """ Main class of pwny module.
@@ -62,24 +64,20 @@ class Pwny(EXE, Socket, String):
             return open(payload, 'rb').read()
         return b''
 
-    def get_loader(self, platform: Union[Platform, str],
-                   arch: Union[Arch, str]) -> bytes:
-        """ Get Pwny loader for migrations.
-
-        :param Union[Platform, str] platform: platform to get Pwny loader for
-        :param Union[Arch, str] arch: architecture to get Pwny loader for
-        :return bytes: Pwny loader
-        """
-
-        return self.get_template(platform, arch, '.ldr')
-
-    def get_implant(self, platform: Union[Platform, str],
-                    arch: Union[Arch, str]) -> bytes:
+    def get_implant(self, platform: Optional[Union[Platform, str]] = None,
+                    arch: Optional[Union[Arch, str]] = None,
+                    payload: Optional[Payload] = None) -> bytes:
         """ Get Pwny implant.
 
-        :param Union[Platform, str] platform: platform to get Pwny implant for
-        :param Union[Arch, str] arch: architecture to get Pwny implant for
+        :param Optional[Union[Platform, str]] platform: platform to get Pwny implant for
+        :param Optional[Union[Arch, str]] arch: architecture to get Pwny implant for
+        :param Optional[Payload] payload: if payload object is not None, ignore
+            platform and arch
         :return bytes: Pwny implant
         """
+
+        if payload is not None:
+            platform = payload.details['Platform']
+            arch = payload.details['Arch']
 
         return self.get_template(platform, arch, '.bin')

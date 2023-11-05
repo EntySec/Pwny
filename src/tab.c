@@ -62,7 +62,7 @@ static int create_tab_disk(tabs_t *tab, char *filename)
 
     if (pid == -1)
     {
-        c2_destroy(c2, FD_CLOSE);
+        c2_destroy(c2);
         return -1;
     }
 
@@ -120,7 +120,7 @@ static int create_tab_buffer(tabs_t *tab, unsigned char *buffer, int size)
     if (pid == -1)
     {
         free(frame);
-        c2_destroy(c2, FD_CLOSE);
+        c2_destroy(c2);
         return -1;
     }
     else if (pid == 0)
@@ -305,7 +305,7 @@ int tab_delete(tabs_t **tabs, int id)
 
         HASH_DEL(*tabs, tab);
 
-        c2_destroy(tab->c2, FD_CLOSE);
+        c2_destroy(tab->c2);
         free(tab);
 
         log_debug("* Deleted tab entry (%d)\n", id);
@@ -329,7 +329,7 @@ void tabs_free(tabs_t *tabs)
         log_debug("* Freed tab entry (%d)\n", tab->id);
         HASH_DEL(tabs, tab);
 
-        c2_destroy(tab->c2, FD_CLOSE);
+        c2_destroy(tab->c2);
         free(tab);
     }
 

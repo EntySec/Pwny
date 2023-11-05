@@ -1,10 +1,9 @@
 injector:
 	@echo "[Building injector]"
 	@cd ../deps/$(PLATFORM)/$(ARCH); \
-	git clone https://github.com/enty8080/injector; \
-	cd injector; \
-	cmake -DCMAKE_TOOLCHAIN_FILE=../../../../toolchain/cmake/$(PLATFORM)_$(ARCH).cmake -B build; \
-	cmake --build build; \
-	cp build/libinjector.a ../; \
-	cp include/injector.h ../
+	git clone https://github.com/kubo/injector; \
+	cd injector/src/$(PLATFORM); \
+	make $(shell sh ../../../../../../toolchain/make/$(PLATFORM)/$(ARCH).sh); \
+	cp libinjector.a ../../../; \
+	cp ../../include/injector.h ../../../
 	@echo "[Done building injector]"

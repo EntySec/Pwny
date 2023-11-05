@@ -29,5 +29,5 @@ class HatSploitCommand(Command):
         }
 
     def run(self, argc, argv):
-        result = self.session.send_command(tag=API_GET_PID,)
+        result = self.session.send_command(tag=PROCESS_GET_PID)
         self.print_empty(f"* PID: {str(result.get_int(TLV_TYPE_PID))}")

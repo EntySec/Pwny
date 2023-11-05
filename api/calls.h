@@ -27,10 +27,12 @@
 
 #include <api.h>
 #include <builtins.h>
+#include <process.h>
 
 void register_api_calls(api_calls_t **api_calls)
 {
     register_builtin_api_calls(api_calls);
+    register_process_api_calls(api_calls);
 }
 
 #endif /* _CALLS_H_ */

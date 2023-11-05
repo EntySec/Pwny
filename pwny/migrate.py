@@ -71,7 +71,7 @@ class Migrate(Pwny, Badges):
             self.print_process(f"Sending migration loader ({str(len(loader))} bytes)...")
 
             tlv = self.session.send_command(
-                tag=API_MIGRATE,
+                tag=BUILTIN_MIGRATE,
                 args={
                     TLV_TYPE_PID: pid,
                     TLV_TYPE_MIGRATE: loader

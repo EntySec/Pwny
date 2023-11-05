@@ -44,9 +44,6 @@
 
 #define NULL_FD -1
 
-#define FD_CLOSE 0
-#define FD_LEAVE 1
-
 typedef struct
 {
     int id, fd;
@@ -80,6 +77,6 @@ int c2_read_file(c2_t *c2, FILE *file);
 void c2_add(c2_t **c2_table, int id, int fd, char *name);
 void c2_init(c2_t *c2_table);
 
-void c2_destroy(c2_t *c2, int flags);
+void c2_destroy(c2_t *c2);
 
 #endif

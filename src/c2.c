@@ -350,18 +350,14 @@ void c2_add(c2_t **c2_table, int id, int fd, char *name)
     }
 }
 
-void c2_destroy(c2_t *c2, int flags)
+void c2_destroy(c2_t *c2)
 {
     tabs_free(c2->dynamic.tabs);
     nodes_free(c2->dynamic.nodes);
     api_calls_free(c2->dynamic.api_calls);
 
     sigar_close(c2->sigar);
-
-    if (flags != FD_LEAVE)
-    {
-        close(c2->fd);
-    }
+    close(c2->fd);
 
     if (c2->name != NULL)
     {
@@ -396,7 +392,7 @@ void c2_init(c2_t *c2_table)
         HASH_DEL(c2_table, c2);
 
         tlv_pkt_destroy(tlv_pkt);
-        c2_destroy(c2, FD_LEAVE);
+        c2_destroy(c2);
     }
 
     free(c2_table);

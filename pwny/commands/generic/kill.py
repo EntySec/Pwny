@@ -30,7 +30,7 @@ class HatSploitCommand(Command):
 
     def run(self, argc, argv):
         result = self.session.send_command(
-            tag=API_PROCESS_KILL,
+            tag=PROCESS_KILL,
             args={
                 TLV_TYPE_PID: argv[1]
             }

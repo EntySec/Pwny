@@ -22,7 +22,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-from typing import Any
+import io
+
+from typing import Any, Union, Optional
 
 from pwny.__main__ import Pwny
 
@@ -53,31 +55,39 @@ class Files(Pwny, Badges, FS):
 
         self.session = session
 
-    def read_file(self, remote_file: str, local_path: str) -> bool:
+    def read_file(self, remote_file: Optional[str],
+                  local_path: Union[str, io.BytesIO]) -> bool:
         """ Read file from session.
 
-        :param str remote_file: remote file path
-        :param str local_path: path to save file to
+        :param Optional[str] remote_file: remote file path
+        :param Union[str, io.BytesIO] local_path: path to save file to
         :return bool: True if success else False
         """
 
-        self.print_process(f"Downloading {remote_file}...")
+        if remote_file:
+            self.print_process(f"Downloading {remote_file}...")
 
-        tlv = TLVPacket()
+            tlv = TLVPacket()
 
-        tlv.add_int(TLV_TYPE_TAG, API_PULL)
-        tlv.add_string(TLV_TYPE_STRING, remote_file)
-        self.session.channel.send(tlv)
+            tlv.add_int(TLV_TYPE_TAG, BUILTIN_PULL)
+            tlv.add_string(TLV_TYPE_STRING, remote_file)
+            self.session.channel.send(tlv)
 
         tlv = self.session.channel.read()
 
         if tlv.get_int(TLV_TYPE_STATUS) == TLV_STATUS_ENOENT:
-            self.print_error(f"Remote file: {remote_file}: does not exist!")
+            if remote_file:
+                self.print_error(f"Remote file: {remote_file}: does not exist!")
+            else:
+                self.print_error(f"Remote data is not available for reading!")
 
             self.session.channel.read()
             return False
 
-        exists, is_dir = self.exists(local_path)
+        exists, is_dir = True, False
+
+        if isinstance(local_path, str):
+            exists, is_dir = self.exists(local_path)
 
         if exists:
             if is_dir:
@@ -88,12 +98,19 @@ class Files(Pwny, Badges, FS):
                 )
 
             try:
-                with open(local_path, 'wb') as f:
+                if isinstance(local_path, str):
+                    file = open(local_path, 'wb')
+                else:
+                    local_path.close = lambda: None
+                    file = local_path
+
+                with file as f:
                     tlv = TLVPacket()
                     tlv.add_int(TLV_TYPE_STATUS, TLV_STATUS_SUCCESS)
                     self.session.channel.send(tlv)
 
-                    self.print_process(f"Saving to {local_path}...")
+                    if isinstance(local_path, str):
+                        self.print_process(f"Saving to {local_path}...")
 
                     while True:
                         tlv = self.session.channel.read()
@@ -105,10 +122,14 @@ class Files(Pwny, Badges, FS):
                         f.write(tlv.get_raw(TLV_TYPE_FILE))
 
                     if status == TLV_STATUS_SUCCESS:
-                        self.print_success(f"Saved to {local_path}!")
+                        if isinstance(local_path, str):
+                            self.print_success(f"Saved to {local_path}!")
+
                         return True
 
-                    self.print_error(f"Failed to save file to {local_path}!")
+                    if isinstance(local_path, str):
+                        self.print_error(f"Failed to save file to {local_path}!")
+
                     return False
 
             except Exception as e:
@@ -121,30 +142,43 @@ class Files(Pwny, Badges, FS):
         self.session.channel.send(tlv)
         self.session.channel.read()
 
-        self.print_error(f"Local path: {local_path}: does not exist!")
+        if isinstance(local_path, str):
+            self.print_error(f"Local path: {local_path}: does not exist!")
+
         return False
 
-    def send_file(self, local_file: str, remote_path: str) -> bool:
+    def send_file(self, local_file: Union[str, io.BytesIO],
+                  remote_path: Optional[str]) -> bool:
         """ Send file to session.
 
-        :param str local_file: path to read from
-        :param str remote_path: path to save uploaded file to
+        :param Union[str, io.BytesIO] local_file: path to read from
+        :param Optional[str] remote_path: path to save uploaded file to
         :return bool: True if success else False
         """
 
-        self.print_process(f"Uploading {local_file}...")
+        if isinstance(local_file, str):
+            self.print_process(f"Uploading {local_file}...")
 
-        tlv = TLVPacket()
+            tlv = TLVPacket()
 
-        tlv.add_int(TLV_TYPE_TAG, API_PUSH)
-        tlv.add_string(TLV_TYPE_STRING, remote_path)
-        self.session.channel.send(tlv)
+            tlv.add_int(TLV_TYPE_TAG, BUILTIN_PUSH)
+            tlv.add_string(TLV_TYPE_STRING, remote_path)
+            self.session.channel.send(tlv)
 
-        exists, is_dir = self.exists(local_file)
+        exists, is_dir = True, False
+
+        if isinstance(local_file, str):
+            exists, is_dir = self.exists(local_file)
 
         if exists and not is_dir:
             try:
-                with open(local_file, 'rb') as f:
+                if isinstance(local_file, str):
+                    file = open(local_file, 'rb')
+                else:
+                    local_file.close = lambda: None
+                    file = local_file
+
+                with file as f:
                     tlv = TLVPacket()
 
                     tlv.add_int(TLV_TYPE_STATUS, TLV_STATUS_SUCCESS)
@@ -152,12 +186,14 @@ class Files(Pwny, Badges, FS):
 
                     tlv = self.session.channel.read()
                     if tlv.get_int(TLV_TYPE_STATUS) == TLV_STATUS_ENOENT:
-                        self.print_error(f"Remote path: {remote_path}: does not exist!")
+                        if remote_path:
+                            self.print_error(f"Remote path: {remote_path}: does not exist!")
 
                         self.session.channel.read()
                         return False
 
-                    self.print_process(f"Saving to {remote_path}...")
+                    if remote_path:
+                        self.print_process(f"Saving to {remote_path}...")
 
                     data = f.read()
                     for i in range((len(data) // TLV_FILE_CHUNK) + 1):
@@ -176,10 +212,14 @@ class Files(Pwny, Badges, FS):
 
                     tlv = self.session.channel.read()
                     if tlv.get_int(TLV_TYPE_STATUS) == TLV_STATUS_SUCCESS:
-                        self.print_success(f"Saved to {remote_path}!")
+                        if remote_path:
+                            self.print_success(f"Saved to {remote_path}!")
+
                         return True
 
-                    self.print_error(f"Failed to save file to {remote_path}!")
+                    if remote_path:
+                        self.print_error(f"Failed to save file to {remote_path}!")
+
                     return False
 
             except Exception as e:
@@ -192,5 +232,7 @@ class Files(Pwny, Badges, FS):
         self.session.channel.send(tlv)
         self.session.channel.read()
 
-        self.print_error(f"Local file: {local_file}: does not exist!")
+        if isinstance(local_file, str):
+            self.print_error(f"Local file: {local_file}: does not exist!")
+
         return False

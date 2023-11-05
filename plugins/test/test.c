@@ -30,9 +30,9 @@
 #include <console.h>
 
 #define TEST \
-        TLV_TYPE_CUSTOM(API_CALL_DYNAMIC, \
-                        TAB_BASE, \
-                        API_CALL)
+        TLV_TAG_CUSTOM(API_CALL_DYNAMIC, \
+                       TAB_BASE, \
+                       API_CALL)
 
 static tlv_pkt_t *test(c2_t *c2)
 {
@@ -53,7 +53,7 @@ int main(void)
         api_call_register(&c2->dynamic.api_calls, TEST, test);
 
         tab_console_loop(c2);
-        c2_destroy(c2, FD_CLOSE);
+        c2_destroy(c2);
 
         return 0;
     }

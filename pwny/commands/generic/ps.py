@@ -29,7 +29,7 @@ class HatSploitCommand(Command):
         }
 
     def run(self, argc, argv):
-        result = self.session.send_command(tag=API_PROCESS_LIST)
+        result = self.session.send_command(tag=PROCESS_LIST)
 
         if result.get_int(TLV_TYPE_STATUS) != TLV_STATUS_SUCCESS:
             self.print_error("Failed to fetch process list!")
@@ -42,8 +42,8 @@ class HatSploitCommand(Command):
         while process:
             data.append((
                 process.get_int(TLV_TYPE_PID),
-                process.get_string(TLV_TYPE_PID_CPU),
-                process.get_string(TLV_TYPE_PID_STATE)
+                process.get_string(PROCESS_TYPE_PID_CPU),
+                process.get_string(PROCESS_TYPE_PID_STATE)
             ))
 
             process = result.get_tlv(TLV_TYPE_TLV)

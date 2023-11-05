@@ -27,26 +27,27 @@
 
 #include <api.h>
 #include <c2.h>
-#include <node.h>
-#include <tab.h>
-#include <migrate.h>
 #include <tlv_types.h>
 #include <tlv.h>
 
-#define SPY_BASE 1
+#define SPY_BASE 4
 
 #define SPY_MIC_LIST \
-        TLV_TYPE_CUSTOM(TLV_TYPE_INT, \
-                        SPY_BASE, \
-                        API_CALL_STATIC + 1)
+        TLV_TAG_CUSTOM(API_CALL_STATIC, \
+                       SPY_BASE, \
+                       API_CALL)
 #define SPY_MIC_START \
-        TLV_TYPE_CUSTOM(TLV_TYPE_INT, \
-                        SPY_BASE, \
-                        API_CALL_STATIC + 2)
+        TLV_TAG_CUSTOM(API_CALL_STATIC, \
+                       SPY_BASE, \
+                       API_CALL + 1)
 #define SPY_MIC_STOP \
-        TLV_TYPE_CUSTOM(TLV_TYPE_INT, \
-                        SPY_BASE, \
-                        API_CALL_STATIC + 3)
+        TLV_TAG_CUSTOM(API_CALL_STATIC, \
+                       SPY_BASE, \
+                       API_CALL + 2)
+#define SPY_MIC_READ \
+        TLV_TAG_CUSTOM(API_CALL_STATIC, \
+                       SPY_BASE, \
+                       API_CALL + 3)
 
 FILE *record;
 
@@ -112,8 +113,20 @@ static tlv_pkt_t *spy_mic_stop(c2_t *c2)
     return api_craft_tlv_pkt(API_CALL_SUCCESS);
 }
 
-static tlv_pkt_t *spy_mic_write(c2_t *c2)
+static tlv_pkt_t *spy_mic_read(c2_t *c2)
 {
-    return api_craft_tlv_pkt(API_CALL_NOT_IMPLEMENTED);
+    if (c2_write_file(c2, record) >= 0)
+    {
+        return api_craft_tlv_pkt(API_CALL_SUCCESS)
+    }
+
+    return api_craft_tlv_pkt(API_CALL_FAIL);
 }
 
+void register_builtin_api_calls(api_calls_t **api_calls)
+{
+    api_call_register(api_calls, SPY_MIC_LIST, spy_mic_list);
+    api_call_register(api_calls, SPY_MIC_START, spy_mic_start);
+    api_call_register(api_calls, SPY_MIC_STOP, spy_mic_stop);
+    api_call_register(api_calls, SPY_MIC_READ, spy_mic_read);
+}

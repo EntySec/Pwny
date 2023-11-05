@@ -110,7 +110,7 @@ class Plugins(Tables, Badges):
                         data = f.read()
 
                         tlv = session.send_command(
-                            tag=API_ADD_TAB_BUFFER,
+                            tag=BUILTIN_ADD_TAB_BUFFER,
                             args={TLV_TYPE_TAB: data}
                         )
 
@@ -149,7 +149,7 @@ class Plugins(Tables, Badges):
             session = plugin_object.session
 
             tlv = session.send_command(
-                tag=API_DEL_TAB,
+                tag=BUILTIN_DEL_TAB,
                 args={
                     TLV_TYPE_TAB_ID: self.plugin_ids[plugin]
                 }

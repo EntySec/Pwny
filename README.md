@@ -28,7 +28,7 @@ That repository contains Pwny, which is supposed to work on `macOS`, `Linux`, `W
 * Support for `macOS`, `Linux`, `Windows` and `Apple iOS` targets.
 * Small executable with low resource utilization which is good on embedded systems.
 * Dynamically-extendable, might load plugins which will extend its functions.
-* Evasion techniques such as process migration.
+* Evasion techniques such as process migration and in-memory loading.
 
 ## Installing
 
@@ -82,6 +82,14 @@ Pwny is an advanced payload that may be loaded in-memory, so all you need to do 
 
 You can find examples of listeners at `examples/`.
 
+**NOTE:** To generate loader, you should use [`hsfgen`](https://docs.hatsploit.com/docs/getting-started/using-hsfgen), just make sure that payload is either `<platform>/<arch>/pwny_reverse_tcp` or `<platform>/<arch>/pwny_bind_tcp`. 
+
+## Testing Pwny
+
+To test Pwny, simply compile `src/main/test.c` (do not forget to change host and port in it) and then execute `examples/listener.py` on attacker and compiled Pwny on target.
+
+**NOTE:** No loader is needed for testing, do not overcomplicate it! To disable in-memory loading add `loader=False` to `open()` in `examples/listener.py`.
+
 ## Caveats
 
-The code provided in this repository has not yet been prepared for use in a production environment. It can be improved anyways, so any contribution is welcome. Unfortunately, most part of the codebase is unstable due to the lack of testing. You can even experience memory leaks, so we'll be glad to accept every single PR which is fixing a potential issue.
+The code provided in this repository has not yet been prepared for use in a production environment. It can be improved, so any contribution is welcome. You can even experience memory leaks, so we'll be glad to accept every single PR which is fixing a potential issue.

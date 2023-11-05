@@ -51,7 +51,7 @@ int main(void)
         /* Your C2 API calls registration */
 
         tab_console_loop(c2);
-        c2_destroy(c2, FD_CLOSE);
+        c2_destroy(c2);
 
         return 0;
     }
