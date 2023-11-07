@@ -1,0 +1,10 @@
+sigar:
+	@echo "[Building libeio]"
+	@cd ../deps/$(PLATFORM)/$(ARCH); \
+	git clone https://github.com/libev-cn/libeio; \
+	cd libeio; \
+	sh autogen.sh; ./configure; \
+	make $(shell sh ../../../../toolchain/make/$(PLATFORM)/$(ARCH).sh); \
+	cp libeio.a ../; \
+	cp eio.h ../
+	@echo "[Done building libeio]"

@@ -94,7 +94,7 @@ static tlv_pkt_t *process_list(c2_t *c2)
             tlv_pkt_add_string(proc_info, TLV_TYPE_PID_CPU, (char *)proc_exec.arch);
         }
 
-        tlv_pkt_add_tlv(result, TLV_TYPE_TLV, proc_info);
+        tlv_pkt_add_tlv(result, TLV_TYPE_GROUP, proc_info);
         tlv_pkt_destroy(proc_info);
     }
 

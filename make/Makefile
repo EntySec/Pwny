@@ -10,4 +10,5 @@ setup:
 
 include Makefile.libpawn
 include Makefile.injector
-include Makefile.sigar
+include Makefile.libsigar
+include Makefile.libeio

@@ -262,72 +262,53 @@ fail:
 
 int c2_write(c2_t *c2, tlv_pkt_t *tlv_pkt)
 {
-    tlv_pkt_t *tlv_count;
+    tlv_pkt_t *response;
 
-    tlv_count = tlv_pkt_create();
+    response = tlv_pkt_create();
 
-    if (tlv_count == NULL)
+    if (response == NULL)
     {
         return -1;
     }
 
-    if (tlv_pkt_add_int(tlv_count, TLV_TYPE_COUNT, tlv_pkt->count) < 0)
+    if (tlv_pkt_add_tlv(response, TLV_TYPE_GROUP, tlv_pkt) < 0)
     {
         goto fail;
     }
 
-    if (tlv_pkt_write(c2->fd, tlv_count) < 0)
-    {
-        goto fail;
-    }
-
-    log_debug("* Writing TLV packets (%d)\n", tlv_pkt->count);
-
-    return tlv_pkt_write(c2->fd, tlv_pkt);
+    return tlv_pkt_write(c2->fd, response);
 
 fail:
-    tlv_pkt_destroy(tlv_count);
+    tlv_pkt_destroy(response);
     return -1;
 }
 
 int c2_read(c2_t *c2, tlv_pkt_t **tlv_pkt)
 {
-    int iter;
-    int count;
+    tlv_pkt_t *request;
 
-    *tlv_pkt = tlv_pkt_create();
+    request = tlv_pkt_create();
 
-    if (*tlv_pkt == NULL)
+    if (request == NULL)
     {
         return -1;
     }
 
-    if (tlv_pkt_read(c2->fd, *tlv_pkt) < 0)
+    if (tlv_pkt_read(c2->fd, request) < 0)
     {
         goto fail;
     }
 
-    log_debug("* Processing read TLV count\n");
-
-    if (tlv_pkt_get_int(*tlv_pkt, TLV_TYPE_COUNT, &count) < 0)
+    if ((*tlv_pkt = tlv_pkt_get_tlv(request, TLV_TYPE_GROUP)) == NULL)
     {
         goto fail;
     }
 
-    log_debug("* Reading TLV packets (%d)\n", count);
-
-    for (iter = 0; iter < count; iter++)
-    {
-        if (tlv_pkt_read(c2->fd, *tlv_pkt) < 0)
-        {
-            goto fail;
-        }
-    }
-
+    tlv_pkt_destroy(request);
     return 0;
 
 fail:
-    tlv_pkt_destroy(*tlv_pkt);
+    tlv_pkt_destroy(request);
     return -1;
 }
 

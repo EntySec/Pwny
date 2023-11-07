@@ -50,14 +50,7 @@ class TLV(object):
         """
 
         tlv = self.client.read()
-        count = tlv.get_int(TLV_TYPE_COUNT)
-
-        if count:
-            while count > 0:
-                tlv += self.client.read()
-                count -= 1
-
-        return tlv
+        return tlv.get_tlv(TLV_TYPE_GROUP)
 
     def send(self, packet: TLVPacket) -> None:
         """ Send TLV packet.
@@ -67,7 +60,6 @@ class TLV(object):
         """
 
         tlv = TLVPacket()
-        tlv.add_int(TLV_TYPE_COUNT, len(packet))
-        tlv += packet
+        tlv.add_tlv(TLV_TYPE_GROUP, packet)
 
         self.client.send(tlv)

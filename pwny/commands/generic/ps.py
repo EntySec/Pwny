@@ -35,7 +35,7 @@ class HatSploitCommand(Command):
             self.print_error("Failed to fetch process list!")
             return
 
-        process = result.get_tlv(TLV_TYPE_TLV)
+        process = result.get_tlv(TLV_TYPE_GROUP)
         headers = ('PID', 'CPU', 'Name')
         data = []
 
@@ -46,6 +46,6 @@ class HatSploitCommand(Command):
                 process.get_string(PROCESS_TYPE_PID_STATE)
             ))
 
-            process = result.get_tlv(TLV_TYPE_TLV)
+            process = result.get_tlv(TLV_TYPE_GROUP)
 
         self.print_table('Process List', headers, *sorted(data))
