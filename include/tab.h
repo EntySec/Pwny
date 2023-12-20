@@ -25,35 +25,31 @@
 #ifndef _TAB_H_
 #define _TAB_H_
 
-#include <c2.h>
-#include <api.h>
-#include <tlv.h>
-#include <tlv_types.h>
-
 #include <unistd.h>
 #include <sys/types.h>
+#include <ev.h>
 
-#include <uthash/uthash.h>
+#include <c2.h>
+#include <tlv.h>
+#include <link.h>
+#include <child.h>
+#include <queue.h>
 
-#define TAB_TERM TLV_TYPE_TAG | 1001
+#define TAB_EV_FLAGS EVFLAG_NOENV | EVBACKEND_SELECT
 
-typedef struct tabs_table
+typedef struct
 {
-    int id;
     c2_t *c2;
-    pid_t pid;
-    UT_hash_handle hh;
-} tabs_t;
 
-void tab_wait(tabs_t *tab);
+    struct ev_loop *loop;
+} tab_t;
 
-int tab_exit(tabs_t *tab);
-int tab_add_disk(tabs_t **tabs, int id, char *filename);
-int tab_add_buffer(tabs_t **tabs, int id, unsigned char *buffer, int size);
-int tab_delete(tabs_t **tabs, int id);
+tab_t *tab_create(void);
 
-tlv_pkt_t *tab_lookup(tabs_t **tabs, int id, c2_t *c2);
+void tab_read(void *data);
+void tab_write(void *data);
 
-void tabs_free(tabs_t *tabs);
+int tab_start(tab_t *tab);
+void tab_destroy(tab_t *tab);
 
 #endif

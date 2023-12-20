@@ -24,7 +24,7 @@ SOFTWARE.
 
 import os
 
-from typing import Union
+from typing import Union, Optional
 
 from pex.exe import EXE
 from pex.socket import Socket
@@ -58,7 +58,7 @@ class Pwny(EXE, Socket, String):
         :return bytes: Pwny template
         """
 
-        payload = self.templates + '/'.join((str(platform), str(arch) + extension))
+        payload = self.templates + '/'.join((str(platform), str(arch) + '.' + extension))
 
         if os.path.exists(payload):
             return open(payload, 'rb').read()
@@ -80,4 +80,4 @@ class Pwny(EXE, Socket, String):
             platform = payload.details['Platform']
             arch = payload.details['Arch']
 
-        return self.get_template(platform, arch, '.bin')
+        return self.get_template(platform, arch, 'bin')

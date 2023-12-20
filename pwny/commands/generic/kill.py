@@ -3,10 +3,6 @@ This command requires HatSploit: https://hatsploit.com
 Current source: https://github.com/EntySec/HatSploit
 """
 
-import os
-
-from textwrap import dedent
-
 from pwny.api import *
 from pwny.types import *
 
@@ -24,7 +20,7 @@ class HatSploitCommand(Command):
                 'Ivan Nikolsky (enty8080) - command developer'
             ],
             'Description': "Kill process by ID.",
-            'Usage': "kill",
+            'Usage': "kill <id>",
             'MinArgs': 1
         }
 
@@ -37,5 +33,5 @@ class HatSploitCommand(Command):
         )
 
         if result.get_int(TLV_TYPE_STATUS) != TLV_STATUS_SUCCESS:
-            self.print_error("Failed to kill desired process!")
+            self.print_error(f"Invalid process ID: {str(argv[1])}!")
             return

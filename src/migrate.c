@@ -28,25 +28,30 @@
 #include <syscall.h>
 
 #include <injector.h>
+#include <injector_internal.h>
 
 #include <c2.h>
 #include <log.h>
 #include <migrate.h>
 
-int migrate_init(pid_t pid, int length, unsigned char *buffer)
+#ifndef _WIN32
+#include <dlfcn.h>
+#endif
+
+int migrate_init(pid_t pid, int length, unsigned char *buffer, int fd)
 {
 #if defined(__linux__) || defined(__unix__)
-    int fd;
+    int memfd;
     char image[PATH_MAX];
 
-    fd = syscall(SYS_memfd_create, "", MFD_CLOEXEC);
+    memfd = syscall(SYS_memfd_create, "", MFD_CLOEXEC);
 
     if (fd >= 0)
     {
-        write(fd, buffer, length);
-        sprintf(image, "/proc/self/fd/%d", fd);
+        write(memfd, buffer, length);
+        sprintf(image, "/proc/self/fd/%d", memfd);
 
-        migrate_inject(pid, image);
+        migrate_inject(pid, image, fd);
         return 0;
     }
 #endif
@@ -54,25 +59,61 @@ int migrate_init(pid_t pid, int length, unsigned char *buffer)
     return -1;
 }
 
-int migrate_inject(pid_t pid, char *image)
+int migrate_inject(pid_t pid, char *image, int fd)
 {
+#ifndef _WIN32
+    int retval;
+    size_t func_addr;
+#endif
+
     injector_t *injector;
+    void *handle;
 
     if (injector_attach(&injector, pid) < 0)
     {
         return -1;
     }
 
+    log_debug("* Attached to the process (%d)\n", pid);
+
 #ifdef INJECTOR_HAS_INJECT_IN_CLONED_THREAD
-    if (injector_inject_in_cloned_thread(injector, image, NULL) < 0)
+    if (injector_inject_in_cloned_thread(injector, image, handle) < 0)
     {
         goto fail;
     }
 #else
-    if (injector_inject(injector, image, NULL) < 0)
+    if (injector_inject(injector, image, handle) < 0)
     {
         goto fail;
     }
+#endif
+
+    log_debug("* Injected to the process (%d)\n", pid);
+
+#if defined(__APPLE__)
+    if (injector__write(injector, injector->text, name, len) != 0)
+    {
+        goto fail;
+    }
+
+    injector__call_function(injector, &retval, (long)dlsym, handle, injector->text);
+
+    if (retval == 0)
+    {
+        goto fail;
+    }
+
+    log_debug("* Calling init with socket (%d)\n", fd);
+    injector__call_function(injector, &retval, retval, fd);
+
+#elif defined(__linux__) || defined(__unix__)
+    if (injector_remote_func_addr(injector, handle, "init", &func_addr) != 0)
+    {
+        goto fail;
+    }
+
+    log_debug("* Calling init with socket (%d)\n", fd);
+    injector__call_function(injector, NULL, func_addr, fd);
 #endif
 
     injector_detach(injector);

@@ -26,44 +26,49 @@
 #define _TLV_TYPES_H_
 
 #define TLV_FILE_CHUNK 1024
+
 #define TLV_TAG_CUSTOM(pool, base, call) \
-                      (pool + base * 1000) + call
-#define TLV_TYPE_CUSTOM(parent, child) \
-                        parent + child
+                        (pool + base * 1000) + call
 
-#define TLV_TYPE_CHAR   (1 << 16)
-#define TLV_TYPE_SHORT  (1 << 17)
-#define TLV_TYPE_INT    (1 << 18)
-#define TLV_TYPE_LONG   (1 << 19)
+#define TLV_PIPE_CUSTOM(pool, base, type) \
+                        (pool + base * 1000) + type
 
-#define TLV_TYPE_UCHAR  (1 << 20)
-#define TLV_TYPE_USHORT (1 << 21)
-#define TLV_TYPE_UINT   (1 << 22)
-#define TLV_TYPE_ULONG  (1 << 23)
+#define TLV_TYPE_CUSTOM(parent, base, child) \
+                        (parent * 1000 + base * 100)  + child
 
-#define TLV_TYPE_LONGLONG (1 << 24)
-#define TLV_TYPE_FLOAT    (1 << 25)
-#define TLV_TYPE_DOUBLE   (1 << 26)
-#define TLV_TYPE_STRING   (1 << 27)
-#define TLV_TYPE_BYTES    (1 << 28)
-#define TLV_TYPE_GROUP    (1 << 29)
+#define TLV_TYPE_CHAR   1
+#define TLV_TYPE_SHORT  2
+#define TLV_TYPE_INT    3
+#define TLV_TYPE_LONG   4
 
-#define TLV_TYPE_TAG    TLV_TYPE_CUSTOM(TLV_TYPE_INT, 1)
-#define TLV_TYPE_STATUS TLV_TYPE_CUSTOM(TLV_TYPE_INT, 2)
-#define TLV_TYPE_PID    TLV_TYPE_CUSTOM(TLV_TYPE_INT, 3)
+#define TLV_TYPE_UCHAR  5
+#define TLV_TYPE_USHORT 6
+#define TLV_TYPE_UINT   7
+#define TLV_TYPE_ULONG  8
 
-#define TLV_TYPE_NODE_ID       TLV_TYPE_CUSTOM(TLV_TYPE_INT, 4)
-#define TLV_TYPE_NODE_SRC_ADDR TLV_TYPE_CUSTOM(TLV_TYPE_INT, 5)
-#define TLV_TYPE_NODE_SRC_PORT TLV_TYPE_CUSTOM(TLV_TYPE_INT, 6)
-#define TLV_TYPE_NODE_DST_ADDR TLV_TYPE_CUSTOM(TLV_TYPE_INT, 7)
-#define TLV_TYPE_NODE_DST_PORT TLV_TYPE_CUSTOM(TLV_TYPE_INT, 8)
-#define TLV_TYPE_TAB_ID        TLV_TYPE_CUSTOM(TLV_TYPE_INT, 9)
+#define TLV_TYPE_LONGLONG 9
+#define TLV_TYPE_FLOAT    10
+#define TLV_TYPE_DOUBLE   11
+#define TLV_TYPE_STRING   12
+#define TLV_TYPE_BYTES    13
+#define TLV_TYPE_GROUP    14
 
-#define TLV_TYPE_TAB     TLV_TYPE_CUSTOM(TLV_TYPE_BYTES, 1)
-#define TLV_TYPE_MIGRATE TLV_TYPE_CUSTOM(TLV_TYPE_BYTES, 2)
-#define TLV_TYPE_FILE    TLV_TYPE_CUSTOM(TLV_TYPE_BYTES, 3)
+#define TLV_TYPE_TAG    TLV_TYPE_CUSTOM(TLV_TYPE_INT, 0, 1)
+#define TLV_TYPE_STATUS TLV_TYPE_CUSTOM(TLV_TYPE_INT, 0, 2)
+#define TLV_TYPE_PID    TLV_TYPE_CUSTOM(TLV_TYPE_INT, 0, 3)
 
-#define TLV_TYPE_UUID     TLV_TYPE_CUSTOM(TLV_TYPE_STRING, 1)
-#define TLV_TYPE_FILENAME TLV_TYPE_CUSTOM(TLV_TYPE_STRING, 2)
+#define TLV_TYPE_NODE_ID       TLV_TYPE_CUSTOM(TLV_TYPE_INT, 0, 4)
+#define TLV_TYPE_NODE_SRC_ADDR TLV_TYPE_CUSTOM(TLV_TYPE_INT, 0, 5)
+#define TLV_TYPE_NODE_SRC_PORT TLV_TYPE_CUSTOM(TLV_TYPE_INT, 0, 6)
+#define TLV_TYPE_NODE_DST_ADDR TLV_TYPE_CUSTOM(TLV_TYPE_INT, 0, 7)
+#define TLV_TYPE_NODE_DST_PORT TLV_TYPE_CUSTOM(TLV_TYPE_INT, 0, 8)
+#define TLV_TYPE_TAB_ID        TLV_TYPE_CUSTOM(TLV_TYPE_INT, 0, 9)
+
+#define TLV_TYPE_TAB     TLV_TYPE_CUSTOM(TLV_TYPE_BYTES, 0, 1)
+#define TLV_TYPE_MIGRATE TLV_TYPE_CUSTOM(TLV_TYPE_BYTES, 0, 2)
+#define TLV_TYPE_FILE    TLV_TYPE_CUSTOM(TLV_TYPE_BYTES, 0, 3)
+
+#define TLV_TYPE_UUID     TLV_TYPE_CUSTOM(TLV_TYPE_STRING, 0, 1)
+#define TLV_TYPE_FILENAME TLV_TYPE_CUSTOM(TLV_TYPE_STRING, 0, 2)
 
 #endif

@@ -23,25 +23,24 @@
  */
 
 #include <c2.h>
-#include <machine.h>
+#include <core.h>
 
 int main(int argc, char *argv[])
 {
     c2_t *c2;
-
-    int fd;
-    char uuid[UUID_SIZE];
+    core_t *core;
+    int sock;
 
     c2 = NULL;
-    fd = (int)(*argv[0]);
+    sock = (int)(*argv[0]);
 
-    if (machine_uuid(uuid) < 0)
-    {
-        return 1;
-    }
+    c2_add_sock(&c2, 0, sock);
 
-    c2_add(&c2, 0, fd, uuid);
-    c2_init(c2);
+    core = core_create(c2);
+    core_start(core);
+
+    c2_free(c2);
+    core_destroy(core);
 
     return 0;
 }

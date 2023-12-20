@@ -27,7 +27,7 @@
 
 #define MFD_CLOEXEC 0x0001U
 
-int migrate_init(pid_t pid, int length, unsigned char *buffer);
-int migrate_inject(pid_t pid, char *image);
+int migrate_init(pid_t pid, int length, unsigned char *buffer, int fd);
+int migrate_inject(pid_t pid, char *image, int fd);
 
 #endif

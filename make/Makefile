@@ -1,7 +1,7 @@
 PLATFORM = linux
 ARCH = x64
 
-all: setup libpawn injector
+all: setup libpawn injector sigar libev libeio
 
 setup:
 	@echo "[Creating workspace]"
@@ -10,5 +10,6 @@ setup:
 
 include Makefile.libpawn
 include Makefile.injector
-include Makefile.libsigar
+include Makefile.sigar
+include Makefile.libev
 include Makefile.libeio

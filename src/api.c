@@ -28,6 +28,7 @@
 #include <string.h>
 
 #include <api.h>
+#include <tabs.h>
 #include <c2.h>
 #include <tlv.h>
 #include <log.h>
@@ -36,6 +37,58 @@
 #include <tlv_types.h>
 
 #include <uthash/uthash.h>
+
+api_signal_t api_process_c2(c2_t *c2)
+{
+    int tag;
+    int status;
+    int tab_id;
+
+    if (tlv_pkt_get_int(c2->request, TLV_TYPE_TAG, &tag) < 0)
+    {
+        log_debug("* No tag was received by API\n");
+        c2->response = api_craft_tlv_pkt(API_CALL_NOT_IMPLEMENTED);
+
+        return API_CALLBACK;
+    }
+
+    log_debug("* Read new tag (%d) by API\n", tag);
+
+    if (tlv_pkt_get_int(c2->request, TLV_TYPE_TAB_ID, &tab_id) >= 0)
+    {
+        if (tabs_lookup(&c2->dynamic.tabs, tab_id, c2->request) >= 0)
+        {
+            return API_SILENT;
+        }
+
+        c2->response = api_craft_tlv_pkt(API_CALL_NOT_IMPLEMENTED);
+        return API_CALLBACK;
+    }
+
+    if (api_call_make(&c2->dynamic.api_calls, c2, tag, &c2->response) < 0)
+    {
+        c2->response = api_craft_tlv_pkt(API_CALL_NOT_IMPLEMENTED);
+        return API_CALLBACK;
+    }
+
+    if (c2->response == NULL)
+    {
+        return API_SILENT;
+    }
+
+    if (tlv_pkt_get_int(c2->response, TLV_TYPE_STATUS, &status) >= 0)
+    {
+        switch (status)
+        {
+            case API_CALL_QUIT:
+                return API_BREAK;
+            default:
+                break;
+        }
+    }
+
+    return API_CALLBACK;
+}
 
 tlv_pkt_t *api_craft_tlv_pkt(int status)
 {
@@ -74,7 +127,7 @@ void api_call_register(api_calls_t **api_calls, int tag, api_t handler)
     }
 }
 
-tlv_pkt_t *api_call_make(api_calls_t **api_calls, c2_t *c2, int tag)
+int api_call_make(api_calls_t **api_calls, c2_t *c2, int tag, tlv_pkt_t **result)
 {
     api_calls_t *api_call;
 
@@ -84,10 +137,12 @@ tlv_pkt_t *api_call_make(api_calls_t **api_calls, c2_t *c2, int tag)
     if (api_call == NULL)
     {
         log_debug("* C2 API call tag was not found (%d)\n", tag);
-        return NULL;
+        *result = NULL;
+        return -1;
     }
 
-    return api_call->handler(c2);
+    *result = api_call->handler(c2);
+    return 0;
 }
 
 void api_calls_free(api_calls_t *api_calls)

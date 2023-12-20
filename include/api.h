@@ -25,18 +25,31 @@
 #ifndef _API_H_
 #define _API_H_
 
-#include <tlv.h>
+#include <sigar.h>
+
 #include <c2.h>
+#include <tlv.h>
+#include <tabs.h>
 
 #include <uthash/uthash.h>
 
 #define API_CALL 1
 #define API_TYPE 1
 
-#define API_CALL_STATIC 10000
-#define API_CALL_DYNAMIC 40000
+#define API_CALL_INTERNAL 10000
+#define API_CALL_STATIC   20000
+#define API_CALL_DYNAMIC  40000
 
-enum api_call_statuses
+typedef tlv_pkt_t *(*api_t)(c2_t *);
+
+typedef enum
+{
+    API_CALLBACK,
+    API_SILENT,
+    API_BREAK,
+} api_signal_t;
+
+typedef enum
 {
     API_CALL_QUIT,
     API_CALL_SUCCESS,
@@ -45,10 +58,7 @@ enum api_call_statuses
     API_CALL_NOT_IMPLEMENTED,
     API_CALL_USAGE_ERROR,
     API_CALL_RW_ERROR,
-    API_CALL_ENOENT,
-};
-
-typedef tlv_pkt_t *(*api_t)(c2_t *);
+} api_status_t;
 
 typedef struct api_calls_table
 {
@@ -57,8 +67,10 @@ typedef struct api_calls_table
     UT_hash_handle hh;
 } api_calls_t;
 
+api_signal_t api_process_c2(c2_t *c2);
+
 tlv_pkt_t *api_craft_tlv_pkt(int status);
-tlv_pkt_t *api_call_make(api_calls_t **api_calls, c2_t *c2, int tag);
+int api_call_make(api_calls_t **api_calls, c2_t *c2, int tag, tlv_pkt_t **result);
 
 void api_calls_register(api_calls_t **api_calls);
 void api_call_register(api_calls_t **api_calls, int tag, api_t handler);

@@ -75,7 +75,7 @@ class Nodes(object):
         """
 
         tlv = session.send_command(
-            tag=BUILTIN_ADD_NODE,
+            tag=NET_ADD_NODE,
             args={
                 TLV_TYPE_NODE_SRC_ADDR: int.from_bytes(Socket().pack_host(src_host), 'little'),
                 TLV_TYPE_NODE_DST_ADDR: int.from_bytes(Socket().pack_host(dst_host), 'little'),
@@ -107,7 +107,7 @@ class Nodes(object):
 
         if node_id in self.nodes:
             tlv = session.send_command(
-                tag=BUILTIN_DEL_NODE,
+                tag=NET_DEL_NODE,
                 args={
                     TLV_TYPE_NODE_ID: node_id
                 }

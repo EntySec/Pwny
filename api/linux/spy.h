@@ -87,7 +87,7 @@ static tlv_pkt_t *spy_mic_start(c2_t *c2)
     int device_id;
     char cmd[128];
 
-    tlv_pkt_get_int(c2->tlv_pkt, TLV_TYPE_INT, &device_id);
+    tlv_pkt_get_int(c2->request, TLV_TYPE_INT, &device_id);
 
     device_id--;
     sprintf(cmd, "arecord -D plughw:%d -q -f cd -t raw -r 11025 -c 1", device_id);

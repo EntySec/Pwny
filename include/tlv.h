@@ -25,7 +25,17 @@
 #ifndef _TLV_H_
 #define _TLV_H_
 
+#include <stdlib.h>
 #include <key_list.h>
+#include <queue.h>
+
+#define TLV_HEADER 8
+
+struct tlv_header
+{
+    int type;
+    int length;
+} __attribute__((packed));
 
 typedef struct
 {
@@ -44,9 +54,6 @@ typedef struct
 
 tlv_pkt_t *tlv_pkt_create(void);
 tlv_pkt_t *tlv_pkt_parse(unsigned char *buffer, int size);
-
-int tlv_pkt_write(int fd, tlv_pkt_t *tlv_pkt);
-int tlv_pkt_read(int fd, tlv_pkt_t *tlv_pkt);
 
 void tlv_pkt_destroy(tlv_pkt_t *tlv_pkt);
 int tlv_pkt_serialize(tlv_pkt_t *tlv_pkt);
@@ -85,6 +92,6 @@ int tlv_pkt_get_float(tlv_pkt_t *tlv_pkt, int type, float *value);
 int tlv_pkt_get_double(tlv_pkt_t *tlv_pkt, int type, double *value);
 int tlv_pkt_get_string(tlv_pkt_t *tlv_pkt, int type, char *value);
 int tlv_pkt_get_bytes(tlv_pkt_t *tlv_pkt, int type, unsigned char **value);
-tlv_pkt_t *tlv_pkt_get_object(tlv_pkt_t *tlv_pkt, int type);
+tlv_pkt_t *tlv_pkt_get_tlv(tlv_pkt_t *tlv_pkt, int type);
 
 #endif

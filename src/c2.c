@@ -28,6 +28,7 @@
 #include <signal.h>
 #include <unistd.h>
 #include <sigar.h>
+#include <ev.h>
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -36,343 +37,196 @@
 #include <log.h>
 #include <tlv.h>
 #include <api.h>
-#include <tab.h>
-#include <node.h>
-#include <console.h>
 #include <c2.h>
+#include <pipe.h>
+#include <link.h>
+#include <node.h>
+#include <group.h>
 #include <tlv_types.h>
+#include <machine.h>
 
 #include <uthash/uthash.h>
 
-c2_t *c2_create(int id, int fd, char *name)
+c2_t *c2_create(int id)
 {
     c2_t *c2;
+    char uuid[UUID_SIZE];
 
     c2 = calloc(1, sizeof(*c2));
 
-    if (c2 != NULL)
+    if (c2 == NULL)
     {
-        c2->id = id;
-        c2->fd = fd;
-
-        if (name != NULL)
-        {
-            c2->name = strdup(name);
-        }
-        else
-        {
-            c2->name = NULL;
-        }
-
-        c2->tlv_pkt = NULL;
-
-        c2->dynamic.t_count = 0;
-        c2->dynamic.n_count = 0;
-        c2->dynamic.tabs = NULL;
-        c2->dynamic.nodes = NULL;
-        c2->dynamic.api_calls = NULL;
-
-        sigar_open(&c2->sigar);
-
-        return c2;
+        return NULL;
     }
 
-    return NULL;
+    c2->id = id;
+    machine_uuid(uuid);
+    c2->uuid = uuid;
+
+    c2->dynamic.t_count = 0;
+    c2->dynamic.n_count = 0;
+    c2->dynamic.tabs = NULL;
+    c2->dynamic.nodes = NULL;
+    c2->dynamic.api_calls = NULL;
+
+    return c2;
 }
 
-int c2_write_status(c2_t *c2, int status)
-{
-    tlv_pkt_t *tlv_pkt;
-
-    tlv_pkt = tlv_pkt_create();
-
-    if (tlv_pkt == NULL)
-    {
-        return -1;
-    }
-
-    tlv_pkt_add_int(tlv_pkt, TLV_TYPE_STATUS, status);
-
-    if (c2_write(c2, tlv_pkt) < 0)
-    {
-        goto fail;
-    }
-
-    tlv_pkt_destroy(tlv_pkt);
-    return 0;
-
-fail:
-    tlv_pkt_destroy(tlv_pkt);
-    return -1;
-}
-
-int c2_read_status(c2_t *c2, int *status)
-{
-    tlv_pkt_t *tlv_pkt;
-
-    if (c2_read(c2, &tlv_pkt) < 0)
-    {
-        goto fail;
-    }
-
-    if (tlv_pkt_get_int(tlv_pkt, TLV_TYPE_STATUS, status) < 0)
-    {
-        goto fail;
-    }
-
-    tlv_pkt_destroy(tlv_pkt);
-    return 0;
-
-fail:
-    tlv_pkt_destroy(tlv_pkt);
-    return -1;
-}
-
-int c2_write_file(c2_t *c2, FILE *file)
-{
-    int bytes_read;
-    int status;
-
-    unsigned char *buffer;
-    tlv_pkt_t *tlv_pkt;
-
-    buffer = malloc(TLV_FILE_CHUNK);
-
-    if (file == NULL || buffer == NULL)
-    {
-        c2_write_status(c2, API_CALL_ENOENT);
-        return -1;
-    }
-
-    if (c2_write_status(c2, API_CALL_SUCCESS) < 0)
-    {
-        return -1;
-    }
-
-    if (c2_read_status(c2, &status) < 0)
-    {
-        return -1;
-    }
-
-    if (status == API_CALL_ENOENT)
-    {
-        tlv_pkt_destroy(tlv_pkt);
-        return -1;
-    }
-
-    while ((bytes_read = fread(buffer, 1, TLV_FILE_CHUNK, file)) > 0)
-    {
-        tlv_pkt = tlv_pkt_create();
-
-        if (tlv_pkt_add_bytes(tlv_pkt, TLV_TYPE_FILE, buffer, bytes_read) < 0)
-        {
-            goto fail;
-        }
-
-        if (tlv_pkt_add_int(tlv_pkt, TLV_TYPE_STATUS, API_CALL_WAIT) < 0)
-        {
-            goto fail;
-        }
-
-        if (c2_write(c2, tlv_pkt) < 0)
-        {
-            goto fail;
-        }
-
-        memset(buffer, 0, TLV_FILE_CHUNK);
-
-        tlv_pkt_destroy(tlv_pkt);
-    }
-
-    free(buffer);
-    return 0;
-
-fail:
-    tlv_pkt_destroy(tlv_pkt);
-    free(buffer);
-    return -1;
-}
-
-int c2_read_file(c2_t *c2, FILE *file)
-{
-    int status;
-    int bytes_read;
-
-    unsigned char *buffer;
-    tlv_pkt_t *tlv_pkt;
-
-    if (c2_read_status(c2, &status) < 0)
-    {
-        return -1;
-    }
-
-    if (status == API_CALL_ENOENT)
-    {
-        return -1;
-    }
-
-    if (file == NULL)
-    {
-        c2_write_status(c2, API_CALL_ENOENT);
-        return -1;
-    }
-
-    if (c2_write_status(c2, API_CALL_SUCCESS) < 0)
-    {
-        return -1;
-    }
-
-    for (;;)
-    {
-        tlv_pkt = tlv_pkt_create();
-
-        if (c2_read(c2, &tlv_pkt) < 0)
-        {
-            goto fail;
-        }
-
-        if (tlv_pkt_get_int(tlv_pkt, TLV_TYPE_STATUS, &status) < 0)
-        {
-            goto fail;
-        }
-
-        if (status != API_CALL_WAIT)
-        {
-            tlv_pkt_destroy(tlv_pkt);
-            break;
-        }
-
-        if ((bytes_read = tlv_pkt_get_bytes(tlv_pkt, TLV_TYPE_FILE, &buffer)) < 0)
-        {
-            goto fail;
-        }
-
-        fwrite(buffer, 1, bytes_read, file);
-
-        free(buffer);
-        tlv_pkt_destroy(tlv_pkt);
-    }
-
-    return 0;
-
-fail:
-    tlv_pkt_destroy(tlv_pkt);
-    return -1;
-}
-
-int c2_write(c2_t *c2, tlv_pkt_t *tlv_pkt)
-{
-    tlv_pkt_t *response;
-
-    response = tlv_pkt_create();
-
-    if (response == NULL)
-    {
-        return -1;
-    }
-
-    if (tlv_pkt_add_tlv(response, TLV_TYPE_GROUP, tlv_pkt) < 0)
-    {
-        goto fail;
-    }
-
-    return tlv_pkt_write(c2->fd, response);
-
-fail:
-    tlv_pkt_destroy(response);
-    return -1;
-}
-
-int c2_read(c2_t *c2, tlv_pkt_t **tlv_pkt)
-{
-    tlv_pkt_t *request;
-
-    request = tlv_pkt_create();
-
-    if (request == NULL)
-    {
-        return -1;
-    }
-
-    if (tlv_pkt_read(c2->fd, request) < 0)
-    {
-        goto fail;
-    }
-
-    if ((*tlv_pkt = tlv_pkt_get_tlv(request, TLV_TYPE_GROUP)) == NULL)
-    {
-        goto fail;
-    }
-
-    tlv_pkt_destroy(request);
-    return 0;
-
-fail:
-    tlv_pkt_destroy(request);
-    return -1;
-}
-
-void c2_add(c2_t **c2_table, int id, int fd, char *name)
+int c2_add_sock(c2_t **c2_table, int id, int sock)
 {
     c2_t *c2;
-    c2_t *c2_new;
 
+    c2 = c2_create(id);
+
+    if (c2 != NULL)
+    {
+        c2->net = net_create(sock, NET_PROTO_TCP);
+
+        if (c2->net == NULL)
+        {
+            goto fail;
+        }
+
+        if (net_block_sock(c2->net->sock) < 0)
+        {
+            goto fail;
+        }
+
+        return c2_add(c2_table, c2);
+    }
+
+    return -1;
+
+fail:
+    c2_destroy(c2);
+    return -1;
+}
+
+int c2_add_file(c2_t **c2_table, int id, int fd)
+{
+    c2_t *c2;
+
+    c2 = c2_create(id);
+
+    if (c2 != NULL)
+    {
+        c2->net = net_create(fd, NET_PROTO_FILE);
+
+        if (c2->net == NULL)
+        {
+            c2_destroy(c2);
+            return -1;
+        }
+
+        return c2_add(c2_table, c2);
+    }
+
+    return -1;
+}
+
+int c2_add(c2_t **c2_table, c2_t *c2_new)
+{
+    int id;
+    c2_t *c2;
+
+    id = c2_new->id;
     HASH_FIND_INT(*c2_table, &id, c2);
 
     if (c2 == NULL)
     {
-        c2_new = c2_create(id, fd, name);
+        HASH_ADD_INT(*c2_table, id, c2_new);
+        log_debug("* Added C2 entry (%d) - (%s)\n", id, c2_new->uuid);
 
-        if (c2_new != NULL)
-        {
-            HASH_ADD_INT(*c2_table, id, c2_new);
-            log_debug("* Added net C2 entry (%d) - (%s)\n", id, name);
-        }
+        return 0;
     }
+
+    return -1;
 }
 
 void c2_destroy(c2_t *c2)
 {
     tabs_free(c2->dynamic.tabs);
     nodes_free(c2->dynamic.nodes);
-    api_calls_free(c2->dynamic.api_calls);
 
-    sigar_close(c2->sigar);
-    close(c2->fd);
-
-    if (c2->name != NULL)
+    if (c2->uuid != NULL)
     {
-        free(c2->name);
+        free(c2->uuid);
     }
+
+    net_free(c2->net);
+    sigar_close(c2->sigar);
+    api_calls_free(c2->dynamic.api_calls);
+    pipes_free(c2->dynamic.pipes);
 
     free(c2);
 }
 
-void c2_init(c2_t *c2_table)
+void c2_set_links(c2_t *c2_table,
+                  link_t read_link,
+                  link_t write_link,
+                  void *data)
 {
     c2_t *c2;
-    tlv_pkt_t *tlv_pkt;
 
     for (c2 = c2_table; c2 != NULL; c2 = c2->hh.next)
     {
-        log_debug("* Initializing net C2 server (%d) - (%s)\n",
-                  c2->id, c2->name);
-        tlv_pkt = tlv_pkt_create();
+        c2->read_link = read_link;
+        c2->write_link = write_link;
+        c2->link_data = data != NULL ? data : c2;
+    }
+}
 
-        if (tlv_pkt != NULL)
+ssize_t c2_dequeue_tlv(c2_t *c2, tlv_pkt_t **tlv_pkt)
+{
+    return group_tlv_dequeue(c2->net->ingress, tlv_pkt);
+}
+
+int c2_enqueue_tlv(c2_t *c2, tlv_pkt_t *tlv_pkt)
+{
+    if (group_tlv_enqueue(c2->net->egress, tlv_pkt) >= 0)
+    {
+        if (c2->write_link)
         {
-            if (tlv_pkt_add_string(tlv_pkt, TLV_TYPE_UUID, c2->name) >= 0)
-            {
-                if (c2_write(c2, tlv_pkt) >= 0)
-                {
-                    tlv_console_loop(c2);
-                }
-            }
+            c2->write_link(c2->link_data);
         }
 
-        HASH_DEL(c2_table, c2);
+        return 0;
+    }
 
-        tlv_pkt_destroy(tlv_pkt);
+    return -1;
+}
+
+void c2_setup(c2_t *c2_table, struct ev_loop *loop)
+{
+    c2_t *c2;
+
+    for (c2 = c2_table; c2 != NULL; c2 = c2->hh.next)
+    {
+        log_debug("* Initializing C2 server (%d) - (%s)\n",
+                  c2->id, c2->uuid);
+
+        c2->loop = loop;
+        sigar_open(&c2->sigar);
+
+        net_set_links(c2->net, c2->read_link, c2->write_link, c2->link_data);
+        net_setup(c2->net, c2->loop);
+
+        register_pipe_api_calls(&c2->dynamic.api_calls);
+        api_calls_register(&c2->dynamic.api_calls);
+        pipes_register(&c2->dynamic.pipes);
+    }
+}
+
+void c2_free(c2_t *c2_table)
+{
+    c2_t *c2;
+
+    for (c2 = c2_table; c2 != NULL; c2 = c2->hh.next)
+    {
+        log_debug("* Freeing C2 server (%d) - (%s)\n",
+                  c2->id, c2->uuid);
+
+        HASH_DEL(c2_table, c2);
         c2_destroy(c2);
     }
 

@@ -9,12 +9,11 @@ Pwny plugins are dynamic extensions that are used to extend basic Pwny functiona
 Firstly, include these headers:
 
 ```c
-#include <tab.h>
+#include <tabs.h>
 #include <api.h>
 #include <c2.h>
 #include <tlv.h>
 #include <tlv_types.h>
-#include <console.h>
 ```
 
 Then you should specify TLV tag for each of the plugin functions.

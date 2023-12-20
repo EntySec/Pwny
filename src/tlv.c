@@ -23,6 +23,7 @@
  */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 #include <fcntl.h>
@@ -32,6 +33,7 @@
 #include <tlv.h>
 #include <c2.h>
 #include <log.h>
+#include <queue.h>
 #include <key_list.h>
 
 static void tlv_pkt_release(value_t value)
@@ -61,76 +63,6 @@ tlv_pkt_t *tlv_pkt_create(void)
     }
 
     return NULL;
-}
-
-int tlv_pkt_write(int fd, tlv_pkt_t *tlv_pkt)
-{
-    if (tlv_pkt_serialize(tlv_pkt) != 0)
-    {
-        return -1;
-    }
-
-    write(fd, tlv_pkt->buffer, tlv_pkt->bytes);
-    return 0;
-}
-
-int tlv_pkt_read(int fd, tlv_pkt_t *tlv_pkt)
-{
-    int total;
-    int bytes_read;
-    int tlv_type;
-    int tlv_length;
-
-    unsigned char tlv_header[8];
-    unsigned char *buffer;
-
-    total = 0;
-    while (total < 8)
-    {
-        bytes_read = read(fd, tlv_header + total, 8 - total);
-
-        if (bytes_read <= 0)
-        {
-            return -1;
-        }
-
-        total += bytes_read;
-    }
-
-    tlv_type = *(int *)(tlv_header);
-    tlv_length = *(int *)(tlv_header + 4);
-
-    buffer = malloc(tlv_length);
-
-    if (buffer == NULL)
-    {
-        return -1;
-    }
-
-    total = 0;
-    while (total < tlv_length)
-    {
-        bytes_read = read(fd, buffer + total, tlv_length - total);
-
-        if (bytes_read <= 0)
-        {
-            goto fail;
-        }
-
-        total += bytes_read;
-    }
-
-    if (tlv_pkt_add_raw(tlv_pkt, tlv_type, buffer, tlv_length) < 0)
-    {
-        goto fail;
-    }
-
-    free(buffer);
-    return 0;
-
-fail:
-    free(buffer);
-    return -1;
 }
 
 tlv_pkt_t *tlv_pkt_parse(unsigned char *buffer, int size)

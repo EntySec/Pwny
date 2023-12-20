@@ -3,7 +3,7 @@ libpawn:
 	@cd ../deps/$(PLATFORM)/$(ARCH); \
 	git clone https://github.com/entysec/libpawn; \
 	cd libpawn; \
-	cmake -DARCH=$(ARCH) -DCMAKE_TOOLCHAIN_FILE=../../../../toolchain/cmake/$(PLATFORM)_$(ARCH).cmake -DDEBUG=ON -B build; \
+	cmake -DARCH=$(ARCH) -DDEBUG=ON -B build; \
 	cmake --build build; \
 	cp build/libpawn.a ../; \
 	cp include/pawn.h ../

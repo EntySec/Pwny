@@ -58,20 +58,21 @@ class Migrate(Pwny, Badges):
         :raises RuntimeError: with trailing error message
         """
 
-        self.print_process(f"Attempting to migrate to {str(pid)}...")
+        self.print_process(f"Migrating into {str(pid)}...")
 
         platform = self.session.details['Platform']
         arch = self.session.details['Arch']
 
-        loader = self.get_loader(
+        loader = self.get_template(
             platform=platform,
-            arch=arch)
+            arch=arch,
+            extension='ldr')
 
         if loader:
-            self.print_process(f"Sending migration loader ({str(len(loader))} bytes)...")
+            self.print_process(f"Sending loader ({str(len(loader))} bytes)...")
 
             tlv = self.session.send_command(
-                tag=BUILTIN_MIGRATE,
+                tag=PROCESS_MIGRATE,
                 args={
                     TLV_TYPE_PID: pid,
                     TLV_TYPE_MIGRATE: loader
@@ -81,7 +82,7 @@ class Migrate(Pwny, Badges):
             if tlv.get_int(TLV_TYPE_STATUS) != TLV_STATUS_SUCCESS:
                 raise RuntimeError(f"Failed to migrate to {str(pid)}!")
 
-            self.print_process("Waiting for the migration to complete...")
+            self.print_process("Waiting for the loader...")
             self.session.open(self.session.channel.client)
         else:
             raise RuntimeError(f"Loader was not found for {platform}/{arch}!")

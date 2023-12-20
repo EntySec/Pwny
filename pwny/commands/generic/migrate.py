@@ -3,10 +3,7 @@ This command requires HatSploit: https://hatsploit.com
 Current source: https://github.com/EntySec/HatSploit
 """
 
-import os
-
-from pwny.api import *
-from pwny.types import *
+from pwny.migrate import Migrate
 
 from hatsploit.lib.command import Command
 
@@ -16,16 +13,16 @@ class HatSploitCommand(Command):
         super().__init__()
 
         self.details = {
-            'Category': "generic",
-            'Name': "test",
+            'Category': "evasion",
+            'Name': "migrate",
             'Authors': [
                 'Ivan Nikolsky (enty8080) - command developer'
             ],
-            'Description': "Test.",
-            'Usage': "test",
-            'MinArgs': 0
+            'Description': "Migrate into a process by ID.",
+            'Usage': "migrate",
+            'MinArgs': 1
         }
 
     def run(self, argc, argv):
-        result = self.session.send_command(tag=API_TEST)
-        print(result.get_string(TLV_TYPE_STRING))
+        migrate = Migrate(session=self.session)
+        migrate.migrate(argv[1])

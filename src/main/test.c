@@ -31,7 +31,7 @@
 #include <arpa/inet.h>
 
 #include <c2.h>
-#include <machine.h>
+#include <core.h>
 
 int connect_to(char *host, int port)
 {
@@ -55,20 +55,19 @@ int connect_to(char *host, int port)
 int main(int argc, char *argv[])
 {
     c2_t *c2;
-
-    int fd;
-    char uuid[UUID_SIZE];
+    core_t *core;
+    int sock;
 
     c2 = NULL;
-    fd = connect_to("192.168.64.1", 8888);
+    sock = connect_to(argv[1], atoi(argv[2]));
 
-    if (fd < 0 || machine_uuid(uuid) < 0)
-    {
-        return 1;
-    }
+    c2_add_sock(&c2, 0, sock);
 
-    c2_add(&c2, 0, fd, uuid);
-    c2_init(c2);
+    core = core_create(c2);
+    core_start(core);
+
+    c2_free(c2);
+    core_destroy(core);
 
     return 0;
 }

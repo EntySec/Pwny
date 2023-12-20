@@ -13,5 +13,5 @@ c, a = s.accept()
 p = PwnySession()
 p.details['Platform'] = OS_LINUX
 p.details['Arch'] = ARCH_AARCH64
-p.open(c)
+p.open(c, loader=False)
 p.interact()

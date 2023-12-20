@@ -22,13 +22,14 @@
  * SOFTWARE.
  */
 
+#ifndef _BUILTINS_H_
+#define _BUILTINS_H_
+
 #include <sigar.h>
 
 #include <api.h>
 #include <c2.h>
-#include <node.h>
-#include <tab.h>
-#include <migrate.h>
+#include <tabs.h>
 #include <tlv_types.h>
 #include <tlv.h>
 
@@ -38,91 +39,36 @@
         TLV_TAG_CUSTOM(API_CALL_STATIC, \
                        BUILTIN_BASE, \
                        API_CALL)
-#define BUILTIN_ADD_NODE \
-        TLV_TAG_CUSTOM(API_CALL_STATIC, \
-                       BUILTIN_BASE, \
-                       API_CALL + 1)
-#define BUILTIN_DELETE_NODE \
-        TLV_TAG_CUSTOM(API_CALL_STATIC, \
-                       BUILTIN_BASE, \
-                       API_CALL + 2)
 #define BUILTIN_ADD_TAB_DISK \
         TLV_TAG_CUSTOM(API_CALL_STATIC, \
                        BUILTIN_BASE, \
-                       API_CALL + 3)
+                       API_CALL + 1)
 #define BUILTIN_ADD_TAB_BUFFER \
         TLV_TAG_CUSTOM(API_CALL_STATIC, \
                        BUILTIN_BASE, \
-                       API_CALL + 4)
+                       API_CALL + 2)
 #define BUILTIN_DELETE_TAB \
         TLV_TAG_CUSTOM(API_CALL_STATIC, \
                        BUILTIN_BASE, \
-                       API_CALL + 5)
-#define BUILTIN_MIGRATE \
-        TLV_TAG_CUSTOM(API_CALL_STATIC, \
-                       BUILTIN_BASE, \
-                       API_CALL + 6)
-#define BUILTIN_PULL \
-        TLV_TAG_CUSTOM(API_CALL_STATIC, \
-                       BUILTIN_BASE, \
-                       API_CALL + 7)
-#define BUILTIN_PUSH \
-        TLV_TAG_CUSTOM(API_CALL_STATIC, \
-                       BUILTIN_BASE, \
-                       API_CALL + 8)
+                       API_CALL + 3)
 #define BUILTIN_SYSINFO \
         TLV_TAG_CUSTOM(API_CALL_STATIC, \
                        BUILTIN_BASE, \
-                       API_CALL + 9)
+                       API_CALL + 4)
+#define BUILTIN_UUID \
+        TLV_TAG_CUSTOM(API_CALL_STATIC, \
+                       BUILTIN_BASE, \
+                       API_CALL + 5)
 
-#define TLV_TYPE_PLATFORM TLV_TYPE_CUSTOM(TLV_TYPE_STRING, API_TYPE)
-#define TLV_TYPE_VERSION  TLV_TYPE_CUSTOM(TLV_TYPE_STRING, API_TYPE + 1)
-#define TLV_TYPE_ARCH     TLV_TYPE_CUSTOM(TLV_TYPE_STRING, API_TYPE + 2)
-#define TLV_TYPE_MACHINE  TLV_TYPE_CUSTOM(TLV_TYPE_STRING, API_TYPE + 3)
-#define TLV_TYPE_VENDOR   TLV_TYPE_CUSTOM(TLV_TYPE_STRING, API_TYPE + 4)
+#define TLV_TYPE_PLATFORM TLV_TYPE_CUSTOM(TLV_TYPE_STRING, BUILTIN_BASE, API_TYPE)
+#define TLV_TYPE_VERSION  TLV_TYPE_CUSTOM(TLV_TYPE_STRING, BUILTIN_BASE, API_TYPE + 1)
+#define TLV_TYPE_ARCH     TLV_TYPE_CUSTOM(TLV_TYPE_STRING, BUILTIN_BASE, API_TYPE + 2)
+#define TLV_TYPE_MACHINE  TLV_TYPE_CUSTOM(TLV_TYPE_STRING, BUILTIN_BASE, API_TYPE + 3)
+#define TLV_TYPE_VENDOR   TLV_TYPE_CUSTOM(TLV_TYPE_STRING, BUILTIN_BASE, API_TYPE + 4)
 
 static tlv_pkt_t *builtin_quit(c2_t *c2)
 {
     return api_craft_tlv_pkt(API_CALL_QUIT);
-}
-
-static tlv_pkt_t *builtin_add_node(c2_t *c2)
-{
-    ipv4_t src_host;
-    ipv4_t dst_host;
-    port_t src_port;
-    port_t dst_port;
-
-    tlv_pkt_t *result;
-
-    tlv_pkt_get_uint(c2->tlv_pkt, TLV_TYPE_NODE_SRC_ADDR, &src_host);
-    tlv_pkt_get_ushort(c2->tlv_pkt, TLV_TYPE_NODE_SRC_PORT, &src_port);
-    tlv_pkt_get_uint(c2->tlv_pkt, TLV_TYPE_NODE_DST_ADDR, &dst_host);
-    tlv_pkt_get_ushort(c2->tlv_pkt, TLV_TYPE_NODE_DST_PORT, &dst_port);
-
-    if (node_add(&c2->dynamic.nodes, c2->dynamic.n_count, \
-        src_host, src_port, dst_host, dst_port) >= 0)
-    {
-        result = api_craft_tlv_pkt(API_CALL_SUCCESS);
-        tlv_pkt_add_int(result, TLV_TYPE_NODE_ID, c2->dynamic.n_count);
-        c2->dynamic.n_count++;
-    }
-
-    return api_craft_tlv_pkt(API_CALL_FAIL);
-}
-
-static tlv_pkt_t *builtin_delete_node(c2_t *c2)
-{
-    int node_id;
-
-    tlv_pkt_get_int(c2->tlv_pkt, TLV_TYPE_NODE_ID, &node_id);
-
-    if (node_delete(&c2->dynamic.nodes, node_id) >= 0)
-    {
-        return api_craft_tlv_pkt(API_CALL_SUCCESS);
-    }
-
-    return api_craft_tlv_pkt(API_CALL_FAIL);
 }
 
 static tlv_pkt_t *builtin_add_tab_disk(c2_t *c2)
@@ -130,9 +76,9 @@ static tlv_pkt_t *builtin_add_tab_disk(c2_t *c2)
     char filename[128];
     tlv_pkt_t *result;
 
-    if (tlv_pkt_get_string(c2->tlv_pkt, TLV_TYPE_FILENAME, filename) >= 0)
+    if (tlv_pkt_get_string(c2->request, TLV_TYPE_FILENAME, filename) >= 0)
     {
-        if (tab_add_disk(&c2->dynamic.tabs, c2->dynamic.t_count, filename) >= 0)
+        if (tabs_add(&c2->dynamic.tabs, c2->dynamic.t_count, NULL, filename, c2) >= 0)
         {
             result = api_craft_tlv_pkt(API_CALL_SUCCESS);
             tlv_pkt_add_int(result, TLV_TYPE_TAB_ID, c2->dynamic.t_count);
@@ -151,9 +97,9 @@ static tlv_pkt_t *builtin_add_tab_buffer(c2_t *c2)
     unsigned char *tab;
     tlv_pkt_t *result;
 
-    if ((tab_size = tlv_pkt_get_bytes(c2->tlv_pkt, TLV_TYPE_TAB, &tab)) >= 0)
+    if ((tab_size = tlv_pkt_get_bytes(c2->request, TLV_TYPE_TAB, &tab)) >= 0)
     {
-        if (tab_add_buffer(&c2->dynamic.tabs, c2->dynamic.t_count, tab, tab_size) >= 0)
+        if (tabs_add(&c2->dynamic.tabs, c2->dynamic.t_count, tab, NULL, c2) >= 0)
         {
             result = api_craft_tlv_pkt(API_CALL_SUCCESS);
             tlv_pkt_add_int(result, TLV_TYPE_TAB_ID, c2->dynamic.t_count);
@@ -175,9 +121,9 @@ static tlv_pkt_t *builtin_delete_tab(c2_t *c2)
 {
     int tab_id;
 
-    tlv_pkt_get_int(c2->tlv_pkt, TLV_TYPE_TAB_ID, &tab_id);
+    tlv_pkt_get_int(c2->request, TLV_TYPE_TAB_ID, &tab_id);
 
-    if (tab_delete(&c2->dynamic.tabs, tab_id) >= 0)
+    if (tabs_delete(&c2->dynamic.tabs, tab_id) >= 0)
     {
         return api_craft_tlv_pkt(API_CALL_SUCCESS);
     }
@@ -185,72 +131,14 @@ static tlv_pkt_t *builtin_delete_tab(c2_t *c2)
     return api_craft_tlv_pkt(API_CALL_FAIL);
 }
 
-static tlv_pkt_t *builtin_migrate(c2_t *c2)
+static tlv_pkt_t *builtin_uuid(c2_t *c2)
 {
-    int migrate_size;
-    unsigned char *migrate;
-    pid_t migrate_pid;
+    tlv_pkt_t *result;
 
-    tlv_pkt_get_int(c2->tlv_pkt, TLV_TYPE_PID, &migrate_pid);
+    result = api_craft_tlv_pkt(API_CALL_SUCCESS);
+    tlv_pkt_add_string(result, TLV_TYPE_UUID, c2->uuid);
 
-    if ((migrate_size = tlv_pkt_get_bytes(c2->tlv_pkt, TLV_TYPE_MIGRATE, &migrate)) >= 0)
-    {
-        if (migrate_init(migrate_pid, migrate_size, migrate) >= 0)
-        {
-            free(migrate);
-            return api_craft_tlv_pkt(API_CALL_QUIT);
-        }
-    }
-
-    return api_craft_tlv_pkt(API_CALL_FAIL);
-}
-
-static tlv_pkt_t *builtin_pull(c2_t *c2)
-{
-    FILE *file;
-    char filename[128];
-    int status;
-
-    tlv_pkt_get_string(c2->tlv_pkt, TLV_TYPE_STRING, filename);
-    file = fopen(filename, "rb");
-
-    status = API_CALL_FAIL;
-
-    if (c2_write_file(c2, file) >= 0)
-    {
-        status = API_CALL_SUCCESS;
-    }
-
-    if (file != NULL)
-    {
-        fclose(file);
-    }
-
-    return api_craft_tlv_pkt(status);
-}
-
-static tlv_pkt_t *builtin_push(c2_t *c2)
-{
-    FILE *file;
-    char filename[128];
-    int status;
-
-    tlv_pkt_get_string(c2->tlv_pkt, TLV_TYPE_STRING, filename);
-    file = fopen(filename, "wb");
-
-    status = API_CALL_FAIL;
-
-    if (c2_read_file(c2, file) >= 0)
-    {
-        status = API_CALL_SUCCESS;
-    }
-
-    if (file != NULL)
-    {
-        fclose(file);
-    }
-
-    return api_craft_tlv_pkt(status);
+    return result;
 }
 
 static tlv_pkt_t *builtin_sysinfo(c2_t *c2)
@@ -280,13 +168,10 @@ static tlv_pkt_t *builtin_sysinfo(c2_t *c2)
 void register_builtin_api_calls(api_calls_t **api_calls)
 {
     api_call_register(api_calls, BUILTIN_QUIT, builtin_quit);
-    api_call_register(api_calls, BUILTIN_ADD_NODE, builtin_add_node);
-    api_call_register(api_calls, BUILTIN_DELETE_NODE, builtin_delete_node);
     api_call_register(api_calls, BUILTIN_ADD_TAB_DISK, builtin_add_tab_disk);
     api_call_register(api_calls, BUILTIN_ADD_TAB_BUFFER, builtin_add_tab_buffer);
     api_call_register(api_calls, BUILTIN_DELETE_TAB, builtin_delete_tab);
-    api_call_register(api_calls, BUILTIN_MIGRATE, builtin_migrate);
-    api_call_register(api_calls, BUILTIN_PULL, builtin_pull);
-    api_call_register(api_calls, BUILTIN_PUSH, builtin_push);
     api_call_register(api_calls, BUILTIN_SYSINFO, builtin_sysinfo);
 }
+
+#endif

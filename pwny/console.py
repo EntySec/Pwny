@@ -49,10 +49,16 @@ class Console(cmd.Cmd):
     Pwny main console.
     """
 
-    def __init__(self):
+    def __init__(self, prompt: str = '%linepwny%end > ') -> None:
+        """ Initialize Pwny console.
+
+        :param str prompt: prompt line (supports ColorScript)
+        :return None: None
+        """
+
         super().__init__()
 
-        self.prompt = ColorScript().parse('%linepwny%end > ')
+        self.prompt = ColorScript().parse(prompt)
 
         self.plugins = Plugins()
         self.commands = Commands()
@@ -67,9 +73,9 @@ class Console(cmd.Cmd):
             ('exit', 'Terminate Pwny session.'),
             ('help', 'Show available commands.'),
             ('load', 'Load Pwny plugin.'),
-            ('migrate', 'Migrate Pwny to PID.'),
             ('plugins', 'List Pwny plugins.'),
             ('quit', 'Stop interaction.'),
+            ('prompt', 'Set prompt.'),
             ('unload', 'Unload Pwny plugin.')
         ]
 
@@ -116,20 +122,6 @@ class Console(cmd.Cmd):
 
         self.plugins.show_plugins()
 
-    def do_migrate(self, pid: int) -> None:
-        """ Migrate to PID.
-
-        :param int pid: PID
-        :return None: None
-        """
-
-        if not pid:
-            self.badges.print_usage("migrate <pid>")
-            return
-
-        migrate = Migrate(session=self.session)
-        migrate.migrate(int(pid))
-
     def do_load(self, plugin: str) -> None:
         """ Load plugin by name.
 
@@ -156,6 +148,20 @@ class Console(cmd.Cmd):
 
         self.plugins.unload_plugin(plugin)
 
+    def do_prompt(self, prompt: str) -> None:
+        """ Set current prompt line.
+
+        :param str prompt: prompt line (supports ColorScript)
+        :return None: None
+        """
+
+        if not prompt:
+            self.badges.print_usage("prompt <line>")
+            return
+
+        prompt = prompt.strip("'\"")
+        self.prompt = ColorScript().parse(prompt)
+
     def do_exit(self, _) -> None:
         """ Exit Pwny and terminate connection.
 
@@ -164,7 +170,7 @@ class Console(cmd.Cmd):
         """
 
         self.session.send_command(
-            tag=API_QUIT
+            tag=BUILTIN_QUIT
         )
         self.session.terminated = True
 

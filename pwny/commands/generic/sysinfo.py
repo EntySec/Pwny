@@ -3,8 +3,6 @@ This command requires HatSploit: https://hatsploit.com
 Current source: https://github.com/EntySec/HatSploit
 """
 
-import os
-
 from textwrap import dedent
 
 from pwny.api import *

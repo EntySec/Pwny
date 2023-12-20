@@ -34,8 +34,6 @@ if (DEBUG)
     add_compile_definitions(DEBUG)
 endif()
 
-add_compile_options(-pedantic-errors)
-
 file(GLOB PWNY_SOURCES src/*.c)
 add_library(pwny STATIC ${PWNY_SOURCES})
 
@@ -43,21 +41,29 @@ set_property(TARGET pwny PROPERTY C_STANDART 99)
 set_property(TARGET pwny PROPERTY POSITION_INDEPENDENT_CODE ON)
 
 set_target_properties(pwny PROPERTIES OUTPUT_NAME pwny)
+string(TOLOWER ${CMAKE_SYSTEM_NAME}/${CMAKE_SYSTEM_PROCESSOR} PATH)
 
 if(CMAKE_SYSTEM_NAME STREQUAL Windows)
-    file(GLOB MAIN_SOURCES src/main/dll.c)
+    file(GLOB MAIN_SOURCES src/main/test.c)
+elseif(CMAKE_SYSTEM_NAME STREQUAL OSX)
+    file(GLOB MAIN_SOURCES src/main/test.c
+                           libpwny.a
+                           deps/${PATH}/libpawn.a
+                           deps/${PATH}/libsigar.a
+                           deps/${PATH}/libev.a
+                           deps/${PATH}/libeio.a)
 else()
-    file(GLOB MAIN_SOURCES src/main/main.c)
+    file(GLOB MAIN_SOURCES src/main/test.c)
 endif()
 
 add_executable(main ${MAIN_SOURCES})
 
-string(TOLOWER ${CMAKE_SYSTEM_NAME}/${CMAKE_SYSTEM_PROCESSOR} PATH)
+if(NOT CMAKE_SYSTEM_NAME STREQUAL OSX)
+    target_link_directories(main PRIVATE deps/${PATH})
+    target_link_libraries(main PRIVATE pwny injector pawn sigar ev eio)
+endif()
 
-target_link_directories(main PRIVATE deps/${PATH})
-target_link_libraries(main PRIVATE pwny injector pawn sigar)
-
-include_directories(include api deps/${PATH})
+include_directories(include api pipe deps/${PATH})
 
 if(CMAKE_SYSTEM_NAME STREQUAL Windows)
     target_link_libraries(main PRIVATE ws2_32 imagehlp)
