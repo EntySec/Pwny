@@ -6,7 +6,7 @@ from pex.platform.types import *
 from pwny.session import PwnySession
 
 s = socket.socket()
-s.bind(('192.168.64.1', 8888))
+s.bind(('172.16.23.132', 8888))
 s.listen()
 c, a = s.accept()
 

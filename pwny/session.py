@@ -113,7 +113,7 @@ class PwnySession(Pwny, Session, Console):
         :return None: None
         """
 
-        self.channel.close()
+        self.channel.client.close()
 
     def heartbeat(self) -> bool:
         """ Check the Pwny session heartbeat.

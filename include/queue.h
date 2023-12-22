@@ -26,6 +26,7 @@
 #define _QUEUE_H_
 
 #include <stdlib.h>
+#include <sys/types.h>
 
 #define QUEUE_FD_MAX 8192
 

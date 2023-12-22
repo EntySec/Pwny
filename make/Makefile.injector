@@ -3,7 +3,7 @@ injector:
 	@cd ../deps/$(PLATFORM)/$(ARCH); \
 	git clone https://github.com/kubo/injector; \
 	cd injector/src/$(PLATFORM); \
-	make; \
+	make $(shell ../toolchain/make/$(PLATFORM)_$(ARCH).sh); \
 	cp libinjector.a ../../../; \
 	cp ../../include/injector.h ../../../; \
 	cp injector_internal.h ../../../

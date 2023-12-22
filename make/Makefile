@@ -1,7 +1,7 @@
 PLATFORM = linux
 ARCH = x64
 
-all: setup libpawn injector sigar libev libeio
+all: setup sigar libev libeio
 
 setup:
 	@echo "[Creating workspace]"

@@ -22,17 +22,19 @@
 # SOFTWARE.
 #
 
-cmake_minimum_required(VERSION 3.0.0)
+cmake_minimum_required(VERSION 3.5.0)
 project(libpwny VERSION 1.0.0)
 
 option(DEBUG "Build in debug mode" OFF)
-option(IPHONE "Is iPhone iOS" OFF)
+option(MAIN "Build main executable" OFF)
 
-set(SDK "" CACHE PATH "Path to SDK")
+set(SOURCE src/main/test.c CACHE STRING "File to build as executable")
 
 if (DEBUG)
     add_compile_definitions(DEBUG)
 endif()
+
+string(TOLOWER ${CMAKE_SYSTEM_NAME}/${CMAKE_SYSTEM_PROCESSOR} PATH)
 
 file(GLOB PWNY_SOURCES src/*.c)
 add_library(pwny STATIC ${PWNY_SOURCES})
@@ -41,67 +43,38 @@ set_property(TARGET pwny PROPERTY C_STANDART 99)
 set_property(TARGET pwny PROPERTY POSITION_INDEPENDENT_CODE ON)
 
 set_target_properties(pwny PROPERTIES OUTPUT_NAME pwny)
-string(TOLOWER ${CMAKE_SYSTEM_NAME}/${CMAKE_SYSTEM_PROCESSOR} PATH)
-
-if(CMAKE_SYSTEM_NAME STREQUAL Windows)
-    file(GLOB MAIN_SOURCES src/main/test.c)
-elseif(CMAKE_SYSTEM_NAME STREQUAL OSX)
-    file(GLOB MAIN_SOURCES src/main/test.c
-                           libpwny.a
-                           deps/${PATH}/libpawn.a
-                           deps/${PATH}/libsigar.a
-                           deps/${PATH}/libev.a
-                           deps/${PATH}/libeio.a)
-else()
-    file(GLOB MAIN_SOURCES src/main/test.c)
-endif()
-
-add_executable(main ${MAIN_SOURCES})
-
-if(NOT CMAKE_SYSTEM_NAME STREQUAL OSX)
-    target_link_directories(main PRIVATE deps/${PATH})
-    target_link_libraries(main PRIVATE pwny injector pawn sigar ev eio)
-endif()
-
 include_directories(include api pipe deps/${PATH})
 
+if(MAIN)
+    file(GLOB MAIN_SOURCES ${SOURCE})
+    file(GLOB MAIN_LIBS deps/${PATH}/*.a)
+
+    add_executable(main ${MAIN_SOURCES})
+
+    target_link_options(main PRIVATE ${MAIN_LIBS})
+    target_link_libraries(main PRIVATE pwny)
+
+    if(CMAKE_SYSTEM_NAME STREQUAL Windows)
+        target_link_libraries(main PRIVATE ws2_32 imagehlp)
+
+    elseif(CMAKE_SYSTEM_NAME STREQUAL Linux)
+        target_compile_options(main PRIVATE -static -no-pie
+                                            -Wl,-Ttext-section=0x1000000)
+    endif()
+endif()
+
 if(CMAKE_SYSTEM_NAME STREQUAL Windows)
-    target_link_libraries(main PRIVATE ws2_32 imagehlp)
+    add_compile_definitions(IS_WINDOWS)
 
-elseif(CMAKE_SYSTEM_NAME STREQUAL OSX)
-    add_compile_options(-x objective-c -fobjc-arc)
+elseif(CMAKE_SYSTEM_NAME STREQUAL Darwin)
+    add_compile_definitions(IS_MACOS)
 
-    if(SDK)
-        add_compile_options(-isysroot ${SDK})
-    endif()
-
-    if(IPHONE)
-        add_compile_definitions(IPHONE)
-        add_compile_options(-arch arm64 -arch arm64e)
-
-        add_link_options(
-            -framework Foundation
-            -framework Security
-            -framework AudioToolbox
-            -framework CoreFoundation
-            -framework MediaPlayer
-            -framework UIKit
-            -framework AVFoundation
-            -framework CoreLocation
-            -framework SpringBoardServices
-            -framework IOSurface)
-
-    else()
-        add_compile_options(-arch x86_64)
-        add_link_options(
-            -framework Foundation
-            -framework AVFoundation
-            -framework AudioToolbox
-            -framework AppKit)
-    endif()
+elseif(CMAKE_SYSTEM_NAME STREQUAL iOS)
+    add_compile_definitions(IS_IPHONE)
+    add_compile_options(-arch arm64)
 
 elseif(CMAKE_SYSTEM_NAME STREQUAL Linux)
-    target_compile_options(main PRIVATE -static -no-pie -Wl,-Ttext-section=0x1000000)
+    add_compile_definitions(IS_LINUX)
 
 endif()
 
