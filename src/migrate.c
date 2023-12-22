@@ -25,22 +25,27 @@
 #include <limits.h>
 #include <unistd.h>
 #include <stdio.h>
-#include <syscall.h>
 
+#if IS_LINUX
+#include <syscall.h>
+#endif
+
+#ifndef IS_IPHONE
 #include <injector.h>
 #include <injector_internal.h>
+#endif
 
 #include <c2.h>
 #include <log.h>
 #include <migrate.h>
 
-#ifndef _WIN32
+#ifndef IS_WINDOWS
 #include <dlfcn.h>
 #endif
 
 int migrate_init(pid_t pid, int length, unsigned char *buffer, int fd)
 {
-#if defined(__linux__) || defined(__unix__)
+#if IS_LINUX
     int memfd;
     char image[PATH_MAX];
 
@@ -61,7 +66,8 @@ int migrate_init(pid_t pid, int length, unsigned char *buffer, int fd)
 
 int migrate_inject(pid_t pid, char *image, int fd)
 {
-#ifndef _WIN32
+#ifndef IS_IPHONE
+#ifndef IS_WINDOWS
     int retval;
     size_t func_addr;
 #endif
@@ -90,7 +96,7 @@ int migrate_inject(pid_t pid, char *image, int fd)
 
     log_debug("* Injected to the process (%d)\n", pid);
 
-#if defined(__APPLE__)
+#if IS_MACOS
     if (injector__write(injector, injector->text, name, len) != 0)
     {
         goto fail;
@@ -106,7 +112,7 @@ int migrate_inject(pid_t pid, char *image, int fd)
     log_debug("* Calling init with socket (%d)\n", fd);
     injector__call_function(injector, &retval, retval, fd);
 
-#elif defined(__linux__) || defined(__unix__)
+#elif IS_LINUX
     if (injector_remote_func_addr(injector, handle, "init", &func_addr) != 0)
     {
         goto fail;
@@ -122,5 +128,7 @@ int migrate_inject(pid_t pid, char *image, int fd)
 fail:
     log_debug("* Failed to do inject (%s)\n", injector_error());
     injector_detach(injector);
+
+#endif
     return -1;
 }

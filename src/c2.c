@@ -61,7 +61,7 @@ c2_t *c2_create(int id)
 
     c2->id = id;
     machine_uuid(uuid);
-    c2->uuid = uuid;
+    c2->uuid = strdup(uuid);
 
     c2->dynamic.t_count = 0;
     c2->dynamic.n_count = 0;

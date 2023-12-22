@@ -33,8 +33,12 @@
 
 #include <queue.h>
 #include <child.h>
-#include <pawn.h>
+
 #include <uthash/uthash.h>
+
+#ifndef IS_IPHONE
+#include <pawn.h>
+#endif
 
 void child_set_links(child_t *child,
                      link_t out_link,
@@ -139,15 +143,12 @@ void child_from_image(child_t *child, unsigned char *image)
 
     argv[0] = "pwny";
 
-#if defined(__APPLE__)
+#if IS_MACOS
     pawn_exec_bundle(image, argv, NULL);
-
-#elif defined(__linux__) || defined(__unix__)
+#elif IS_LINUX
     pawn_exec_fd(image, argv, NULL);
-
-#elif defined(_WIN32)
+#elif IS_WINDOWS
     pawn_exec(image, argv);
-
 #endif
 
     abort();

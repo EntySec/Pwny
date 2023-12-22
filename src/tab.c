@@ -39,7 +39,6 @@
 #include <log.h>
 #include <link.h>
 #include <queue.h>
-#include <pawn.h>
 
 static void tab_signal_handler(struct ev_loop *loop, ev_signal *w, int revents)
 {
