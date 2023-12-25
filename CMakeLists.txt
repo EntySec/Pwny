@@ -34,7 +34,11 @@ if (DEBUG)
     add_compile_definitions(DEBUG)
 endif()
 
-string(TOLOWER ${CMAKE_SYSTEM_NAME}/${CMAKE_SYSTEM_PROCESSOR} PATH)
+if(CMAKE_SYSTEM_NAME STREQUAL Darwin)
+    string(TOLOWER macOS/${CMAKE_SYSTEM_PROCESSOR} PATH)
+else()
+    string(TOLOWER ${CMAKE_SYSTEM_NAME}/${CMAKE_SYSTEM_PROCESSOR} PATH)
+endif()
 
 file(GLOB PWNY_SOURCES src/*.c)
 add_library(pwny STATIC ${PWNY_SOURCES})
@@ -43,7 +47,7 @@ set_property(TARGET pwny PROPERTY C_STANDART 99)
 set_property(TARGET pwny PROPERTY POSITION_INDEPENDENT_CODE ON)
 
 set_target_properties(pwny PROPERTIES OUTPUT_NAME pwny)
-include_directories(include api pipe deps/${PATH})
+include_directories(include api deps/${PATH})
 
 if(MAIN)
     file(GLOB MAIN_SOURCES ${SOURCE})
@@ -56,6 +60,20 @@ if(MAIN)
 
     if(CMAKE_SYSTEM_NAME STREQUAL Windows)
         target_link_libraries(main PRIVATE ws2_32 imagehlp)
+
+    elseif(CMAKE_SYSTEM_NAME STREQUAL iOS)
+        target_link_libraries(main PRIVATE "-framework Foundation"
+                                           "-framework UIKit"
+                                           "-framework AVFoundation"
+                                           "-framework CoreMedia"
+                                           "-framework CoreVideo"
+                                           "-framework CoreGraphics"
+                                           "-framework CoreImage"
+                                           "-framework BackBoardServices"
+                                           "-framework MediaRemote"
+                                           "-framework MediaPlayer"
+                                           "-framework SpringBoardServices")
+
 
     elseif(CMAKE_SYSTEM_NAME STREQUAL Linux)
         target_compile_options(main PRIVATE -static -no-pie

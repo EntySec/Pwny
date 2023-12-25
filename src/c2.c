@@ -40,7 +40,6 @@
 #include <c2.h>
 #include <pipe.h>
 #include <link.h>
-#include <node.h>
 #include <group.h>
 #include <tlv_types.h>
 #include <machine.h>
@@ -66,8 +65,8 @@ c2_t *c2_create(int id)
     c2->dynamic.t_count = 0;
     c2->dynamic.n_count = 0;
     c2->dynamic.tabs = NULL;
-    c2->dynamic.nodes = NULL;
     c2->dynamic.api_calls = NULL;
+    c2->dynamic.pipes = NULL;
 
     return c2;
 }
@@ -146,7 +145,6 @@ int c2_add(c2_t **c2_table, c2_t *c2_new)
 void c2_destroy(c2_t *c2)
 {
     tabs_free(c2->dynamic.tabs);
-    nodes_free(c2->dynamic.nodes);
 
     if (c2->uuid != NULL)
     {
@@ -156,7 +154,7 @@ void c2_destroy(c2_t *c2)
     net_free(c2->net);
     sigar_close(c2->sigar);
     api_calls_free(c2->dynamic.api_calls);
-    pipes_free(c2->dynamic.pipes);
+    api_pipes_free(c2->dynamic.pipes);
 
     free(c2);
 }
@@ -213,7 +211,7 @@ void c2_setup(c2_t *c2_table, struct ev_loop *loop)
 
         register_pipe_api_calls(&c2->dynamic.api_calls);
         api_calls_register(&c2->dynamic.api_calls);
-        pipes_register(&c2->dynamic.pipes);
+        api_pipes_register(&c2->dynamic.pipes);
     }
 }
 

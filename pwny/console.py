@@ -242,6 +242,35 @@ class Console(cmd.Cmd):
             return False
         return True
 
+    def load_commands(self, path: str) -> None:
+        """ Load custom Pwny commands.
+
+        :param str path: commands path
+        :return None: None
+        """
+
+        exists, is_dir = self.fs.exists(path)
+
+        if exists and is_dir:
+            self.custom_commands.update(
+                self.commands.load_commands(path)
+            )
+
+        for command in self.custom_commands:
+            self.custom_commands[command].session = self.session
+
+    def load_plugins(self, path: str) -> None:
+        """ Load custom Pwny plugins.
+
+        :param str path: plugins path
+        :return None: None
+        """
+
+        exists, is_dir = self.fs.exists(path)
+
+        if exists and is_dir:
+            self.plugins.import_plugins(path, self.session)
+
     def start_pwny(self, session: Session) -> None:
         """ Start Pwny.
 
@@ -249,38 +278,13 @@ class Console(cmd.Cmd):
         :return None: None
         """
 
-        commands = session.pwny_commands + str(session.details['Platform']).lower()
-        exists, is_dir = self.fs.exists(commands)
-
-        if exists and is_dir:
-            self.custom_commands.update(
-                self.commands.load_commands(commands)
-            )
-
-        commands = session.pwny_commands + 'generic'
-        exists, is_dir = self.fs.exists(commands)
-
-        if exists and is_dir:
-            self.custom_commands.update(
-                self.commands.load_commands(commands)
-            )
-
-        for command in self.custom_commands:
-            self.custom_commands[command].session = session
-
-        plugins = session.pwny_plugins + str(session.details['Platform']).lower()
-        exists, is_dir = self.fs.exists(plugins)
-
-        if exists and is_dir:
-            self.plugins.import_plugins(plugins, session)
-
-        plugins = session.pwny_plugins + 'generic'
-        exists, is_dir = self.fs.exists(plugins)
-
-        if exists and is_dir:
-            self.plugins.import_plugins(plugins, session)
-
         self.session = session
+
+        self.load_commands(session.pwny_commands + str(session.details['Platform']).lower())
+        self.load_commands(session.pwny_commands + 'generic')
+
+        self.load_plugins(session.pwny_plugins + str(session.details['Platform']).lower())
+        self.load_plugins(session.pwny_plugins + 'generic')
 
     def pwny_console(self) -> None:
         """ Start Pwny console.

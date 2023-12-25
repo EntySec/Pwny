@@ -75,9 +75,10 @@
 #define PIPE_DYNAMIC  40000
 
 typedef struct pipes_table pipes_t;
+typedef struct pipe_callbacks pipe_callbacks_t;
 typedef struct pipes pipe_t;
 
-typedef struct
+struct pipe_callbacks
 {
     int (*create_cb)(pipe_t *pipe, c2_t *c2);
     int (*read_cb)(pipe_t *pipe, void *buffer, int length);
@@ -85,7 +86,7 @@ typedef struct
     int (*seek_cb)(pipe_t *pipe, int offset, int whence);
     int (*tell_cb)(pipe_t *pipe);
     int (*destroy_cb)(pipe_t *pipe, c2_t *c2);
-} pipe_callbacks_t;
+};
 
 struct pipes
 {
@@ -102,10 +103,6 @@ struct pipes_table
     UT_hash_handle hh;
 };
 
-void pipe_register(pipes_t **pipes, int type, pipe_callbacks_t callbacks);
-void pipes_register(pipes_t **pipes);
-
-void pipes_free(pipes_t *pipes);
 void register_pipe_api_calls(api_calls_t **api_calls);
 
 #endif

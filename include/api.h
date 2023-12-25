@@ -42,6 +42,9 @@
 
 typedef tlv_pkt_t *(*api_t)(c2_t *);
 
+typedef struct pipes_table pipes_t;
+typedef struct pipe_callbacks pipe_callbacks_t;
+
 typedef enum
 {
     API_CALLBACK,
@@ -73,8 +76,12 @@ tlv_pkt_t *api_craft_tlv_pkt(int status);
 int api_call_make(api_calls_t **api_calls, c2_t *c2, int tag, tlv_pkt_t **result);
 
 void api_calls_register(api_calls_t **api_calls);
+void api_pipes_register(pipes_t **pipes);
+
 void api_call_register(api_calls_t **api_calls, int tag, api_t handler);
+void api_pipe_register(pipes_t **pipes, int type, pipe_callbacks_t callbacks);
 
 void api_calls_free(api_calls_t *api_calls);
+void api_pipes_free(pipes_t *pipes);
 
 #endif

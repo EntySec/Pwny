@@ -43,16 +43,11 @@ TLV_TYPE_TAG = tlv_custom_type(TLV_TYPE_INT, 0, 1)
 TLV_TYPE_STATUS = tlv_custom_type(TLV_TYPE_INT, 0, 2)
 TLV_TYPE_PID = tlv_custom_type(TLV_TYPE_INT, 0, 3)
 
-TLV_TYPE_NODE_ID = tlv_custom_type(TLV_TYPE_INT, 0, 4)
-TLV_TYPE_NODE_SRC_ADDR = tlv_custom_type(TLV_TYPE_INT, 0, 5)
-TLV_TYPE_NODE_SRC_PORT = tlv_custom_type(TLV_TYPE_INT, 0, 6)
-TLV_TYPE_NODE_DST_ADDR = tlv_custom_type(TLV_TYPE_INT, 0, 7)
-TLV_TYPE_NODE_DST_PORT = tlv_custom_type(TLV_TYPE_INT, 0, 8)
-TLV_TYPE_TAB_ID = tlv_custom_type(TLV_TYPE_INT, 0, 9)
+TLV_TYPE_TAB_ID = tlv_custom_type(TLV_TYPE_INT, 0, 4)
 
 TLV_TYPE_TAB = tlv_custom_type(TLV_TYPE_BYTES, 0, 1)
 TLV_TYPE_MIGRATE = tlv_custom_type(TLV_TYPE_BYTES, 0, 2)
-TLV_TYPE_FILE = tlv_custom_type(TLV_TYPE_BYTES, 0, 3)
 
 TLV_TYPE_UUID = tlv_custom_type(TLV_TYPE_STRING, 0, 1)
 TLV_TYPE_FILENAME = tlv_custom_type(TLV_TYPE_STRING, 0, 2)
+TLV_TYPE_PATH = tlv_custom_type(TLV_TYPE_STRING, 0, 3)

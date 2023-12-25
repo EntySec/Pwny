@@ -68,7 +68,7 @@ int migrate_inject(pid_t pid, char *image, int fd)
 {
 #ifndef IS_IPHONE
 #ifndef IS_WINDOWS
-    int retval;
+    long retval;
     size_t func_addr;
 #endif
 
@@ -97,7 +97,7 @@ int migrate_inject(pid_t pid, char *image, int fd)
     log_debug("* Injected to the process (%d)\n", pid);
 
 #if IS_MACOS
-    if (injector__write(injector, injector->text, name, len) != 0)
+    if (injector__write(injector, injector->text, "init", 4) != 0)
     {
         goto fail;
     }

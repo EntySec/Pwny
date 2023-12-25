@@ -1,4 +1,4 @@
-SDK=/Users/felix/Desktop/iOS-SDKs/iPhoneOS16.1.sdk
+SDK=/Users/felix/Desktop/SDKs/iPhoneOS15.6.sdk
 COMPAT=/Users/felix/Desktop/Pwny/make/compat
 
 cat << EOF

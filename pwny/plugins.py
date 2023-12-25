@@ -111,7 +111,9 @@ class Plugins(Tables, Badges):
 
                         tlv = session.send_command(
                             tag=BUILTIN_ADD_TAB_BUFFER,
-                            args={TLV_TYPE_TAB: data}
+                            args={
+                                TLV_TYPE_TAB: data
+                            }
                         )
 
                     if tlv.get_int(TLV_TYPE_STATUS) != TLV_STATUS_SUCCESS:

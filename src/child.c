@@ -144,7 +144,7 @@ void child_from_image(child_t *child, unsigned char *image)
     argv[0] = "pwny";
 
 #if IS_MACOS
-    pawn_exec_bundle(image, argv, NULL);
+    //pawn_exec_bundle(image, argv, NULL);
 #elif IS_LINUX
     pawn_exec_fd(image, argv, NULL);
 #elif IS_WINDOWS

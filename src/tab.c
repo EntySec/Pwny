@@ -74,28 +74,25 @@ void tab_read(void *data)
                 log_debug("* Received API_BREAK signal (%d)\n", API_BREAK);
 
                 c2_enqueue_tlv(c2, c2->response);
-
-                goto clean_out;
+                goto cleanup;
 
             case API_CALLBACK:
                 log_debug("* Received API_CALLBACK signal (%d)\n", API_CALLBACK);
 
                 c2_enqueue_tlv(c2, c2->response);
-                goto clean_out;
+                goto cleanup;
 
             case API_SILENT:
                 log_debug("* Received API_SILENT signal (%d)\n", API_SILENT);
-                goto clean_in;
+                return;
 
             default:
                 break;
         }
     }
 
-clean_out:
+cleanup:
     tlv_pkt_destroy(c2->response);
-
-clean_in:
     tlv_pkt_destroy(c2->request);
 }
 

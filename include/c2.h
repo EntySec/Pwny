@@ -59,7 +59,6 @@ typedef struct c2_table
         int n_count;
 
         struct tabs_table *tabs;
-        struct nodes_table *nodes;
         struct api_calls_table *api_calls;
         struct pipes_table *pipes;
     } dynamic;

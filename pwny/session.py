@@ -26,19 +26,17 @@ import os
 import socket
 
 from badges import Badges
-from typing import Union, Optional
+from typing import Optional
 
 from pwny import Pwny
 
 from pwny.types import *
 from pwny.api import *
-from pwny.pipe import *
 
 from pwny.tlv import TLV
 from pwny.pipes import Pipes
 from pwny.console import Console
 
-from hatsploit.lib.loot import Loot
 from hatsploit.lib.session import Session
 
 from pex.fs import FS
@@ -55,7 +53,6 @@ class PwnySession(Pwny, Session, Console):
     def __init__(self) -> None:
         super().__init__()
 
-        self.loot = Loot()
         self.pwny = f'{os.path.dirname(os.path.dirname(__file__))}/pwny/'
 
         self.pwny_data = self.pwny + 'data/'
@@ -114,6 +111,7 @@ class PwnySession(Pwny, Session, Console):
         """
 
         self.channel.client.close()
+        self.terminated = True
 
     def heartbeat(self) -> bool:
         """ Check the Pwny session heartbeat.

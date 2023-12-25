@@ -58,6 +58,7 @@ api_signal_t api_process_c2(c2_t *c2)
     {
         if (tabs_lookup(&c2->dynamic.tabs, tab_id, c2->request) >= 0)
         {
+            tlv_pkt_destroy(c2->request);
             return API_SILENT;
         }
 
@@ -98,6 +99,34 @@ tlv_pkt_t *api_craft_tlv_pkt(int status)
     tlv_pkt_add_int(c2_pkt, TLV_TYPE_STATUS, status);
 
     return c2_pkt;
+}
+
+void api_pipes_register(pipes_t **pipes)
+{
+    register_api_pipes(pipes);
+}
+
+void api_pipe_register(pipes_t **pipes, int type, pipe_callbacks_t callbacks)
+{
+    pipes_t *pipe;
+    pipes_t *pipe_new;
+
+    HASH_FIND_INT(*pipes, &type, pipe);
+
+    if (pipe == NULL)
+    {
+        pipe_new = calloc(1, sizeof(*pipe_new));
+
+        if (pipe_new != NULL)
+        {
+            pipe_new->type = type;
+            pipe_new->pipes = NULL;
+            pipe_new->callbacks = callbacks;
+
+            HASH_ADD_INT(*pipes, type, pipe_new);
+            log_debug("* Registered API pipe (type: %d)\n", type);
+        }
+    }
 }
 
 void api_calls_register(api_calls_t **api_calls)
@@ -143,6 +172,31 @@ int api_call_make(api_calls_t **api_calls, c2_t *c2, int tag, tlv_pkt_t **result
 
     *result = api_call->handler(c2);
     return 0;
+}
+
+void api_pipes_free(pipes_t *pipes)
+{
+    pipes_t *pipe;
+    pipe_t *each_pipe;
+
+    for (pipe = pipes; pipe != NULL; pipe = pipe->hh.next)
+    {
+        for (each_pipe = pipe->pipes; each_pipe != NULL; each_pipe = each_pipe->hh.next)
+        {
+            log_debug("* Freed API pipe (id: %d)\n", each_pipe->id);
+
+            HASH_DEL(pipe->pipes, each_pipe);
+            free(each_pipe);
+        }
+
+        free(pipes->pipes);
+        log_debug("* Freed API pipe (type: %d)\n", pipe->type);
+
+        HASH_DEL(pipes, pipe);
+        free(pipe);
+    }
+
+    free(pipes);
 }
 
 void api_calls_free(api_calls_t *api_calls)

@@ -28,62 +28,8 @@
 #include <log.h>
 #include <api.h>
 #include <pipe.h>
-#include <pipes.h>
 
 #include <uthash/uthash.h>
-
-void pipe_register(pipes_t **pipes, int type, pipe_callbacks_t callbacks)
-{
-    pipes_t *pipe;
-    pipes_t *pipe_new;
-
-    HASH_FIND_INT(*pipes, &type, pipe);
-
-    if (pipe == NULL)
-    {
-        pipe_new = calloc(1, sizeof(*pipe_new));
-
-        if (pipe_new != NULL)
-        {
-            pipe_new->type = type;
-            pipe_new->pipes = NULL;
-            pipe_new->callbacks = callbacks;
-
-            HASH_ADD_INT(*pipes, type, pipe_new);
-            log_debug("* Registered C2 pipe (type: %d)\n", type);
-        }
-    }
-}
-
-void pipes_register(pipes_t **pipes)
-{
-    register_pipes(pipes);
-}
-
-void pipes_free(pipes_t *pipes)
-{
-    pipes_t *pipe;
-    pipe_t *each_pipe;
-
-    for (pipe = pipes; pipe != NULL; pipe = pipe->hh.next)
-    {
-        for (each_pipe = pipe->pipes; each_pipe != NULL; each_pipe = each_pipe->hh.next)
-        {
-            log_debug("* Freed C2 pipe (id: %d)\n", each_pipe->id);
-
-            HASH_DEL(pipe->pipes, each_pipe);
-            free(each_pipe);
-        }
-
-        free(pipes->pipes);
-        log_debug("* Freed C2 pipe (type: %d)\n", pipe->type);
-
-        HASH_DEL(pipes, pipe);
-        free(pipe);
-    }
-
-    free(pipes);
-}
 
 static pipe_t *pipe_from_tlv(pipe_t *pipes, tlv_pkt_t *tlv_pkt)
 {
