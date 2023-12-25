@@ -28,7 +28,6 @@
 #include <api.h>
 #include <builtins.h>
 #include <process.h>
-#include <network.h>
 #include <fs.h>
 
 #ifdef IS_IPHONE
@@ -41,7 +40,6 @@ void register_api_calls(api_calls_t **api_calls)
 {
     register_builtin_api_calls(api_calls);
     register_process_api_calls(api_calls);
-    register_net_api_calls(api_calls);
     register_fs_api_calls(api_calls);
 
 #ifdef IS_IPHONE

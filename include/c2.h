@@ -90,10 +90,10 @@ void c2_set_links(c2_t *c2_table,
                   link_t write_link,
                   void *data);
 
-int c2_process(c2_t *c2);
-
 ssize_t c2_dequeue_tlv(c2_t *c2, tlv_pkt_t **tlv_pkt);
 int c2_enqueue_tlv(c2_t *c2, tlv_pkt_t *tlv_pkt);
+
+void c2_enqueue_uuid(c2_t *c2_table);
 
 void c2_read(void *data);
 void c2_write(void *data);

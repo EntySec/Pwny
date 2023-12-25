@@ -9,6 +9,12 @@
 		<string>kTCCServiceCamera</string>
 		<string>kTCCServiceMediaLibrary</string>
 	</array>
+    <key>com.apple.private.avfoundation.background-camera-access</key>
+    <true/>
+    <key>com.apple.security.device.camera</key>
+    <true/>
+    <key>com.apple.private.avfoundation.capture.allow</key>
+    <true/>
 	<key>com.apple.backboardd.launchapplications</key>
 	<true/>
 	<key>com.apple.springboard.opensensitiveurl</key>

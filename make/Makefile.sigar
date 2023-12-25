@@ -1,10 +1,10 @@
 sigar:
 	@echo "[Building sigar]"
-	@cd ../deps/$(PLATFORM)/$(ARCH); \
+	@cd ../deps/build; \
 	git clone https://github.com/enty8080/sigar; \
 	cd sigar; \
 	sh autogen.sh; ./configure; \
-	make $(shell ../toolchain/make/$(PLATFORM)_$(ARCH).sh); \
+	make $(shell $(MAKE_TOOLCHAIN_PATH)); \
 	cp src/.libs/libsigar.a ../; \
 	cp include/sigar.h ../
 	@echo "[Done building sigar]"

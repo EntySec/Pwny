@@ -1,10 +1,10 @@
 libeio:
 	@echo "[Building libeio]"
-	@cd ../deps/$(PLATFORM)/$(ARCH); \
+	@cd ../deps/build; \
 	git clone https://github.com/libev-cn/libeio; \
 	cd libeio; \
 	sh autogen.sh; ./configure; \
-	make $(shell ../toolchain/make/$(PLATFORM)_$(ARCH).sh); \
+	make $(shell $(MAKE_TOOLCHAIN_PATH)); \
 	cp .libs/libeio.a ../; \
 	cp eio.h ../
 	@echo "[Done building libeio]"

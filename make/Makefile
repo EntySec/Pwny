@@ -1,12 +1,14 @@
-PLATFORM = linux
-ARCH = x64
-
 all: setup sigar libev libeio
 
 setup:
 	@echo "[Creating workspace]"
-	@mkdir -p ../deps/$(PLATFORM)/$(ARCH)
+	@mkdir -p ../deps/build/
 	@echo "[Done creating workspace]"
+
+clean:
+	@echo "[Cleaning old build]"
+	@rm -rf ../deps/build/
+	@echo "[Done cleaning old build]"
 
 include Makefile.libpawn
 include Makefile.injector

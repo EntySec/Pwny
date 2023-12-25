@@ -9,7 +9,7 @@ Pwny plugins are dynamic extensions that are used to extend basic Pwny functiona
 Firstly, include these headers:
 
 ```c
-#include <tabs.h>
+#include <tab.h>
 #include <api.h>
 #include <c2.h>
 #include <tlv.h>
@@ -43,31 +43,28 @@ All Pwny plugins should have this code as a `main(void)` function.
 ```c
 int main(void)
 {
-    c2_t *c2;
+    tab_t *tab;
 
-    if ((c2 = c2_create(0, STDIN_FILENO, NULL)) != NULL)
-    {
-        /* Your C2 API calls registration */
+	tab = tab_create();
 
-        tab_console_loop(c2);
-        c2_destroy(c2);
+	/* Your TAB API calls registration */
 
-        return 0;
-    }
+	tab_start(tab);
+	tab_destroy(tab);
 
     return 1;
 }
 ```
 
-If you have one or more functions available, you should replace `/* Your C2 API calls registration */` with this code:
+If you have one or more functions available, you should replace `/* Your TAB API calls registration */` with this code:
 
 ```c
-api_call_register(&c2->dynamic.api_calls, TEST, test);
+tab_register_call(tab, TEST, test);
 ```
 
 Where `TEST` is a function TLV tag and `test` is a function.
 
-## How it works?
+## How does it work?
 
 Here is how Pwny loads TAB (plugin):
 

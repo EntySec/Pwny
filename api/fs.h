@@ -240,13 +240,10 @@ static int fs_eio_list(eio_req *request)
 
         for (iter = 0; iter < request->result; iter++)
         {
-            log_debug("* Listing: %s %d\n", path, iter);
             stat_result = tlv_pkt_create();
 
             entry = entries + iter;
             name = names + entry->nameofs;
-
-            log_debug("* Discovered %s\n", name);
 
             snprintf(fq_path, sizeof(fq_path), "%s/%s", path, name);
 

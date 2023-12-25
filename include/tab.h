@@ -30,6 +30,8 @@
 #include <ev.h>
 
 #include <c2.h>
+#include <pipe.h>
+#include <api.h>
 #include <tlv.h>
 #include <link.h>
 #include <child.h>
@@ -48,6 +50,9 @@ tab_t *tab_create(void);
 
 void tab_read(void *data);
 void tab_write(void *data);
+
+void tab_register_call(tab_t *tab, int tag, api_t handler);
+void tab_register_pipe(tab_t *tab, int type, pipe_callbacks_t callbacks);
 
 int tab_start(tab_t *tab);
 void tab_destroy(tab_t *tab);

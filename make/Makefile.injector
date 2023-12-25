@@ -1,6 +1,6 @@
 injector:
 	@echo "[Building injector]"
-	@cd ../deps/$(PLATFORM)/$(ARCH); \
+	@cd ../deps/build/; \
 	git clone https://github.com/kubo/injector; \
 	cd injector/src/$(PLATFORM); \
 	make $(shell ../toolchain/make/$(PLATFORM)_$(ARCH).sh); \

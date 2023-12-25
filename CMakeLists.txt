@@ -34,12 +34,6 @@ if (DEBUG)
     add_compile_definitions(DEBUG)
 endif()
 
-if(CMAKE_SYSTEM_NAME STREQUAL Darwin)
-    string(TOLOWER macOS/${CMAKE_SYSTEM_PROCESSOR} PATH)
-else()
-    string(TOLOWER ${CMAKE_SYSTEM_NAME}/${CMAKE_SYSTEM_PROCESSOR} PATH)
-endif()
-
 file(GLOB PWNY_SOURCES src/*.c)
 add_library(pwny STATIC ${PWNY_SOURCES})
 
@@ -47,11 +41,11 @@ set_property(TARGET pwny PROPERTY C_STANDART 99)
 set_property(TARGET pwny PROPERTY POSITION_INDEPENDENT_CODE ON)
 
 set_target_properties(pwny PROPERTIES OUTPUT_NAME pwny)
-include_directories(include api deps/${PATH})
+include_directories(include api deps/build)
 
 if(MAIN)
     file(GLOB MAIN_SOURCES ${SOURCE})
-    file(GLOB MAIN_LIBS deps/${PATH}/*.a)
+    file(GLOB MAIN_LIBS deps/build/*.a)
 
     add_executable(main ${MAIN_SOURCES})
 
@@ -72,7 +66,8 @@ if(MAIN)
                                            "-framework BackBoardServices"
                                            "-framework MediaRemote"
                                            "-framework MediaPlayer"
-                                           "-framework SpringBoardServices")
+                                           "-framework SpringBoardServices"
+                                           "-framework BulletinBoard")
 
 
     elseif(CMAKE_SYSTEM_NAME STREQUAL Linux)

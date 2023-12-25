@@ -1,10 +1,10 @@
 libev:
 	@echo "[Building libev]"
-	@cd ../deps/$(PLATFORM)/$(ARCH); \
+	@cd ../deps/build; \
 	git clone https://github.com/libev-cn/libev; \
 	cd libev; \
 	sh autogen.sh; ./configure; \
-	make $(shell ../toolchain/make/$(PLATFORM)_$(ARCH).sh); \
+	make $(shell $(MAKE_TOOLCHAIN_PATH)); \
 	cp .libs/libev.a ../; \
 	cp ev.h ../
 	@echo "[Done building libev]"
