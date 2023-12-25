@@ -168,6 +168,7 @@ int core_start(core_t *core)
     ev_async_start(core->loop, &eio_async_watcher);
     net_start(core->c2->net);
 
+    c2_enqueue_uuid(core->c2);
     return ev_run(core->loop, 0);
 }
 

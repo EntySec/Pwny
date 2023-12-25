@@ -19,10 +19,9 @@ class HatSploitCommand(Command):
                 'Ivan Nikolsky (enty8080) - command developer'
             ],
             'Description': "Migrate into a process by ID.",
-            'Usage': "migrate",
+            'Usage': "migrate <pid>",
             'MinArgs': 1
         }
 
     def run(self, argc, argv):
-        migrate = Migrate(session=self.session)
-        migrate.migrate(argv[1])
+        self.print_error("Migration is not implemented yet!")

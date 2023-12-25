@@ -194,6 +194,23 @@ int c2_enqueue_tlv(c2_t *c2, tlv_pkt_t *tlv_pkt)
     return -1;
 }
 
+void c2_enqueue_uuid(c2_t *c2_table)
+{
+    c2_t *c2;
+    tlv_pkt_t *tlv_pkt;
+
+    for (c2 = c2_table; c2 != NULL; c2 = c2->hh.next)
+    {
+        log_debug("* Sending UUID to C2 (%d) - (%s)\n",
+                  c2->id, c2->uuid);
+
+        tlv_pkt = tlv_pkt_create();
+        tlv_pkt_add_string(tlv_pkt, TLV_TYPE_UUID, c2->uuid);
+        c2_enqueue_tlv(c2, tlv_pkt);
+        tlv_pkt_destroy(tlv_pkt);
+    }
+}
+
 void c2_setup(c2_t *c2_table, struct ev_loop *loop)
 {
     c2_t *c2;

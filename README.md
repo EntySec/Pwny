@@ -44,24 +44,24 @@ First, you need to build dependencies for your platform, so do this:
 
 ```shell
 cd make
-make PLATFORM=<platform> ARCH=<arch>
+make PLATFORM=<platform> ARCH=<arch> MAKE_TOOLCHAIN_FILE=<toolchain>
 ```
+
+**NOTE:** Make toolchains are located at `toolchains/make/`.
 
 Then you need to execute these commands to build Pwny executable:
 
 ```shell
-cmake -DCMAKE_TOOLCHAIN_PATH=<toolchain> -B build
+cmake -DCMAKE_TOOLCHAIN_FILE=<toolchain> -B build
 cmake --build build
 ```
 
-**NOTE:** Toolchains are located at `toolchains/cmake/`.
+**NOTE:** CMake toolchains are located at `toolchains/cmake/`.
 
 There are `cmake` build options that allows you to build for the specific platform.
 
-* `IPHONE` - Should be `ON` if building for Apple iOS.
-* `SDK` - Set SDK for macOS and Apple iOS targets.
-  * macOS patched SDKs from [here](https://github.com/phracker/MacOSX-SDKs).
-  * Apple iOS patched SDKs from [here](https://github.com/theos/sdks).
+* `MAIN` - Should be `ON` if you want to build a test executable.
+* `SOURCE` - Custom executable source file.
 * `DEBUG` - Enable debug logging for development.
 
 ## Basic usage
@@ -73,7 +73,7 @@ from pwny import Pwny
 from pwny.session import PwnySession
 ```
 
-* `Pwny` - Pwny utilities, mostly for generating payloads and encoding arguments.
+* `Pwny` - Pwny utilities, mostly for generating payloads.
 * `PwnySession` - Wrapper for `HatSploitSession` for Pwny, HatSploit should use it with Pwny payload.
 
 ## Executing Pwny

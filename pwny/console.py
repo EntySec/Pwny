@@ -94,8 +94,6 @@ class Console(cmd.Cmd):
                                 *self.core_commands)
         self.commands.show_commands(self.custom_commands)
 
-        print(self.plugins.loaded_plugins)
-
         for plugin in self.plugins.loaded_plugins:
             loaded_plugin = self.plugins.loaded_plugins[plugin]
 

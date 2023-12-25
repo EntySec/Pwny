@@ -104,6 +104,16 @@ void tab_write(void *data)
     net_write(c2->net);
 }
 
+void tab_register_call(tab_t *tab, int tag, api_t handler)
+{
+    api_call_register(&tab->c2->dynamic.api_calls, tag, handler);
+}
+
+void tab_register_pipe(tab_t *tab, int type, pipe_callbacks_t callbacks)
+{
+    api_pipe_register(&tab->c2->dynamic.pipes, type, callbacks);
+}
+
 tab_t *tab_create(void)
 {
     tab_t *tab;

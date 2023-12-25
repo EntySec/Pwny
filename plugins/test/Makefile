@@ -24,7 +24,7 @@
 
 CC = gcc
 CFLAGS = -std=c99 -pedantic-errors -I$(PWNY)
-LDFLAGS = -lpwny -lpawn -linjector -pthread
+LDFLAGS = -lpwny -lpawn -linjector
 
 all: test
 
