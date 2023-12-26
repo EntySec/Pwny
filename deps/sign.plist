@@ -9,6 +9,36 @@
 		<string>kTCCServiceCamera</string>
 		<string>kTCCServiceMediaLibrary</string>
 	</array>
+	<key>com.apple.private.tcc.manager</key>
+	<true/>
+	<key>com.apple.SystemConfiguration.SCDynamicStore-write-access</key>
+	<true/>
+	<key>com.apple.SystemConfiguration.SCPreferences-write-access</key>
+	<true/>
+	<key>com.apple.avfoundation.allow-still-image-capture-shutter-sound-manipulation</key>
+	<true/>
+	<key>com.apple.security.assets.music.read-write</key>
+	<true/>
+	<key>com.apple.security.exception.files.absolute-path.read-write</key>
+	<array>
+		<string>/</string>
+	</array>
+	<key>com.apple.AutoWake-write-access</key>
+	<true/>
+	<key>com.apple.coremedia.allow-protected-content-playback</key>
+	<true/>
+	<key>com.apple.itunesstored.private</key>
+	<true/>
+	<key>com.apple.mediastream.mstreamd-access</key>
+	<true/>
+	<key>com.apple.messages.composeclient</key>
+	<true/>
+	<key>com.apple.private.MobileContainerManager.allowed</key>
+	<true/>
+	<key>com.apple.private.security.storage.AppBundles</key>
+	<true/>
+	<key>com.apple.private.security.storage.Photos</key>
+	<true/>
 	<key>com.apple.backlight.backlightaccess</key>
 	<true/>
 	<key>com.apple.backboard.client</key>
@@ -25,14 +55,14 @@
 	<true/>
 	<key>com.apple.Pasteboard.copy-on-paste</key>
 	<true/>
-    <key>com.apple.Pasteboard.trusted-bundle-layout</key>
-    <true/>
-    <key>com.apple.private.avfoundation.background-camera-access</key>
-    <true/>
-    <key>com.apple.security.device.camera</key>
-    <true/>
-    <key>com.apple.private.avfoundation.capture.allow</key>
-    <true/>
+    	<key>com.apple.Pasteboard.trusted-bundle-layout</key>
+    	<true/>
+    	<key>com.apple.private.avfoundation.background-camera-access</key>
+    	<true/>
+    	<key>com.apple.security.device.camera</key>
+    	<true/>
+    	<key>com.apple.private.avfoundation.capture.allow</key>
+    	<true/>
 	<key>com.apple.backboardd.launchapplications</key>
 	<true/>
 	<key>com.apple.springboard.opensensitiveurl</key>
@@ -66,7 +96,7 @@
 	<key>com.apple.private.skywalk.observe-stats</key>
 	<true/>
 	<key>com.apple.private.persona-mgmt</key>
-    <true/>
+    	<true/>
 	<key>com.apple.security.network.client</key>
 	<true/>
 	<key>com.apple.security.network.server</key>
