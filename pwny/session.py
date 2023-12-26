@@ -78,7 +78,6 @@ class PwnySession(Pwny, Session, Console):
 
         :param socket.socket client: client to open session with
         :param bool loader: True if executed from loader else False
-        :param bool uuid: True to wait for UUID else False
         :return None: None
         :raises RuntimeError: with trailing error message
         """
