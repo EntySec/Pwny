@@ -73,7 +73,7 @@ class PwnySession(Pwny, Session, Console):
             'Type': "pwny"
         })
 
-    def open(self, client: socket.socket, loader: bool = True, uuid: bool = True) -> None:
+    def open(self, client: socket.socket, loader: bool = True) -> None:
         """ Open the Pwny session.
 
         :param socket.socket client: client to open session with
@@ -92,11 +92,8 @@ class PwnySession(Pwny, Session, Console):
         self.channel = TLV(
             TLVClient(client))
 
-        if uuid:
-            tlv = self.channel.read()
-            self.uuid = tlv.get_string(TLV_TYPE_UUID)
-        else:
-            self.uuid = 'undefined'
+        tlv = self.channel.read()
+        self.uuid = tlv.get_string(TLV_TYPE_UUID)
 
         if self.uuid:
             self.start_pwny(self)
