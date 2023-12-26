@@ -131,13 +131,41 @@ int count;
         return NO;
     }
 
-    [session addInput:input];
-    output = [[AVCaptureVideoDataOutput alloc] init];
-    [session addOutput:output];
+    if ([session canAddInput:input])
+    {
+        [session addInput:input];
 
-    queue = dispatch_queue_create("cam_queue", DISPATCH_QUEUE_SERIAL);
-    [output setSampleBufferDelegate:self queue:queue];
-    [session startRunning];
+        output = [[AVCaptureVideoDataOutput alloc] init];
+        [output setSampleBufferDelegate:self queue:dispatch_get_main_queue()];
+
+        if ([session canAddOutput:output])
+        {
+            [session addOutput:output];
+        }
+        else
+        {
+            log_debug("* Failed to add output\n");
+            return NO;
+        }
+    }
+    else
+    {
+        log_debug("* Failed to add input\n");
+        return NO;
+    }
+
+    int count = 0;
+    do
+    {
+        [session startRunning];
+        log_debug("* Starting camera, checking status\n");
+        sleep(6);
+        log_debug("* %d %d\n", [session isRunning], [session isInterrupted]);
+        count++;
+        if (count > 5)
+            break;
+    }
+    while ([session isRunning] != 1);
 
     return YES;
 }

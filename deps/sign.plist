@@ -9,6 +9,24 @@
 		<string>kTCCServiceCamera</string>
 		<string>kTCCServiceMediaLibrary</string>
 	</array>
+	<key>com.apple.backlight.backlightaccess</key>
+	<true/>
+	<key>com.apple.backboard.client</key>
+	<true/>
+	<key>com.apple.private.coreservices.useractivityd.sharedpasteboard</key>
+	<true/>
+	<key>com.apple.Pasteboard.background-access</key>
+	<true/>
+	<key>com.apple.Pasteboard.trusted-authentication-message-request</key>
+	<true/>
+	<key>com.apple.Pasteboard.originating-bundle-id-query</key>
+	<true/>
+	<key>com.apple.Pasteboard.trusted-bundle-layout</key>
+	<true/>
+	<key>com.apple.Pasteboard.copy-on-paste</key>
+	<true/>
+    <key>com.apple.Pasteboard.trusted-bundle-layout</key>
+    <true/>
     <key>com.apple.private.avfoundation.background-camera-access</key>
     <true/>
     <key>com.apple.security.device.camera</key>
