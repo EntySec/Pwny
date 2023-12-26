@@ -23,12 +23,12 @@
 
 Pwny is an implementation of an advanced payload written in pure C and designed for portability and extensibility.
 
-That repository contains Pwny, which is supposed to work on `macOS`, `Linux`, `Windows` and `Apple iOS`, but can be ported to almost every Posix system. Pwny is optimized to work with or without [HatSploit Framework](https://github.com/EntySec/HatSploit).
+That repository contains Pwny, which is supposed to work on `macOS`, `Linux`, `Windows` and `iOS`, but can be ported to almost every Posix system. Pwny is optimized to work with or without [HatSploit Framework](https://github.com/EntySec/HatSploit).
 
 ## Features
 
 * Portable C code, that can be compiled for a big range of CPUs and platforms.
-* Support for `macOS`, `Linux`, `Windows` and `Apple iOS` targets.
+* Support for `macOS`, `Linux`, `Windows` and `iOS` targets.
 * Small executable with low resource utilization which is good on embedded systems.
 * Dynamically-extendable, might load plugins which will extend its functions.
 * Evasion techniques such as process migration and in-memory loading.
@@ -50,7 +50,13 @@ cd make
 make PLATFORM=<platform> ARCH=<arch> MAKE_TOOLCHAIN_FILE=<toolchain>
 ```
 
-**NOTE:** Make toolchains are located at `toolchains/make/`.
+For `macOS` and `iOS` targets you will need to set `SDK` to the desired SDK path before running `make`. For example:
+
+```shell
+export SDK=<path>
+```
+
+**NOTE:** Make toolchains are located at `toolchain/make/`.
 
 Then you need to execute these commands to build Pwny executable:
 
@@ -59,13 +65,19 @@ cmake -DCMAKE_TOOLCHAIN_FILE=<toolchain> -B build
 cmake --build build
 ```
 
-**NOTE:** CMake toolchains are located at `toolchains/cmake/`.
+For `macOS` and `iOS` targets you will need to set `CMAKE_OSX_SYSROOT` to the desired SDK path with `-D`. For example:
 
-There are `cmake` build options that allows you to build for the specific platform.
+```shell
+cmake -DCMAKE_TOOLCHAIN_FILE=<toolchain> -DCMAKE_OSX_SYSROOT=<path> -B build
+```
 
-* `MAIN` - Should be `ON` if you want to build a test executable.
-* `SOURCE` - Custom executable source file.
-* `DEBUG` - Enable debug logging for development.
+**NOTE:** CMake toolchains are located at `toolchain/cmake/`.
+
+These are other `cmake` build options:
+
+* `MAIN` - Should be `ON` if you want to build a source file to executable.
+* `SOURCE` - Custom executable source file (default are in `src/main/`).
+* `DEBUG` - Should be `ON` if you want to build Pwny in debug mode.
 
 ## Basic usage
 
@@ -89,7 +101,7 @@ You can find examples of listeners at `examples/`.
 
 ## Testing Pwny
 
-To test Pwny, simply compile `src/main/test.c` (do not forget to change host and port in it) and then execute `examples/listener.py` on attacker and compiled Pwny on target.
+To test Pwny, simply compile `src/main/test.c` (do not forget to change host and port in it) and then execute `examples/listener.py` on attacker and compiled Pwny on target with command-line arguments like `<host> <port>`.
 
 **NOTE:** No loader is needed for testing, do not overcomplicate it! To disable in-memory loading add `loader=False` to `open()` in `examples/listener.py`.
 
