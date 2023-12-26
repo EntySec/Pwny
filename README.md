@@ -7,6 +7,9 @@
     <a href="https://github.com/EntySec/Pwny">
         <img src="https://img.shields.io/badge/language-C-grey.svg">
     </a>
+    <a href="https://github.com/EntySec/Pwny">
+        <img src="https://img.shields.io/badge/language-Objective--C-blue.svg">
+    </a>
     <a href="https://github.com/EntySec/Pwny/forks">
         <img src="https://img.shields.io/github/forks/EntySec/Pwny?color=green">
     </a>
