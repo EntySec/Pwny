@@ -38,7 +38,7 @@ class HatSploitCommand(Command):
     def run(self, argc, argv):
         if argv[1] == 'read':
             result = self.session.send_command(tag=UI_CLIPBOARD_GET)
-            self.print_empty(f"* {result.get_string(TLV_TYPE_STRING)}")
+            self.print_information(f"Data:%newline{result.get_string(TLV_TYPE_STRING)}")
 
         elif argv[1] == 'write':
             buffer = ""

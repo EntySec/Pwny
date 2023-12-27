@@ -47,9 +47,9 @@ class HatSploitCommand(Command):
         if argv[1] == 'info':
             result = self.session.send_command(tag=PLAYER_INFO)
 
-            self.print_empty(f"* Title:  {result.get_string(PLAYER_TITLE)}")
-            self.print_empty(f"* Album:  {result.get_string(PLAYER_ALBUM)}")
-            self.print_empty(f"* Artist: {result.get_string(PLAYER_ARTIST)}")
+            self.print_information(f"Title:  {result.get_string(PLAYER_TITLE)}")
+            self.print_information(f"Album:  {result.get_string(PLAYER_ALBUM)}")
+            self.print_information(f"Artist: {result.get_string(PLAYER_ARTIST)}")
 
         elif argv[1] == 'play':
             self.session.send_command(tag=PLAYER_PLAY)

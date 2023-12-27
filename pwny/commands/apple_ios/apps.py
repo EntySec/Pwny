@@ -37,6 +37,6 @@ class HatSploitCommand(Command):
         id = 0
 
         while bundle_id:
-            self.print_empty(f"{str(id)}: {bundle_id}")
+            self.print_information(f"{str(id): <4}: {bundle_id}")
             id += 1
             bundle_id = result.get_string(TLV_TYPE_STRING)

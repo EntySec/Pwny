@@ -47,7 +47,7 @@ class HatSploitCommand(Command):
             id = 0
 
             while device:
-                self.print_empty(f"{str(id)}: {device}")
+                self.print_information(f"{str(id): <4}: {device}")
                 id += 1
 
                 device = result.get_string(TLV_TYPE_STRING)

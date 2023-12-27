@@ -33,4 +33,4 @@ class HatSploitCommand(Command):
             self.print_error("Failed to get current working directory!")
             return
 
-        self.print_empty(f"* Working directory: {result.get_string(TLV_TYPE_PATH)}")
+        self.print_empty(result.get_string(TLV_TYPE_PATH))
