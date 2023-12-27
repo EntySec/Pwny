@@ -51,7 +51,11 @@ class HatSploitCommand(Command):
 
         while stat:
             buffer = stat.get_raw(TLV_TYPE_BYTES)
-            hash = self.string.bytes_to_stat(buffer)
+
+            try:
+                hash = self.string.bytes_to_stat(buffer)
+            except Exception:
+                hash = {}
 
             file_size = self.string.size_normalize(hash.get('st_size', 0))
             file_mode = self.string.mode_symbolic(hash.get('st_mode', 0))
