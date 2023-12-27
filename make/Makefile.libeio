@@ -4,7 +4,7 @@ libeio:
 	git clone https://github.com/libev-cn/libeio; \
 	cd libeio; \
 	sh autogen.sh; ./configure; \
-	make $(shell $(MAKE_TOOLCHAIN_PATH)); \
+	make $(shell $(MAKE_TOOLCHAIN_FILE)); \
 	cp .libs/libeio.a ../; \
 	cp eio.h ../
 	@echo "[Done building libeio]"
