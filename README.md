@@ -10,6 +10,9 @@
     <a href="https://github.com/EntySec/Pwny">
         <img src="https://img.shields.io/badge/language-Objective--C-blue.svg">
     </a>
+    <a href="https://github.com/EntySec/Pwny">
+        <img src="https://img.shields.io/badge/language-Python-blue.svg">
+    </a>
     <a href="https://github.com/EntySec/Pwny/forks">
         <img src="https://img.shields.io/github/forks/EntySec/Pwny?color=green">
     </a>
@@ -104,6 +107,10 @@ You can find examples of listeners at `examples/`.
 To test Pwny, simply compile `src/main/test.c` (do not forget to change host and port in it) and then execute `examples/listener.py` on attacker and compiled Pwny on target with command-line arguments like `<host> <port>`.
 
 **NOTE:** No loader is needed for testing, do not overcomplicate it! To disable in-memory loading add `loader=False` to `open()` in `examples/listener.py`.
+
+## Projects
+
+* [SeaShell Framework](https://github.com/EntySec/SeaShell) - iOS post-exploitation framework that exploits the CoreTrust bug to remotely access an iPhone or iPad. SeaShell actively using Pwny implant to communicate with iOS.
 
 ## Caveats
 
