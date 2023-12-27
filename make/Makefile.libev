@@ -4,7 +4,7 @@ libev:
 	git clone https://github.com/libev-cn/libev; \
 	cd libev; \
 	sh autogen.sh; ./configure; \
-	make $(shell $(MAKE_TOOLCHAIN_PATH)); \
+	make $(shell $(MAKE_TOOLCHAIN_FILE)); \
 	cp .libs/libev.a ../; \
 	cp ev.h ../
 	@echo "[Done building libev]"
