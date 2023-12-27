@@ -151,6 +151,7 @@ void net_read_tcp(net_t *net)
         bytes += stat;
     }
 
+    log_debug("* Did we pass?\n");
     error = errno;
 
     if (bytes > 0 && net->read_link)

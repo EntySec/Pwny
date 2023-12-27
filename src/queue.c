@@ -27,6 +27,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <queue.h>
+#include <log.h>
 
 #include <uthash/utlist.h>
 
@@ -82,6 +83,8 @@ int queue_add_raw(queue_t *queue, const void *data, size_t length)
 
     LL_APPEND(queue->data, buffer);
     queue->bytes += length;
+
+    log_debug("* Added to queue (%d)\n", length);
 
     return 0;
 }

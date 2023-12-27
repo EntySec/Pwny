@@ -44,6 +44,8 @@ api_signal_t api_process_c2(c2_t *c2)
     int status;
     int tab_id;
 
+    log_debug("* Processing packet via API\n");
+
     if (tlv_pkt_get_int(c2->request, TLV_TYPE_TAG, &tag) < 0)
     {
         log_debug("* No tag was received by API\n");

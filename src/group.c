@@ -25,6 +25,7 @@
 #include <stdlib.h>
 
 #include <tlv.h>
+#include <log.h>
 #include <group.h>
 #include <queue.h>
 #include <tlv_types.h>
@@ -41,6 +42,7 @@ group_t *group_create(tlv_pkt_t *tlv_pkt)
 
 tlv_pkt_t *group_tlv(group_t *group)
 {
+    log_debug("* Getting global TLV_GROUP\n");
     return tlv_pkt_get_tlv(group, TLV_TYPE_GROUP);
 }
 
@@ -98,38 +100,41 @@ ssize_t group_tlv_dequeue(queue_t *queue, tlv_pkt_t **tlv_pkt)
 ssize_t group_dequeue(queue_t *queue, group_t **group)
 {
     int total;
+    int length;
 
     struct tlv_header header;
     unsigned char *buffer;
 
-    if (queue_copy(queue, &header, TLV_HEADER) == TLV_HEADER)
+    if (queue->bytes < sizeof(header))
     {
-        buffer = malloc(header.length);
-
-        if (buffer == NULL)
-        {
-            return -1;
-        }
-
-        total += queue_drain(queue, TLV_HEADER);
-
-        if (queue_copy(queue, buffer, header.length) != header.length)
-        {
-            goto fail;
-        }
-
-        *group = tlv_pkt_create();
-
-        if (tlv_pkt_add_raw(*group, header.type, buffer, header.length) < 0)
-        {
-            goto fail;
-        }
-
-        total += queue_drain(queue, header.length);
-        return total;
+        return -1;
     }
 
-    return -1;
+    queue_copy(queue, &header, sizeof(header));
+    length = header.length;
+
+    if (queue->bytes < sizeof(header) + length)
+    {
+        return -1;
+    }
+
+    if ((buffer = malloc(length)) == NULL)
+    {
+        return -1;
+    }
+
+    total = queue_drain(queue, sizeof(header));
+    queue_copy(queue, buffer, length);
+
+    *group = tlv_pkt_create();
+
+    if (tlv_pkt_add_raw(*group, header.type, buffer, length) < 0)
+    {
+        goto fail;
+    }
+
+    total += queue_drain(queue, length);
+    return total;
 
 fail:
     free(buffer);

@@ -209,7 +209,10 @@ class PwnySession(Pwny, Session, Console):
 
             self.badges.print_process(f"Uploading {local_file} ({str(len(buffer))} bytes)")
 
-            self.pipes.write_pipe(FS_PIPE_FILE, pipe_id, buffer)
+            for step in range(0, len(buffer), 4096):
+                chunk = buffer[step:step+4096]
+                self.pipes.write_pipe(FS_PIPE_FILE, pipe_id, chunk)
+
             self.pipes.destroy_pipe(FS_PIPE_FILE, pipe_id)
 
             self.badges.print_success(f"File saved as {remote_path}!")

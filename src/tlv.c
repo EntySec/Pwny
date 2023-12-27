@@ -502,6 +502,7 @@ tlv_pkt_t *tlv_pkt_get_tlv(tlv_pkt_t *tlv_pkt, int type)
     }
 
     tlv = (tlv_t *)tlv_value.value;
+    log_debug("* Getting TLV from TLV\n");
 
     return (tlv_pkt_t *)tlv_pkt_parse(tlv->value, tlv->length);
 }

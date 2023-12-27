@@ -29,8 +29,6 @@
 #include <key_list.h>
 #include <queue.h>
 
-#define TLV_HEADER 8
-
 struct tlv_header
 {
     int type;
