@@ -73,6 +73,7 @@ class HatSploitCommand(Command):
 
         if result.get_int(TLV_TYPE_STATUS) != TLV_STATUS_SUCCESS:
             self.print_error(f"Remote file: {argv[1]}: does not exist!")
+            return
 
         try:
             hash = self.string.bytes_to_stat(result.get_raw(TLV_TYPE_BYTES))

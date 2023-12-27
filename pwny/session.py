@@ -25,6 +25,7 @@ SOFTWARE.
 import os
 import socket
 
+from alive_progress import alive_bar
 from badges import Badges
 from typing import Optional
 
@@ -169,16 +170,17 @@ class PwnySession(Pwny, Session, Console):
             size = self.pipes.tell_pipe(FS_PIPE_FILE, pipe_id)
             self.pipes.seek_pipe(FS_PIPE_FILE, pipe_id, 0, 0)
 
-            self.badges.print_process(f"Downloading {remote_file} ({str(size)} bytes)")
-
             with open(local_path, 'wb') as f:
-                while size > 0:
-                    chunk = min(TLV_FILE_CHUNK, size)
-                    buffer = self.pipes.read_pipe(FS_PIPE_FILE, pipe_id, chunk)
-                    f.write(buffer)
-                    size -= chunk
+                with alive_bar(int(size / TLV_FILE_CHUNK) + 1, receipt=False, ctrl_c=False,
+                               title=os.path.split(remote_file)[1]) as bar:
+                    while size > 0:
+                        bar()
 
-            self.badges.print_success(f"File saved as {str(local_path)}!")
+                        chunk = min(TLV_FILE_CHUNK, size)
+                        buffer = self.pipes.read_pipe(FS_PIPE_FILE, pipe_id, chunk)
+                        f.write(buffer)
+                        size -= chunk
+
             self.pipes.destroy_pipe(FS_PIPE_FILE, pipe_id)
 
             return True
@@ -198,6 +200,7 @@ class PwnySession(Pwny, Session, Console):
 
         with open(local_file, 'rb') as f:
             buffer = f.read()
+            size = len(buffer)
 
             pipe_id = self.pipes.create_pipe(
                 pipe_type=FS_PIPE_FILE,
@@ -207,15 +210,16 @@ class PwnySession(Pwny, Session, Console):
                 }
             )
 
-            self.badges.print_process(f"Uploading {local_file} ({str(len(buffer))} bytes)")
+            with alive_bar(int(size / TLV_FILE_CHUNK) + 1, receipt=False, ctrl_c=False,
+                           title=os.path.split(local_file)[1]) as bar:
+                for step in range(0, size, TLV_FILE_CHUNK):
+                    bar()
 
-            for step in range(0, len(buffer), 4096):
-                chunk = buffer[step:step+4096]
-                self.pipes.write_pipe(FS_PIPE_FILE, pipe_id, chunk)
+                    chunk = buffer[step:step + TLV_FILE_CHUNK]
+                    self.pipes.write_pipe(FS_PIPE_FILE, pipe_id, chunk)
 
             self.pipes.destroy_pipe(FS_PIPE_FILE, pipe_id)
 
-            self.badges.print_success(f"File saved as {remote_path}!")
             return True
 
     def interact(self) -> None:
