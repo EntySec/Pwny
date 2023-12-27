@@ -51,7 +51,6 @@ class HatSploitCommand(Command):
 
         while stat:
             buffer = stat.get_raw(TLV_TYPE_BYTES)
-
             try:
                 hash = self.string.bytes_to_stat(buffer)
             except Exception:
