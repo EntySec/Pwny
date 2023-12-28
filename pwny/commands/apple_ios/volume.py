@@ -11,7 +11,7 @@ from hatsploit.lib.command import Command
 UI_BASE = 6
 
 UI_VOLUME_SET = tlv_custom_tag(API_CALL_STATIC, UI_BASE, API_CALL + 10)
-UI_VOLUME_GET = tlv_custom_tag(API_CALL_STATIC, UI_BASE, API_CALL + 10)
+UI_VOLUME_GET = tlv_custom_tag(API_CALL_STATIC, UI_BASE, API_CALL + 11)
 
 
 class HatSploitCommand(Command):
