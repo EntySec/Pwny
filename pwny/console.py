@@ -57,6 +57,7 @@ class Console(cmd.Cmd):
         """
 
         super().__init__()
+        cmd.Cmd.__init__(self)
 
         self.prompt = ColorScript().parse(prompt)
 

@@ -43,14 +43,24 @@ class TLV(object):
 
         self.client = client
 
-    def read(self) -> TLVPacket:
+    def read(self, error: bool = False) -> TLVPacket:
         """ Read TLV packet.
 
+        :param bool error: raise errors if status is wrong
         :return TLVPacket: TLV packet
+        :raises RuntimeError: with trailing error message
         """
 
         tlv = self.client.read()
-        return tlv.get_tlv(TLV_TYPE_GROUP)
+        group = tlv.get_tlv(TLV_TYPE_GROUP)
+
+        if error:
+            status = group.get_int(TLV_TYPE_STATUS, delete=False)
+
+            if status == TLV_STATUS_NOT_IMPLEMENTED:
+                raise RuntimeError("Feature is not implemented yet!")
+
+        return group
 
     def send(self, packet: TLVPacket) -> None:
         """ Send TLV packet.

@@ -26,17 +26,13 @@ import os
 
 from typing import Union, Optional
 
-from pex.exe import EXE
-from pex.socket import Socket
-from pex.string import String
-
 from pex.arch.types import Arch
 from pex.platform.types import Platform
 
 from hatsploit.lib.payload import Payload
 
 
-class Pwny(EXE, Socket, String):
+class Pwny(object):
     """ Main class of pwny module.
 
     This main class of pwny module is intended for providing
@@ -46,7 +42,15 @@ class Pwny(EXE, Socket, String):
     def __init__(self):
         super().__init__()
 
-        self.templates = f'{os.path.dirname(os.path.dirname(__file__))}/pwny/templates/'
+        self.pwny = f'{os.path.dirname(os.path.dirname(__file__))}/pwny/'
+
+        self.pwny_data = self.pwny + 'data/'
+        self.pwny_libs = self.pwny + 'libs/'
+
+        self.pwny_plugins = self.pwny + 'plugins/'
+        self.pwny_commands = self.pwny + 'commands/'
+
+        self.templates = self.pwny + 'templates/'
 
     def get_template(self, platform: Union[Platform, str],
                      arch: Union[Arch, str], extension: str = '') -> bytes:

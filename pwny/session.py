@@ -26,22 +26,22 @@ import os
 import socket
 
 from alive_progress import alive_bar
+
 from badges import Badges
 from typing import Optional
 
 from pwny import Pwny
-
 from pwny.types import *
 from pwny.api import *
-
 from pwny.tlv import TLV
 from pwny.pipes import Pipes
 from pwny.console import Console
 
-from hatsploit.lib.session import Session
-
 from pex.fs import FS
+from pex.ssl import OpenSSL
 from pex.proto.tlv import TLVClient, TLVPacket
+
+from hatsploit.lib.session import Session
 
 
 class PwnySession(Pwny, Session, Console):
@@ -54,25 +54,20 @@ class PwnySession(Pwny, Session, Console):
     def __init__(self) -> None:
         super().__init__()
 
-        self.pwny = f'{os.path.dirname(os.path.dirname(__file__))}/pwny/'
-
-        self.pwny_data = self.pwny + 'data/'
-        self.pwny_libs = self.pwny + 'libs/'
-
-        self.pwny_plugins = self.pwny + 'plugins/'
-        self.pwny_commands = self.pwny + 'commands/'
-
         self.channel = None
         self.uuid = None
         self.terminated = False
 
         self.pipes = Pipes(self)
-        self.fs = FS()
         self.badges = Badges()
+        self.fs = FS()
+        self.ssl = OpenSSL()
 
-        self.details.update({
-            'Type': "pwny"
-        })
+        self.details.update(
+            {
+                'Type': "pwny"
+            }
+        )
 
     def open(self, client: socket.socket, loader: bool = True) -> None:
         """ Open the Pwny session.
@@ -89,8 +84,8 @@ class PwnySession(Pwny, Session, Console):
                 arch=self.details['Arch']
             ))
 
-        self.channel = TLV(
-            TLVClient(client))
+        client = self.ssl.wrap_client(client)
+        self.channel = TLV(TLVClient(client))
 
         tlv = self.channel.read()
         self.uuid = tlv.get_string(TLV_TYPE_UUID)
@@ -136,7 +131,7 @@ class PwnySession(Pwny, Session, Console):
         tlv.add_from_dict(args)
 
         self.channel.send(tlv)
-        return self.channel.read()
+        return self.channel.read(error=True)
 
     def download(self, remote_file: str, local_path: str) -> bool:
         """ Download file from the Pwny session.
