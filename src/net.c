@@ -30,6 +30,11 @@
 #include <log.h>
 #include <ev.h>
 
+#include <mbedtls/ssl.h>
+#include <mbedtls/entropy.h>
+#include <mbedtls/net_sockets.h>
+#include <mbedtls/ctr_drbg.h>
+
 #include <net.h>
 #include <link.h>
 #include <queue.h>
@@ -75,8 +80,86 @@ void net_set_links(net_t *net,
     net->link_data = data != NULL ? data : net;
 }
 
+int net_tls_start(net_t *net)
+{
+    int error;
+    net_tls_t *net_tls;
+    const char *pers;
+
+    net_tls = calloc(1, sizeof(*net_tls));
+
+    if (net_tls == NULL)
+    {
+        return -1;
+    }
+
+    pers = "ssl_client";
+
+    mbedtls_ssl_init(&net_tls->ssl);
+    mbedtls_ssl_config_init(&net_tls->conf);
+    mbedtls_ctr_drbg_init(&net_tls->ctr_drbg);
+    mbedtls_entropy_init(&net_tls->entropy);
+
+    if (mbedtls_ctr_drbg_seed(&net_tls->ctr_drbg, mbedtls_entropy_func, &net_tls->entropy, (const unsigned char *)pers, strlen(pers)) != 0)
+    {
+        goto fail;
+    }
+
+    if (mbedtls_ssl_config_defaults(&net_tls->conf, MBEDTLS_SSL_IS_CLIENT, MBEDTLS_SSL_TRANSPORT_STREAM, MBEDTLS_SSL_PRESET_DEFAULT) != 0)
+    {
+        goto fail;
+    }
+
+    mbedtls_ssl_conf_authmode(&net_tls->conf, MBEDTLS_SSL_VERIFY_NONE);
+    mbedtls_ssl_conf_rng(&net_tls->conf, mbedtls_ctr_drbg_random, &net_tls->ctr_drbg);
+
+    if (mbedtls_ssl_setup(&net_tls->ssl, &net_tls->conf) != 0)
+    {
+        goto fail;
+    }
+
+    mbedtls_ssl_set_bio(&net_tls->ssl, &net->sock, mbedtls_net_send, mbedtls_net_recv, NULL);
+
+    while ((error = mbedtls_ssl_handshake(&net_tls->ssl)) != 0)
+    {
+        if (error != MBEDTLS_ERR_SSL_WANT_READ && error != MBEDTLS_ERR_SSL_WANT_WRITE)
+        {
+            goto fail;
+        }
+    }
+
+    net->tls = net_tls;
+
+    return 0;
+
+fail:
+    net_tls_free(net_tls);
+    return -1;
+}
+
+void net_tls_free(net_tls_t *net_tls)
+{
+    mbedtls_ssl_close_notify(&net_tls->ssl);
+    mbedtls_ssl_free(&net_tls->ssl);
+    mbedtls_ssl_config_free(&net_tls->conf);
+    mbedtls_ctr_drbg_free(&net_tls->ctr_drbg);
+    mbedtls_entropy_free(&net_tls->entropy);
+
+    free(net_tls);
+}
+
 void net_start(net_t *net)
 {
+    const char *pers;
+
+    if (net->proto == NET_PROTO_TLS)
+    {
+        if (net_tls_start(net) != 0)
+        {
+            net->proto = NET_PROTO_TCP;
+        }
+    }
+
     ev_io_init(&net->io, net_read, net->sock, EV_READ);
     net->io.data = net;
     ev_io_start(net->loop, &net->io);
@@ -135,6 +218,27 @@ void net_read_file(net_t *net)
     }
 }
 
+void net_read_tls(net_t *net)
+{
+    int stat;
+    int bytes;
+    char buffer[NET_QUEUE_SIZE];
+
+    log_debug("* Read TLS event initialized (%d)\n", net->sock);
+
+    while ((stat = mbedtls_ssl_read(&net->tls->ssl, (unsigned char *)buffer, sizeof(buffer))) > 0)
+    {
+        log_debug("* Read bytes via TLS (%d) - (%d)\n", net->sock, stat);
+        queue_add_raw(net->ingress, buffer, stat);
+        bytes += stat;
+    }
+
+    if (bytes > 0 && net->read_link)
+    {
+        net->read_link(net->link_data);
+    }
+}
+
 void net_read_tcp(net_t *net)
 {
     int error;
@@ -151,7 +255,6 @@ void net_read_tcp(net_t *net)
         bytes += stat;
     }
 
-    log_debug("* Did we pass?\n");
     error = errno;
 
     if (bytes > 0 && net->read_link)
@@ -185,6 +288,42 @@ void net_write_file(net_t *net)
     {
         log_debug("* Writing bytes to FILE (%d) - (%d)\n", net->sock, size);
         write(net->sock, buffer, size);
+        free(buffer);
+    }
+}
+
+void net_write_tls(net_t *net)
+{
+    size_t size;
+    int stat;
+    int offset;
+    void *buffer;
+
+    buffer = NULL;
+    offset = 0;
+
+    if (net->egress->bytes <= 0)
+    {
+        return;
+    }
+
+    while ((size = queue_remove_all(net->egress, &buffer)) > 0)
+    {
+        log_debug("* Writing bytes to TLS (%d) - (%d)\n", net->sock, size);
+
+        do
+        {
+            stat = mbedtls_ssl_write(&net->tls->ssl, buffer + offset, size - offset);
+
+            if (stat > 0)
+            {
+                offset += stat;
+            }
+
+            log_debug("* Write bytes via TLS (%d) - (%d)\n", net->sock, stat);
+        }
+        while (stat > 0);
+
         free(buffer);
     }
 }
@@ -236,9 +375,15 @@ void net_read(struct ev_loop *loop, struct ev_io *w, int events)
         case NET_PROTO_TCP:
             net_read_tcp(net);
             break;
+
         case NET_PROTO_FILE:
             net_read_file(net);
             break;
+
+        case NET_PROTO_TLS:
+            net_read_tls(net);
+            break;
+
         default:
             break;
     }
@@ -251,9 +396,15 @@ void net_write(net_t *net)
         case NET_PROTO_TCP:
             net_write_tcp(net);
             break;
+
         case NET_PROTO_FILE:
             net_write_file(net);
             break;
+
+        case NET_PROTO_TLS:
+            net_write_tls(net);
+            break;
+
         default:
             break;
     }
@@ -267,6 +418,11 @@ void net_free(net_t *net)
 
         queue_free(net->ingress);
         queue_free(net->egress);
+
+        if (net->proto == NET_PROTO_TLS)
+        {
+            net_tls_free(net->tls);
+        }
 
         close(net->sock);
         free(net);

@@ -111,14 +111,17 @@ void core_read(void *data)
 
                 tlv_pkt_destroy(c2->response);
                 tlv_pkt_destroy(c2->request);
+
                 break;
 
             case API_CALLBACK:
                 log_debug("* Received API_CALLBACK signal (%d)\n", API_CALLBACK);
 
                 c2_enqueue_tlv(c2, c2->response);
+
                 tlv_pkt_destroy(c2->response);
                 tlv_pkt_destroy(c2->request);
+
                 break;
 
             case API_SILENT:

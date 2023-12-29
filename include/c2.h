@@ -79,7 +79,7 @@ typedef struct c2_table
 
 c2_t *c2_create(int id);
 
-int c2_add_sock(c2_t **c2_table, int id, int sock);
+int c2_add_sock(c2_t **c2_table, int id, int sock, int proto);
 int c2_add_file(c2_t **c2_table, int id, int fd);
 int c2_add(c2_t **c2_table, c2_t *c2_new);
 

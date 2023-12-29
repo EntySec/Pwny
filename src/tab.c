@@ -66,7 +66,7 @@ void tab_read(void *data)
 
     c2 = data;
 
-    if (c2_dequeue_tlv(c2, &c2->request) > 0)
+    while (c2_dequeue_tlv(c2, &c2->request) > 0)
     {
         switch (api_process_c2(c2))
         {
@@ -74,13 +74,22 @@ void tab_read(void *data)
                 log_debug("* Received API_BREAK signal (%d)\n", API_BREAK);
 
                 c2_enqueue_tlv(c2, c2->response);
-                goto cleanup;
+                ev_break(c2->loop, EVBREAK_ALL);
+
+                tlv_pkt_destroy(c2->response);
+                tlv_pkt_destroy(c2->request);
+
+                break;
 
             case API_CALLBACK:
                 log_debug("* Received API_CALLBACK signal (%d)\n", API_CALLBACK);
 
                 c2_enqueue_tlv(c2, c2->response);
-                goto cleanup;
+
+                tlv_pkt_destroy(c2->response);
+                tlv_pkt_destroy(c2->request);
+
+                break;
 
             case API_SILENT:
                 log_debug("* Received API_SILENT signal (%d)\n", API_SILENT);
@@ -90,10 +99,6 @@ void tab_read(void *data)
                 break;
         }
     }
-
-cleanup:
-    tlv_pkt_destroy(c2->response);
-    tlv_pkt_destroy(c2->request);
 }
 
 void tab_write(void *data)

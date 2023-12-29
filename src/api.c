@@ -46,7 +46,7 @@ api_signal_t api_process_c2(c2_t *c2)
 
     log_debug("* Processing packet via API\n");
 
-    if (tlv_pkt_get_int(c2->request, TLV_TYPE_TAG, &tag) < 0)
+    if (tlv_pkt_get_int(c2->request, TLV_TYPE_TAG, &tag) != 0)
     {
         log_debug("* No tag was received by API\n");
         c2->response = api_craft_tlv_pkt(API_CALL_NOT_IMPLEMENTED);
@@ -56,9 +56,9 @@ api_signal_t api_process_c2(c2_t *c2)
 
     log_debug("* Read new tag (%d) by API\n", tag);
 
-    if (tlv_pkt_get_int(c2->request, TLV_TYPE_TAB_ID, &tab_id) >= 0)
+    if (tlv_pkt_get_int(c2->request, TLV_TYPE_TAB_ID, &tab_id) == 0)
     {
-        if (tabs_lookup(&c2->dynamic.tabs, tab_id, c2->request) >= 0)
+        if (tabs_lookup(&c2->dynamic.tabs, tab_id, c2->request) == 0)
         {
             tlv_pkt_destroy(c2->request);
             return API_SILENT;
@@ -68,7 +68,7 @@ api_signal_t api_process_c2(c2_t *c2)
         return API_CALLBACK;
     }
 
-    if (api_call_make(&c2->dynamic.api_calls, c2, tag, &c2->response) < 0)
+    if (api_call_make(&c2->dynamic.api_calls, c2, tag, &c2->response) != 0)
     {
         c2->response = api_craft_tlv_pkt(API_CALL_NOT_IMPLEMENTED);
         return API_CALLBACK;
@@ -79,7 +79,7 @@ api_signal_t api_process_c2(c2_t *c2)
         return API_SILENT;
     }
 
-    if (tlv_pkt_get_int(c2->response, TLV_TYPE_STATUS, &status) >= 0)
+    if (tlv_pkt_get_int(c2->response, TLV_TYPE_STATUS, &status) == 0)
     {
         switch (status)
         {

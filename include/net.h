@@ -30,6 +30,10 @@
 
 #include <sys/types.h>
 
+#include <mbedtls/ssl.h>
+#include <mbedtls/entropy.h>
+#include <mbedtls/ctr_drbg.h>
+
 #include <link.h>
 #include <queue.h>
 
@@ -39,7 +43,16 @@ enum NET_PROTO
 {
     NET_PROTO_FILE,
     NET_PROTO_TCP,
+    NET_PROTO_TLS
 };
+
+typedef struct
+{
+    mbedtls_entropy_context entropy;
+    mbedtls_ctr_drbg_context ctr_drbg;
+    mbedtls_ssl_context ssl;
+    mbedtls_ssl_config conf;
+} net_tls_t;
 
 typedef struct
 {
@@ -52,6 +65,8 @@ typedef struct
     queue_t *ingress;
     queue_t *egress;
 
+    net_tls_t *tls;
+
     void *link_data;
     link_t read_link;
     link_t write_link;
@@ -62,12 +77,16 @@ int net_block_sock(int sock);
 net_t *net_create(int sock, int proto);
 
 void net_setup(net_t *net, struct ev_loop *loop);
+int net_tls_start(net_t *net);
 void net_start(net_t *net);
 
 void net_set_links(net_t *net,
                    link_t read_link,
                    link_t write_link,
                    void *data);
+
+void net_read_tls(net_t *net);
+void net_write_tls(net_t *net);
 
 void net_read_tcp(net_t *net);
 void net_write_tcp(net_t *net);
@@ -78,6 +97,7 @@ void net_write_file(net_t *net);
 void net_read(struct ev_loop *loop, struct ev_io *w, int events);
 void net_write(net_t *net);
 
+void net_tls_free(net_tls_t *net_tls);
 void net_free(net_t *net);
 
 #endif

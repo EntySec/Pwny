@@ -31,6 +31,7 @@
 #include <arpa/inet.h>
 
 #include <c2.h>
+#include <net.h>
 #include <core.h>
 
 int connect_to(char *host, int port)
@@ -61,7 +62,7 @@ int main(int argc, char *argv[])
     c2 = NULL;
     sock = connect_to(argv[1], atoi(argv[2]));
 
-    c2_add_sock(&c2, 0, sock);
+    c2_add_sock(&c2, 0, sock, NET_PROTO_TLS);
 
     core = core_create(c2);
     core_start(core);

@@ -1,0 +1,9 @@
+mbedtls:
+	@echo "[Building mbedtls]"
+	@cd ../deps/build; \
+	git clone https://github.com/mbed-tls/mbedtls; \
+	cd mbedtls; \
+	make $(shell $(MAKE_TOOLCHAIN_FILE)); \
+	cp library/*.a ../; \
+	cp -r include/mbedtls ../
+	@echo "[Done building mbedtls]"

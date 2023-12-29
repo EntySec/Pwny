@@ -1,4 +1,4 @@
-all: setup sigar libev libeio
+all: setup mbedtls sigar libev libeio
 
 setup:
 	@echo "[Creating workspace]"
@@ -15,3 +15,4 @@ include Makefile.injector
 include Makefile.sigar
 include Makefile.libev
 include Makefile.libeio
+include Makefile.mbedtls

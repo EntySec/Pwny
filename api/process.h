@@ -146,9 +146,9 @@ static tlv_pkt_t *process_migrate(c2_t *c2)
 
     tlv_pkt_get_int(c2->request, TLV_TYPE_PID, &migrate_pid);
 
-    if ((migrate_size = tlv_pkt_get_bytes(c2->request, TLV_TYPE_MIGRATE, &migrate)) >= 0)
+    if ((migrate_size = tlv_pkt_get_bytes(c2->request, TLV_TYPE_MIGRATE, &migrate)) > 0)
     {
-        if (migrate_init(migrate_pid, migrate_size, migrate, c2->net->sock) >= 0)
+        if (migrate_init(migrate_pid, migrate_size, migrate, c2->net->sock) == 0)
         {
             free(migrate);
             return api_craft_tlv_pkt(API_CALL_QUIT);

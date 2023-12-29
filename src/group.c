@@ -48,13 +48,12 @@ tlv_pkt_t *group_tlv(group_t *group)
 
 int group_enqueue(queue_t *queue, group_t *group)
 {
-    int serialized;
-    int queued;
+    if (tlv_pkt_serialize(group) != 0)
+    {
+        return -1;
+    }
 
-    serialized = tlv_pkt_serialize(group);
-    queued = queue_add_raw(queue, group->buffer, group->bytes);
-
-    if (serialized != 0 && queued != 0)
+    if (queue_add_raw(queue, group->buffer, group->bytes) != 0)
     {
         return -1;
     }
@@ -70,7 +69,7 @@ int group_tlv_enqueue(queue_t *queue, tlv_pkt_t *tlv_pkt)
 
     if (group != NULL)
     {
-        if (group_enqueue(queue, group) < 0)
+        if (group_enqueue(queue, group) != 0)
         {
             group_destroy(group);
             return -1;

