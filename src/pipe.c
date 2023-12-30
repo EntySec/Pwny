@@ -79,6 +79,7 @@ static tlv_pkt_t *pipe_create(c2_t *c2)
 
     if (pipes->callbacks.create_cb(pipe, c2) != 0)
     {
+        log_debug("* Failed to create C2 pipe (id: %d)\n", id);
         return api_craft_tlv_pkt(API_CALL_FAIL);
     }
 
@@ -221,14 +222,13 @@ static tlv_pkt_t *pipe_write(c2_t *c2)
 
     log_debug("* Writing to C2 pipe (id: %d)\n", pipe->id);
     bytes = pipes->callbacks.write_cb(pipe, buffer, length);
+    free(buffer);
 
     if (bytes >= 0)
     {
-        free(buffer);
         return api_craft_tlv_pkt(API_CALL_SUCCESS);
     }
 
-    free(buffer);
     return api_craft_tlv_pkt(API_CALL_FAIL);
 }
 

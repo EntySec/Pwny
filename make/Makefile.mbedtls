@@ -1,9 +1,10 @@
 mbedtls:
 	@echo "[Building mbedtls]"
 	@cd ../deps/build; \
-	git clone https://github.com/mbed-tls/mbedtls; \
-	cd mbedtls; \
+	git clone https://github.com/mbed-tls/mbedtls mbed-tls; \
+	cd mbed-tls; \
 	make $(shell $(MAKE_TOOLCHAIN_FILE)); \
 	cp library/*.a ../; \
+	cp -r include/psa ../; \
 	cp -r include/mbedtls ../
 	@echo "[Done building mbedtls]"

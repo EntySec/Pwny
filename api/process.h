@@ -30,6 +30,7 @@
 #include <api.h>
 #include <c2.h>
 #include <tlv_types.h>
+#include <child.h>
 #include <tlv.h>
 #include <migrate.h>
 

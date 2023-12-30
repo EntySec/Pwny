@@ -52,6 +52,10 @@ void register_api_calls(api_calls_t **api_calls)
 void register_api_pipes(pipes_t **pipes)
 {
     register_fs_api_pipes(pipes);
+
+#ifdef IS_IPHONE
+    register_player_api_pipes(pipes);
+#endif
 }
 
 #endif

@@ -25,7 +25,14 @@
 #ifndef _BUILTINS_H_
 #define _BUILTINS_H_
 
+#include <stdlib.h>
+#include <unistd.h>
 #include <sigar.h>
+#include <time.h>
+
+#ifndef IS_WINDOWS
+#include <pwd.h>
+#endif
 
 #include <api.h>
 #include <c2.h>
@@ -55,10 +62,14 @@
         TLV_TAG_CUSTOM(API_CALL_STATIC, \
                        BUILTIN_BASE, \
                        API_CALL + 4)
-#define BUILTIN_UUID \
+#define BUILTIN_TIME \
         TLV_TAG_CUSTOM(API_CALL_STATIC, \
                        BUILTIN_BASE, \
                        API_CALL + 5)
+#define BUILTIN_WHOAMI \
+        TLV_TAG_CUSTOM(API_CALL_STATIC, \
+                       BUILTIN_BASE, \
+                       API_CALL + 6)
 
 #define TLV_TYPE_PLATFORM TLV_TYPE_CUSTOM(TLV_TYPE_STRING, BUILTIN_BASE, API_TYPE)
 #define TLV_TYPE_VERSION  TLV_TYPE_CUSTOM(TLV_TYPE_STRING, BUILTIN_BASE, API_TYPE + 1)
@@ -131,12 +142,25 @@ static tlv_pkt_t *builtin_delete_tab(c2_t *c2)
     return api_craft_tlv_pkt(API_CALL_FAIL);
 }
 
-static tlv_pkt_t *builtin_uuid(c2_t *c2)
+static tlv_pkt_t *builtin_time(c2_t *c2)
 {
     tlv_pkt_t *result;
+    char date_time[128];
+    struct tm local_time;
+    time_t time_ctx;
+
+#ifndef IS_WINDOWS
+    memset(date_time, '\0', 128);
+    time_ctx = time(NULL);
+
+    localtime_r(&time_ctx, &local_time);
+    strftime(date_time, sizeof(date_time) - 1, "%Y-%m-%d %H:%M:%S %Z (UTC%z)", &local_time);
 
     result = api_craft_tlv_pkt(API_CALL_SUCCESS);
-    tlv_pkt_add_string(result, TLV_TYPE_UUID, c2->uuid);
+    tlv_pkt_add_string(result, TLV_TYPE_STRING, date_time);
+#else
+    result = api_craft_tlv_pkt(API_CALL_NOT_IMPLEMENTED);
+#endif
 
     return result;
 }
@@ -165,6 +189,31 @@ static tlv_pkt_t *builtin_sysinfo(c2_t *c2)
     return result;
 }
 
+static tlv_pkt_t *builtin_whoami(c2_t *c2)
+{
+    tlv_pkt_t *result;
+
+#ifndef IS_WINDOWS
+    struct passwd *pw_entry;
+
+    if ((pw_entry = getpwuid(geteuid())))
+    {
+        result = api_craft_tlv_pkt(API_CALL_SUCCESS);
+
+        tlv_pkt_add_string(result, TLV_TYPE_STRING, pw_entry->pw_name);
+        tlv_pkt_add_string(result, TLV_TYPE_STRING, pw_entry->pw_passwd);
+    }
+    else
+    {
+        result = api_craft_tlv_pkt(API_CALL_FAIL);
+    }
+#else
+    result = api_craft_tlv_pkt(API_CALL_NOT_IMPLEMENTED);
+#endif
+
+    return result;
+}
+
 void register_builtin_api_calls(api_calls_t **api_calls)
 {
     api_call_register(api_calls, BUILTIN_QUIT, builtin_quit);
@@ -172,6 +221,8 @@ void register_builtin_api_calls(api_calls_t **api_calls)
     api_call_register(api_calls, BUILTIN_ADD_TAB_BUFFER, builtin_add_tab_buffer);
     api_call_register(api_calls, BUILTIN_DELETE_TAB, builtin_delete_tab);
     api_call_register(api_calls, BUILTIN_SYSINFO, builtin_sysinfo);
+    api_call_register(api_calls, BUILTIN_TIME, builtin_time);
+    api_call_register(api_calls, BUILTIN_WHOAMI, builtin_whoami);
 }
 
 #endif
