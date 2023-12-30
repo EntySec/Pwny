@@ -26,7 +26,6 @@ import cmd
 
 from pwny.types import *
 from pwny.api import *
-
 from pwny.plugins import Plugins
 from pwny.migrate import Migrate
 
@@ -34,6 +33,9 @@ from hatsploit.lib.session import Session
 
 from colorscript import ColorScript
 from badges import Badges, Tables
+
+from pex.platform.types import *
+from pex.arch.types import *
 
 from hatsploit.lib.runtime import Runtime
 from hatsploit.lib.commands import Commands
