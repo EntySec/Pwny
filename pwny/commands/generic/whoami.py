@@ -30,10 +30,7 @@ class HatSploitCommand(Command):
         )
 
         if result.get_int(TLV_TYPE_STATUS) != TLV_STATUS_SUCCESS:
-            self.print_error("Failed to get current user!")
+            self.print_error("???")
             return
 
-        password = result.get_string(TLV_TYPE_STRING)
-        username = result.get_string(TLV_TYPE_STRING)
-
-        self.print_empty(username + ':' + password)
+        self.print_empty(result.get_string(TLV_TYPE_STRING))
