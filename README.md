@@ -1,28 +1,11 @@
 # Pwny
 
-<p>
-    <a href="https://entysec.com">
-        <img src="https://img.shields.io/badge/developer-EntySec-blue.svg">
-    </a>
-    <a href="https://github.com/EntySec/Pwny">
-        <img src="https://img.shields.io/badge/language-C-grey.svg">
-    </a>
-    <a href="https://github.com/EntySec/Pwny">
-        <img src="https://img.shields.io/badge/language-Objective--C-blue.svg">
-    </a>
-    <a href="https://github.com/EntySec/Pwny">
-        <img src="https://img.shields.io/badge/language-Python-blue.svg">
-    </a>
-    <a href="https://github.com/EntySec/Pwny/forks">
-        <img src="https://img.shields.io/github/forks/EntySec/Pwny?color=green">
-    </a>
-    <a href="https://github.com/EntySec/Pwny/stargazers">
-        <img src="https://img.shields.io/github/stars/EntySec/Pwny?color=yellow">
-    </a>
-    <a href="https://www.codefactor.io/repository/github/EntySec/Pwny">
-        <img src="https://www.codefactor.io/repository/github/EntySec/Pwny/badge">
-    </a>
-</p>
+[![Developer](https://img.shields.io/badge/developer-EntySec-blue.svg)](https://entysec.com)
+[![Language](https://img.shields.io/badge/language-C-grey.svg)](https://github.com/EntySec/Pwny)
+[![Language](https://img.shields.io/badge/language-Python-blue.svg)](https://github.com/EntySec/Pwny)
+[![Forks](https://img.shields.io/github/forks/EntySec/Pwny?style=flat&color=green)](https://github.com/EntySec/Pwny/forks)
+[![Stars](https://img.shields.io/github/stars/EntySec/Pwny?style=flat&color=yellow)](https://github.com/EntySec/Pwny/stargazers)
+[![CodeFactor](https://www.codefactor.io/repository/github/EntySec/Pwny/badge)](https://www.codefactor.io/repository/github/EntySec/Pwny)
 
 Pwny is an implementation of an advanced payload written in pure C and designed for portability and extensibility.
 
