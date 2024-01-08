@@ -61,6 +61,7 @@ class Console(cmd.Cmd):
         super().__init__()
         cmd.Cmd.__init__(self)
 
+        self.scheme = prompt
         self.prompt = self.parse_prompt(prompt)
 
         self.plugins = Plugins()
@@ -94,6 +95,7 @@ class Console(cmd.Cmd):
         :return None: None
         """
 
+        self.scheme = prompt
         self.prompt = self.parse_prompt(prompt)
 
     def whoami(self) -> str:
@@ -286,6 +288,16 @@ class Console(cmd.Cmd):
         """
 
         pass
+
+    def postcmd(self, stop: str, _) -> str:
+        """ Do something after each command.
+
+        :param str stop: stop
+        :return str: continue
+        """
+
+        self.set_prompt(self.scheme)
+        return stop
 
     def check_session(self) -> bool:
         """ Check is session alive.
