@@ -139,13 +139,13 @@ class Console(cmd.Cmd):
         prompt = ColorScript().parse(prompt)
 
         if '$dir' in prompt:
-            prompt.replace('$dir', self.pwd())
+            prompt = prompt.replace('$dir', self.pwd())
 
         if '$user' in prompt:
-            prompt.replace('$user', self.whoami())
+            prompt = prompt.replace('$user', self.whoami())
 
         if '$prompt' in prompt:
-            prompt.replace('$prompt', '#' if self.whoami() == 'root' else '$')
+            prompt = prompt.replace('$prompt', '#' if self.whoami() == 'root' else '$')
 
         return prompt
 
