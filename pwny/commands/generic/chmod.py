@@ -17,7 +17,7 @@ class HatSploitCommand(Command):
             'Category': "filesystem",
             'Name': "chmod",
             'Authors': [
-                'Ivan Nikolsky (enty8080) - command developer'
+                'Ivan Nikolskiy (enty8080) - command developer'
             ],
             'Description': "Change path permissions.",
             'Usage': "chmod <mode> <path>",

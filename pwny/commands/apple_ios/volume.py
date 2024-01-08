@@ -22,7 +22,7 @@ class HatSploitCommand(Command):
             'Category': "UI",
             'Name': "volume",
             'Authors': [
-                'Ivan Nikolsky (enty8080) - command developer'
+                'Ivan Nikolskiy (enty8080) - command developer'
             ],
             'Description': "Set volume level.",
             'Usage': "volume <option> [arguments]",

@@ -17,7 +17,7 @@ class HatSploitCommand(Command):
             'Category': "filesystem",
             'Name': "mkdir",
             'Authors': [
-                'Ivan Nikolsky (enty8080) - command developer'
+                'Ivan Nikolskiy (enty8080) - command developer'
             ],
             'Description': "Create a directory.",
             'Usage': "mkdir <path>",

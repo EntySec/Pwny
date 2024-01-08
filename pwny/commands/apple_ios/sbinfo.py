@@ -24,7 +24,7 @@ class HatSploitCommand(Command):
             'Category': "UI",
             'Name': "sbinfo",
             'Authors': [
-                'Ivan Nikolsky (enty8080) - command developer'
+                'Ivan Nikolskiy (enty8080) - command developer'
             ],
             'Description': "Get SpringBoard basic information.",
             'Usage': "sbinfo",

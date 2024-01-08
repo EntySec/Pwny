@@ -21,7 +21,7 @@ class HatSploitCommand(Command):
             'Category': "filesystem",
             'Name': "download",
             'Authors': [
-                'Ivan Nikolsky (enty8080) - command developer'
+                'Ivan Nikolskiy (enty8080) - command developer'
             ],
             'Description': "Download remote file or directory.",
             'Usage': "download <remote_file> <local_path>",

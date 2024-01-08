@@ -17,7 +17,7 @@ class HatSploitCommand(Command):
             'Category': "filesystem",
             'Name': "cp",
             'Authors': [
-                'Ivan Nikolsky (enty8080) - command developer'
+                'Ivan Nikolskiy (enty8080) - command developer'
             ],
             'Description': "Copy file.",
             'Usage': "cp <src> <dst>",

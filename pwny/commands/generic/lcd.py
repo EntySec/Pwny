@@ -16,7 +16,7 @@ class HatSploitCommand(Command):
             'Category': "local",
             'Name': "lcd",
             'Authors': [
-                'Ivan Nikolsky (enty8080) - command developer'
+                'Ivan Nikolskiy (enty8080) - command developer'
             ],
             'Description': "Change current directory.",
             'Usage': "lcd",

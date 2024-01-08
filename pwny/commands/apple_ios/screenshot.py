@@ -21,7 +21,7 @@ class HatSploitCommand(Command):
             'Category': "gather",
             'Name': "screenshot",
             'Authors': [
-                'Ivan Nikolsky (enty8080) - command developer'
+                'Ivan Nikolskiy (enty8080) - command developer'
             ],
             'Description': "Take screenshot.",
             'Usage': "screenshot <local_path>",

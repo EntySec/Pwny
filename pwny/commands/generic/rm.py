@@ -17,7 +17,7 @@ class HatSploitCommand(Command):
             'Category': "filesystem",
             'Name': "rm",
             'Authors': [
-                'Ivan Nikolsky (enty8080) - command developer'
+                'Ivan Nikolskiy (enty8080) - command developer'
             ],
             'Description': "Delete file or directory.",
             'Usage': "rm [-r] <path>",

@@ -19,7 +19,7 @@ class HatSploitCommand(Command):
             'Category': "filesystem",
             'Name': "upload",
             'Authors': [
-                'Ivan Nikolsky (enty8080) - command developer'
+                'Ivan Nikolskiy (enty8080) - command developer'
             ],
             'Description': "Upload local file or directory.",
             'Usage': "upload <local_file> <remote_path>",

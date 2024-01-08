@@ -21,7 +21,7 @@ class HatSploitCommand(Command):
             'Category': "gather",
             'Name': "pid",
             'Authors': [
-                'Ivan Nikolsky (enty8080) - command developer'
+                'Ivan Nikolskiy (enty8080) - command developer'
             ],
             'Description': "Get current process ID.",
             'Usage': "pid",

@@ -1,7 +1,7 @@
 """
 MIT License
 
-Copyright (c) 2020-2023 EntySec
+Copyright (c) 2020-2024 EntySec
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -61,7 +61,7 @@ class Console(cmd.Cmd):
         super().__init__()
         cmd.Cmd.__init__(self)
 
-        self.prompt = ColorScript().parse(prompt)
+        self.prompt = self.parse_prompt(prompt)
 
         self.plugins = Plugins()
         self.commands = Commands()
@@ -86,6 +86,68 @@ class Console(cmd.Cmd):
 
         self.handler = Handler()
         self.session = None
+
+    def set_prompt(self, prompt: str) -> None:
+        """ Set prompt.
+
+        :param str prompt: prompt to set
+        :return None: None
+        """
+
+        self.prompt = self.parse_prompt(prompt)
+
+    def whoami(self) -> str:
+        """ Get current session username.
+
+        :return str: username
+        """
+
+        if session:
+            result = self.session.send_command(
+                tag=BUILTIN_WHOAMI
+            )
+
+            if result.get_int(TLV_TYPE_STATUS) == TLV_STATUS_SUCCESS:
+                return result.get_string(TLV_TYPE_STRING)
+
+        return '???'
+
+    def pwd(self) -> str:
+        """ Get current session working directory.
+
+        :return str: working directory
+        """
+
+        if session:
+            result = self.session.send_command(
+                tag=FS_GETWD
+            )
+
+            if result.get_int(TLV_TYPE_STATUS) == TLV_STATUS_SUCCESS:
+                return result.get_string(TLV_TYPE_STRING)
+
+        return '???'
+
+    def parse_prompt(self, prompt: str) -> str:
+        """ Parse prompt.
+
+        :param str prompt: prompt to parse
+        :return str: parsed prompt
+        """
+
+        prompt = prompt.strip("'\"")
+        prompt = ColorScript().parse(prompt)
+
+        if '$dir' in prompt:
+            prompt.replace('$dir', self.pwd())
+
+        if '$user' in prompt:
+            prompt.replace('$user', self.whoami())
+
+        if '$prompt' in prompt:
+            prompt.replace('$prompt', '#' if self.whoami() == 'root' else '$')
+
+        return prompt
 
     def do_help(self, _) -> None:
         """ Show available commands.
@@ -160,8 +222,7 @@ class Console(cmd.Cmd):
             self.badges.print_usage("prompt <line>")
             return
 
-        prompt = prompt.strip("'\"")
-        self.prompt = ColorScript().parse(prompt)
+        self.set_prompt(prompt)
 
     def do_exit(self, _) -> None:
         """ Exit Pwny and terminate connection.
@@ -281,10 +342,12 @@ class Console(cmd.Cmd):
 
         self.session = session
 
-        self.load_commands(session.pwny_commands + str(session.details['Platform']).lower())
+        self.load_commands(session.pwny_commands + str(
+            session.details['Platform']).lower())
         self.load_commands(session.pwny_commands + 'generic')
 
-        self.load_plugins(session.pwny_plugins + str(session.details['Platform']).lower())
+        self.load_plugins(session.pwny_plugins + str(
+            session.details['Platform']).lower())
         self.load_plugins(session.pwny_plugins + 'generic')
 
     def pwny_console(self) -> None:

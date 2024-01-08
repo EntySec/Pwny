@@ -19,7 +19,7 @@ class HatSploitCommand(Command):
             'Category': "filesystem",
             'Name': "list",
             'Authors': [
-                'Ivan Nikolsky (enty8080) - command developer'
+                'Ivan Nikolskiy (enty8080) - command developer'
             ],
             'Description': "Get contents of a directory.",
             'Usage': "list [path]",

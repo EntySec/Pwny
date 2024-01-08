@@ -33,7 +33,7 @@ class HatSploitCommand(Command):
             'Category': "UI",
             'Name': "player",
             'Authors': [
-                'Ivan Nikolsky (enty8080) - command developer'
+                'Ivan Nikolskiy (enty8080) - command developer'
             ],
             'Description': "Manipulate MediaPlayer.",
             'Usage': "player <option>",

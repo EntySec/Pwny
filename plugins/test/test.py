@@ -17,7 +17,7 @@ class HatSploitPlugin(Plugin):
             'Name': "Test Pwny Plugin",
             'Plugin': "test",
             'Authors': [
-                'Ivan Nikolsky (enty8080) - plugin developer'
+                'Ivan Nikolskiy (enty8080) - plugin developer'
             ],
             'Description': ""
         }

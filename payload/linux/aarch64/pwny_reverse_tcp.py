@@ -19,7 +19,7 @@ class HatSploitPayload(Payload, Handler, Pwny, Assembler):
             'Name': "Linux aarch64 Pwny Reverse TCP",
             'Payload': "linux/aarch64/pwny_reverse_tcp",
             'Authors': [
-                'Ivan Nikolsky (enty8080) - payload developer'
+                'Ivan Nikolskiy (enty8080) - payload developer'
             ],
             'Description': "Linux aarch64 (arm64) Pwny Reverse TCP",
             'Arch': ARCH_AARCH64,

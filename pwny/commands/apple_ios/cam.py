@@ -26,7 +26,7 @@ class HatSploitCommand(Command):
             'Category': "gather",
             'Name': "cam",
             'Authors': [
-                'Ivan Nikolsky (enty8080) - command developer'
+                'Ivan Nikolskiy (enty8080) - command developer'
             ],
             'Description': "Use built-in camera.",
             'Usage': "cam <option> [arguments]",

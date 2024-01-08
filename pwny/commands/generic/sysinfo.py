@@ -19,7 +19,7 @@ class HatSploitCommand(Command):
             'Category': "gather",
             'Name': "sysinfo",
             'Authors': [
-                'Ivan Nikolsky (enty8080) - command developer'
+                'Ivan Nikolskiy (enty8080) - command developer'
             ],
             'Description': "Get session system properties.",
             'Usage': "sysinfo",
@@ -33,10 +33,8 @@ class HatSploitCommand(Command):
             self.print_error("Failed to fetch system information!")
             return
 
-        self.print_empty(dedent(f"""\
-        * Name:    {result.get_string(BUILTIN_TYPE_PLATFORM)}
-        * Arch:    {result.get_string(BUILTIN_TYPE_ARCH)}
-        * Version: {result.get_string(BUILTIN_TYPE_VERSION)}
-        * Vendor:  {result.get_string(BUILTIN_TYPE_VENDOR)}
-        * UUID:    {self.session.uuid}\
-        """))
+        self.print_information(f"Name:    {result.get_string(BUILTIN_TYPE_PLATFORM)}")
+        self.print_information(f"Arch:    {result.get_string(BUILTIN_TYPE_ARCH)}")
+        self.print_information(f"Version: {result.get_string(BUILTIN_TYPE_VERSION)}")
+        self.print_information(f"Vendor:  {result.get_string(BUILTIN_TYPE_VENDOR)}")
+        self.print_information(f"UUID:    {self.session.uuid}")

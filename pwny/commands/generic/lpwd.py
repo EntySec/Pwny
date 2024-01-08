@@ -16,7 +16,7 @@ class HatSploitCommand(Command):
             'Category': "local",
             'Name': "lpwd",
             'Authors': [
-                'Ivan Nikolsky (enty8080) - command developer'
+                'Ivan Nikolskiy (enty8080) - command developer'
             ],
             'Description': "Get local working directory.",
             'Usage': "lpwd",
@@ -24,4 +24,4 @@ class HatSploitCommand(Command):
         }
 
     def run(self, argc, argv):
-        self.print_information(f"Local working directory: {os.getcwd()}")
+        self.print_information(os.getcwd())

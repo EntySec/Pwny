@@ -17,7 +17,7 @@ class HatSploitCommand(Command):
             'Category': "manage",
             'Name': "kill",
             'Authors': [
-                'Ivan Nikolsky (enty8080) - command developer'
+                'Ivan Nikolskiy (enty8080) - command developer'
             ],
             'Description': "Kill process by ID.",
             'Usage': "kill <id>",

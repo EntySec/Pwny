@@ -17,7 +17,7 @@ class HatSploitCommand(Command):
             'Category': "gather",
             'Name': "ps",
             'Authors': [
-                'Ivan Nikolsky (enty8080) - command developer'
+                'Ivan Nikolskiy (enty8080) - command developer'
             ],
             'Description': "Get list of processes.",
             'Usage': "ps",

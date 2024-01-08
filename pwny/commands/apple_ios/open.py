@@ -22,7 +22,7 @@ class HatSploitCommand(Command):
             'Category': "UI",
             'Name': "open",
             'Authors': [
-                'Ivan Nikolsky (enty8080) - command developer'
+                'Ivan Nikolskiy (enty8080) - command developer'
             ],
             'Description': "Open URL or app.",
             'Usage': "open <option> <arguments>",

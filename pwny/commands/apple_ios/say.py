@@ -21,7 +21,7 @@ class HatSploitCommand(Command):
             'Category': "UI",
             'Name': "say",
             'Authors': [
-                'Ivan Nikolsky (enty8080) - command developer'
+                'Ivan Nikolskiy (enty8080) - command developer'
             ],
             'Description': "Say something.",
             'Usage': "say <message>",
