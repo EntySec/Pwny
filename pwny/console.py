@@ -102,7 +102,7 @@ class Console(cmd.Cmd):
         :return str: username
         """
 
-        if session:
+        if self.session:
             result = self.session.send_command(
                 tag=BUILTIN_WHOAMI
             )
@@ -118,7 +118,7 @@ class Console(cmd.Cmd):
         :return str: working directory
         """
 
-        if session:
+        if self.session:
             result = self.session.send_command(
                 tag=FS_GETWD
             )
