@@ -124,7 +124,7 @@ class Console(cmd.Cmd):
             )
 
             if result.get_int(TLV_TYPE_STATUS) == TLV_STATUS_SUCCESS:
-                return result.get_string(TLV_TYPE_STRING)
+                return result.get_string(TLV_TYPE_PATH)
 
         return '???'
 
