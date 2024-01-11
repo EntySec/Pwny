@@ -138,7 +138,7 @@ class Console(cmd.Cmd):
         """
 
         prompt = prompt.strip("'\"")
-        prompt = ColorScript().parse(prompt)
+        prompt = ColorScript().parse_input(prompt)
 
         if '$dir' in prompt:
             prompt = prompt.replace('$dir', self.pwd())
