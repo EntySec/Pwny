@@ -37,6 +37,28 @@
 #include <queue.h>
 #include <uthash/uthash.h>
 
+#define CHILD_EV_FLAGS EVFLAG_NOENV | EVBACKEND_SELECT
+#define CHILD_ALIVE 1
+#define CHILD_DEAD 0
+
+#define CHILD_FORCE_PTY   1 << 0
+#define CHILD_NO_FORK     1 << 1
+
+typedef struct
+{
+    int flags;
+    char *args;
+    char **argv;
+    char **env;
+} child_options_t;
+
+typedef struct
+{
+    int in_pair[2];
+    int out_pair[2];
+    int err_pair[2];
+} child_pipes_t;
+
 typedef struct
 {
     struct ev_io io;
@@ -57,6 +79,7 @@ typedef struct
     int out;
     int err;
 
+    int status;
     void *link_data;
 
     link_t out_link;
@@ -72,10 +95,7 @@ void child_set_links(child_t *child,
                      link_t exit_link,
                      void *data);
 
-void child_from_image(child_t *child, unsigned char *image);
-void child_from_file(child_t *child, char *filename);
-
-child_t *child_create(char *filename, unsigned char *image);
+child_t *child_create(char *filename, unsigned char *image, child_options_t *options);
 
 void child_out(struct ev_loop *loop, struct ev_io *w, int events);
 void child_err(struct ev_loop *loop, struct ev_io *w, int events);
@@ -84,6 +104,7 @@ void child_exit(struct ev_loop *loop, struct ev_child *w, int revents);
 size_t child_read(child_t *child, void *buffer, size_t length);
 size_t child_write(child_t *child, void *buffer, size_t length);
 
+void child_kill(child_t *child);
 void child_destroy(child_t *child);
 
 #endif

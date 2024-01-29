@@ -60,6 +60,10 @@
         TLV_TAG_CUSTOM(API_CALL_INTERNAL, \
                        PIPE_BASE, \
                        API_CALL + 5)
+#define PIPE_HEARTBEAT \
+        TLV_TAG_CUSTOM(API_CALL_INTERNAL, \
+                       PIPE_BASE, \
+                       API_CALL + 6)
 
 #define TLV_TYPE_PIPE_TYPE   TLV_TYPE_CUSTOM(TLV_TYPE_INT, PIPE_BASE, API_TYPE)
 #define TLV_TYPE_PIPE_ID     TLV_TYPE_CUSTOM(TLV_TYPE_INT, PIPE_BASE, API_TYPE + 1)
@@ -86,6 +90,7 @@ struct pipe_callbacks
     int (*seek_cb)(pipe_t *pipe, int offset, int whence);
     int (*tell_cb)(pipe_t *pipe);
     int (*destroy_cb)(pipe_t *pipe, c2_t *c2);
+    int (*heartbeat_cb)(pipe_t *pipe);
 };
 
 struct pipes

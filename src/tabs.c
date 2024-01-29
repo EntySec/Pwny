@@ -104,7 +104,7 @@ int tabs_add(tabs_t **tabs, int id,
         {
             tab_new->id = id;
             tab_new->c2 = c2;
-            tab_new->child = child_create(filename, image);
+            tab_new->child = child_create(filename, image, NULL);
 
             if (tab_new->child == NULL)
             {

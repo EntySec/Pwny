@@ -59,10 +59,33 @@ class Pipes(object):
         if pipe_id not in self.pipes[pipe_type]:
             raise RuntimeError(f"No such pipe with ID {str(id)}!")
 
+    def heartbeat_pipe(self, pipe_type: int, pipe_id: int) -> bool:
+        """ Check pipe is alive or not.
+
+        :param int pipe_type: type of pipe
+        :param int pipe_id: pipe ID
+        :return bool: True if alive else False
+        """
+
+        self.check_pipe(pipe_type, pipe_id)
+
+        tlv = self.session.send_command(
+            tag=PIPE_HEARTBEAT,
+            args={
+                PIPE_TYPE_TYPE: pipe_type,
+                PIPE_TYPE_ID: pipe_id,
+            }
+        )
+
+        if tlv.get_int(TLV_TYPE_STATUS) == TLV_STATUS_FAIL:
+            return False
+
+        return True
+
     def tell_pipe(self, pipe_type: int, pipe_id: int) -> int:
         """ Tell from pipe.
 
-        :param int pipe_type: type of type
+        :param int pipe_type: type of pipe
         :param int pipe_id: pipe ID
         :return int: offset
         :raises RuntimeError: with trailing error message
@@ -87,7 +110,7 @@ class Pipes(object):
                   offset: int, whence: int) -> None:
         """ Seek in the pipe.
 
-        :param int pipe_type: type of type
+        :param int pipe_type: type of pipe
         :param int pipe_id: pipe ID
         :param int offset: offset
         :param int whence: whence

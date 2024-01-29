@@ -31,10 +31,13 @@ from badges import Badges
 from typing import Optional
 
 from pwny import Pwny
+
 from pwny.types import *
 from pwny.api import *
+
 from pwny.tlv import TLV
 from pwny.pipes import Pipes
+from pwny.spawn import Spawn
 from pwny.console import Console
 
 from pex.fs import FS
@@ -59,6 +62,7 @@ class PwnySession(Pwny, Session, Console):
         self.terminated = False
 
         self.pipes = Pipes(self)
+
         self.badges = Badges()
         self.fs = FS()
         self.ssl = OpenSSL()
@@ -216,6 +220,16 @@ class PwnySession(Pwny, Session, Console):
             self.pipes.destroy_pipe(FS_PIPE_FILE, pipe_id)
 
             return True
+
+    def spawn(self, path: str, args: list = []) -> bool:
+        """ Execute path.
+
+        :param str path: path to execute
+        :param list args: command-line arguments
+        :return bool: True if success else False
+        """
+
+        return Spawn(self).spawn(path, args)
 
     def interact(self) -> None:
         """ Interact with the Pwny session.

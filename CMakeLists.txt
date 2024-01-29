@@ -67,8 +67,7 @@ if(MAIN)
                                            "-framework MediaRemote"
                                            "-framework MediaPlayer"
                                            "-framework SpringBoardServices"
-                                           "-framework BulletinBoard")
-
+                                           "-framework CoreLocation")
 
     elseif(CMAKE_SYSTEM_NAME STREQUAL Linux)
         target_compile_options(main PRIVATE -static -no-pie

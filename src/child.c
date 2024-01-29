@@ -26,11 +26,21 @@
 #include <stdlib.h>
 #include <signal.h>
 #include <string.h>
+#include <ctype.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <termios.h>
+
+#if defined(IS_IPHONE) || defined(IS_MACOS)
+#include <util.h>
+#else
+#include <pty.h>
+#endif
+
 #include <ev.h>
 
+#include <log.h>
 #include <queue.h>
 #include <child.h>
 
@@ -38,7 +48,98 @@
 
 #ifndef IS_IPHONE
 #include <pawn.h>
+#else
+#include <spawn.h>
 #endif
+
+static char **argv_split(char *args, char **argv, size_t *argc)
+{
+    char *p = NULL;
+    char *start_of_word = NULL;
+    int c;
+
+    enum states
+    {
+        DULL,
+        IN_WORD,
+        IN_STRING,
+        IN_STRING_LIT
+    } state = DULL;
+
+    for (p = args; *p != '\0'; p++)
+    {
+        c = (unsigned char) *p;
+
+        switch (state)
+        {
+            case DULL:
+                if (isspace(c))
+                {
+                    continue;
+                }
+
+                if (c == '"')
+                {
+                    state = IN_STRING;
+                    start_of_word = p + 1;
+                    continue;
+                }
+
+                if (c == '\'')
+                {
+                    state = IN_STRING_LIT;
+                    start_of_word = p + 1;
+                    continue;
+                }
+
+                state = IN_WORD;
+                start_of_word = p;
+                continue;
+
+            case IN_STRING:
+                if (c == '"')
+                {
+                    *p = 0;
+                    argv = realloc(argv, sizeof(char *) * (*argc + 1));
+                    argv[(*argc)++] = start_of_word;
+                    state = DULL;
+                }
+
+                continue;
+
+            case IN_STRING_LIT:
+                if (c == '\'')
+                {
+                    *p = 0;
+                    argv = realloc(argv, sizeof(char *) * (*argc + 1));
+                    argv[(*argc)++] = start_of_word;
+                    state = DULL;
+                }
+                continue;
+
+            case IN_WORD:
+                if (isspace(c))
+                {
+                    *p = 0;
+                    argv = realloc(argv, sizeof(char *) * (*argc + 1));
+                    argv[(*argc)++] = start_of_word;
+                    state = DULL;
+                }
+                continue;
+        }
+    }
+
+    if (state != DULL)
+    {
+        argv = realloc(argv, sizeof(char *) * (*argc + 1));
+        argv[(*argc)++] = start_of_word;
+    }
+
+    argv = realloc(argv, sizeof(char *) * (*argc + 2));
+    argv[(*argc)] = NULL;
+
+    return argv;
+}
 
 void child_set_links(child_t *child,
                      link_t out_link,
@@ -82,6 +183,7 @@ size_t child_write(child_t *child, void *buffer, size_t length)
             break;
         }
 
+        log_debug("* Writing bytes to child (%d)\n", stat);
         count += stat;
     }
 
@@ -91,11 +193,15 @@ size_t child_write(child_t *child, void *buffer, size_t length)
 void child_out(struct ev_loop *loop, struct ev_io *w, int events)
 {
     child_t *child;
+    int length;
 
     child = w->data;
+    log_debug("* Child read out event initialized\n");
 
-    if (queue_from_fd(child->out_queue.queue, w->fd) > 0)
+    while ((length = queue_from_fd(child->out_queue.queue, w->fd)) > 0)
     {
+        log_debug("* Child read from out (%d)\n", length);
+
         if (child->out_link)
         {
             child->out_link(child->link_data);
@@ -106,11 +212,15 @@ void child_out(struct ev_loop *loop, struct ev_io *w, int events)
 void child_err(struct ev_loop *loop, struct ev_io *w, int events)
 {
     child_t *child;
+    int length;
 
     child = w->data;
+    log_debug("* Child read err event initialized\n");
 
-    if (queue_from_fd(child->err_queue.queue, w->fd) > 0)
+    while ((length = queue_from_fd(child->err_queue.queue, w->fd)) > 0)
     {
+        log_debug("* Child read from err (%d)\n", length);
+
         if (child->err_link)
         {
             child->err_link(child->link_data);
@@ -123,28 +233,28 @@ void child_exit(struct ev_loop *loop, struct ev_child *w, int revents)
     child_t *child;
 
     child = w->data;
+    log_debug("* Child exit event initialized\n");
 
     ev_child_stop(loop, w);
+    child->status = CHILD_DEAD;
 
     if (child->exit_link)
     {
         child->exit_link(child->link_data);
     }
 
-    child_destroy(child);
+    ev_io_stop(child->loop, &child->out_queue.io);
+    ev_io_stop(child->loop, &child->err_queue.io);
 }
 
-void child_from_image(child_t *child, unsigned char *image)
+static void child_from_image(child_t *child, unsigned char *image,
+                             char **argv, char **env)
 {
-    char *argv[1];
-
     ev_loop_fork(EV_DEFAULT);
     ev_loop_destroy(EV_DEFAULT_UC);
 
-    argv[0] = "pwny";
-
-#if IS_MACOS
-    //pawn_exec_bundle(image, argv, NULL);
+#if defined(IS_MACOS) || defined(IS_IPHONE)
+#error "Darwin-like systems are not supported yet"
 #elif IS_LINUX
     pawn_exec_fd(image, argv, NULL);
 #elif IS_WINDOWS
@@ -154,23 +264,136 @@ void child_from_image(child_t *child, unsigned char *image)
     abort();
 }
 
-void child_from_file(child_t *child, char *filename)
+static void child_from_file(child_t *child, char *filename,
+                            char **argv, char **env)
 {
     ev_loop_fork(EV_DEFAULT);
     ev_loop_destroy(EV_DEFAULT_UC);
 
+    execve(filename, argv, env);
+
     abort();
 }
 
-child_t *child_create(char *filename, unsigned char *image)
+static pid_t child_spawn(char *filename, unsigned char *image,
+                         child_options_t *options,
+                         child_pipes_t *pipes)
+{
+    pid_t pid;
+    int posix_stat;
+
+    posix_spawn_file_actions_t actions;
+    posix_spawnattr_t attr;
+
+    posix_spawnattr_init(&attr);
+    posix_spawnattr_setflags(&attr, POSIX_SPAWN_SETPGROUP);
+
+    posix_spawn_file_actions_init(&actions);
+    posix_spawn_file_actions_adddup2(&actions, pipes->out_pair[1], STDOUT_FILENO);
+    posix_spawn_file_actions_adddup2(&actions, pipes->in_pair[0], STDIN_FILENO);
+    posix_spawn_file_actions_adddup2(&actions, pipes->err_pair[1], STDERR_FILENO);
+    posix_spawn_file_actions_addclose(&actions, pipes->out_pair[1]);
+    posix_spawn_file_actions_addclose(&actions, pipes->in_pair[0]);
+    posix_spawn_file_actions_addclose(&actions, pipes->err_pair[1]);
+
+    if ((posix_stat = posix_spawn(&pid, filename, &actions, &attr, options->argv, options->env)) != 0)
+    {
+        log_debug("* posix_spawn() failed with status (%d)\n", posix_stat);
+
+        posix_spawn_file_actions_destroy(&actions);
+        posix_spawnattr_destroy(&attr);
+
+        return -1;
+    }
+
+    log_debug("* posix_spawn() succeeded on (%s)\n", filename);
+
+    posix_spawn_file_actions_destroy(&actions);
+    posix_spawnattr_destroy(&attr);
+
+    return pid;
+}
+
+static pid_t child_fork(child_t *child, char *filename, unsigned char *image,
+                        child_options_t *options,
+                        child_pipes_t *pipes)
+{
+    pid_t pid;
+
+    pid = fork();
+
+    if (pid == 0)
+    {
+        dup2(pipes->in_pair[0], STDIN_FILENO);
+        dup2(pipes->out_pair[1], STDOUT_FILENO);
+        dup2(pipes->err_pair[1], STDERR_FILENO);
+
+        if (image != NULL)
+        {
+            child_from_image(child, image, options->argv, options->env);
+        }
+        else if (filename != NULL)
+        {
+            child_from_file(child, filename, options->argv, options->env);
+        }
+
+        return 0;
+    }
+    else if (pid == -1)
+    {
+        return -1;
+    }
+
+    return pid;
+}
+
+child_t *child_create(char *filename, unsigned char *image, child_options_t *options)
 {
     child_t *child;
-    int in_pair[2];
-    int out_pair[2];
-    int err_pair[2];
+    child_pipes_t pipes;
 
-    if (pipe(err_pair) == -1)
+    size_t argc;
+    char *args;
+
+    argc = 0;
+    options->argv = NULL;
+
+    if (options->args)
     {
+        if (filename != NULL)
+        {
+            asprintf(&args, "%s %s", filename, options->args);
+        }
+        else
+        {
+            asprintf(&args, "pwny %s", options->args);
+        }
+
+        options->argv = argv_split(args, options->argv, &argc);
+    }
+
+    if (options->argv == NULL)
+    {
+        options->argv = realloc(options->argv, sizeof(char *) * 2);
+        options->argv[0] = filename != NULL ? filename : "pwny";
+        options->argv[1] = NULL;
+    }
+
+    if (pipe(pipes.err_pair) == -1)
+    {
+        log_debug("* Failed to create err pair for child\n");
+        return NULL;
+    }
+
+    if (pipe(pipes.in_pair) == -1)
+    {
+        log_debug("* Failed to create in pair for child\n");
+        return NULL;
+    }
+
+    if (pipe(pipes.out_pair) == -1)
+    {
+        log_debug("* Failed to create out pair for child\n");
         return NULL;
     }
 
@@ -181,87 +404,60 @@ child_t *child_create(char *filename, unsigned char *image)
         return NULL;
     }
 
-    if (pipe(in_pair) == -1)
+    if (options->flags & CHILD_NO_FORK)
     {
-        return NULL;
+        child->pid = child_spawn(filename, image, options, &pipes);
+    }
+    else
+    {
+        child->pid = child_fork(child, filename, image, options, &pipes);
     }
 
-    if (pipe(out_pair) == -1)
+    if (child->pid == -1)
     {
-        return NULL;
-    }
-
-    child->pid = fork();
-
-    if (child->pid == 0)
-    {
-        dup2(in_pair[0], STDIN_FILENO);
-        dup2(out_pair[1], STDOUT_FILENO);
-        dup2(err_pair[1], STDERR_FILENO);
-
-        close(err_pair[1]);
-        close(err_pair[0]);
-
-        if (image != NULL)
-        {
-            child_from_image(child, image);
-        }
-        else if (filename != NULL)
-        {
-            child_from_file(child, filename);
-        }
-
-        return NULL;
-    }
-    else if (child->pid == -1)
-    {
-        close(in_pair[1]);
-        close(in_pair[0]);
-        close(out_pair[1]);
-        close(out_pair[0]);
-        close(err_pair[1]);
-        close(err_pair[0]);
         free(child);
-
         return NULL;
     }
 
     child->child.data = child;
+    child->loop = ev_default_loop(CHILD_EV_FLAGS);
 
     ev_child_init(&child->child, child_exit, child->pid, 0);
     ev_child_start(child->loop, &child->child);
 
-    fcntl(in_pair[1], F_SETFL, O_NONBLOCK);
-    child->in = in_pair[1];
+    fcntl(pipes.in_pair[1], F_SETFL, O_NONBLOCK);
+    child->in = pipes.in_pair[1];
 
-    fcntl(out_pair[0], F_SETFL, O_NONBLOCK);
+    fcntl(pipes.out_pair[0], F_SETFL, O_NONBLOCK);
 
-    child->out = out_pair[0];
+    child->out = pipes.out_pair[0];
     child->out_queue.io.data = child;
     child->out_queue.queue = queue_create();
 
     ev_io_init(&child->out_queue.io, child_out, child->out, EV_READ);
     ev_io_start(child->loop, &child->out_queue.io);
 
-    fcntl(err_pair[0], F_SETFL, O_NONBLOCK);
+    fcntl(pipes.err_pair[0], F_SETFL, O_NONBLOCK);
 
-    child->err = err_pair[0];
+    child->err = pipes.err_pair[0];
     child->err_queue.io.data = child;
     child->err_queue.queue = queue_create();
 
     ev_io_init(&child->err_queue.io, child_err, child->err, EV_READ);
     ev_io_start(child->loop, &child->err_queue.io);
 
-    close(in_pair[0]);
-    close(out_pair[1]);
-    close(err_pair[1]);
+    close(pipes.in_pair[0]);
+    close(pipes.out_pair[1]);
+    close(pipes.err_pair[1]);
+
+    child->status = CHILD_ALIVE;
 
     return child;
 }
 
-int child_kill(child_t *child)
+void child_kill(child_t *child)
 {
-    return kill(child->pid, SIGINT);
+    kill(child->pid, SIGINT);
 }
 
 void child_destroy(child_t *child)
@@ -269,9 +465,6 @@ void child_destroy(child_t *child)
     close(child->in);
     close(child->out);
     close(child->err);
-
-    ev_io_stop(child->loop, &child->out_queue.io);
-    ev_io_stop(child->loop, &child->err_queue.io);
 
     queue_free(child->out_queue.queue);
     queue_free(child->err_queue.queue);

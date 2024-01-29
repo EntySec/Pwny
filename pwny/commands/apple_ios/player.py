@@ -36,7 +36,7 @@ class HatSploitCommand(Command):
                 'Ivan Nikolskiy (enty8080) - command developer'
             ],
             'Description': "Manipulate MediaPlayer.",
-            'Usage': "player <option>",
+            'Usage': "player <option> [arguments]",
             'MinArgs': 1,
             'Options': {
                 'info': ['', 'Get current playing song.'],

