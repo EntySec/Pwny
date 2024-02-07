@@ -34,6 +34,7 @@
 #include <tlv.h>
 #include <migrate.h>
 #include <pipe.h>
+#include <proc.h>
 
 #define PROCESS_BASE 2
 
@@ -53,6 +54,10 @@
         TLV_TAG_CUSTOM(API_CALL_STATIC, \
                        PROCESS_BASE, \
                        API_CALL + 3)
+#define PROCESS_KILLALL \
+        TLV_TAG_CUSTOM(API_CALL_STATIC, \
+                       PROCESS_BASE, \
+                       API_CALL + 4)
 
 #define PROCESS_PIPE \
         TLV_PIPE_CUSTOM(PIPE_STATIC, \
@@ -126,18 +131,31 @@ static tlv_pkt_t *process_list(c2_t *c2)
 static tlv_pkt_t *process_kill(c2_t *c2)
 {
     int pid;
-    int status;
 
     tlv_pkt_get_int(c2->request, TLV_TYPE_PID, &pid);
 
-    if ((status = sigar_proc_kill(pid, 9)) != SIGAR_OK)
+    if (proc_kill(c2->sigar, pid) == -1)
     {
-        log_debug("* Failed to sigar process kill (%s)\n",
-                  sigar_strerror(c2->sigar, status));
         return api_craft_tlv_pkt(API_CALL_FAIL);
     }
 
     return api_craft_tlv_pkt(API_CALL_SUCCESS);
+}
+
+static tlv_pkt_t *process_killall(c2_t *c2)
+{
+    int pid;
+    char name[128];
+
+    tlv_pkt_get_string(c2->request, TLV_TYPE_PID_STATE, name);
+
+    if ((pid = proc_find(c2->sigar, name)) != -1)
+    {
+        proc_kill(c2->sigar, pid);
+        return api_craft_tlv_pkt(API_CALL_SUCCESS);
+    }
+
+    return api_craft_tlv_pkt(API_CALL_FAIL);
 }
 
 static tlv_pkt_t *process_get_pid(c2_t *c2)
@@ -280,6 +298,7 @@ void register_process_api_calls(api_calls_t **api_calls)
     api_call_register(api_calls, PROCESS_KILL, process_kill);
     api_call_register(api_calls, PROCESS_GET_PID, process_get_pid);
     api_call_register(api_calls, PROCESS_MIGRATE, process_migrate);
+    api_call_register(api_calls, PROCESS_KILLALL, process_killall);
 }
 
 void register_process_api_pipes(pipes_t **pipes)

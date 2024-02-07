@@ -52,6 +52,7 @@ typedef struct c2_table
 {
     int id;
     char *uuid;
+    const char *path;
 
     struct
     {

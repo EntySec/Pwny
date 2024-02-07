@@ -39,6 +39,8 @@ from typing import Any
 from badges import Badges
 
 
+# TODO: chunked read
+
 class Spawn(object):
     """ Subclass of pwny module.
 
@@ -63,6 +65,24 @@ class Spawn(object):
         self.badges = Badges()
         self.string = String()
 
+    def read_pipe(self, pipe_id: int) -> None:
+        """ Read output from pipe.
+
+        :param int pipe_id: pipe ID
+        :return None: None
+        """
+
+        size = self.pipes.tell_pipe(PROCESS_PIPE, pipe_id)
+
+        while size > 0:
+            chunk = min(TLV_FILE_CHUNK, size)
+            buffer = self.pipes.read_pipe(PROCESS_PIPE, pipe_id, chunk)
+
+            sys.stdout.write(buffer.decode(errors='ignore'))
+            sys.stdout.flush()
+
+            size -= chunk
+
     def read_thread(self, pipe_id: int) -> None:
         """ Thread for reading.
 
@@ -80,18 +100,9 @@ class Spawn(object):
             if not self.pipes.heartbeat_pipe(PROCESS_PIPE, pipe_id):
                 break
 
-            size = self.pipes.tell_pipe(PROCESS_PIPE, pipe_id)
+            self.read_pipe(pipe_id)
 
-            if size:
-                self.badges.print_empty(self.pipes.read_pipe(
-                    PROCESS_PIPE, pipe_id, size).decode(errors='ignore'), end='')
-
-        size = self.pipes.tell_pipe(PROCESS_PIPE, pipe_id)
-
-        if size:
-            self.badges.print_empty(self.pipes.read_pipe(
-                PROCESS_PIPE, pipe_id, size).decode(errors='ignore'), end='')
-
+        self.read_pipe(pipe_id)
         self.closed = True
 
     def write_thread(self, pipe_id: int) -> None:

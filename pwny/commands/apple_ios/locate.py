@@ -10,9 +10,7 @@ from hatsploit.lib.command import Command
 
 LOCATE_BASE = 8
 
-LOCATE_ON = tlv_custom_tag(API_CALL_STATIC, LOCATE_BASE, API_CALL)
-LOCATE_OFF = tlv_custom_tag(API_CALL_STATIC, LOCATE_BASE, API_CALL + 1)
-LOCATE_GET = tlv_custom_tag(API_CALL_STATIC, LOCATE_BASE, API_CALL + 2)
+LOCATE_GET = tlv_custom_tag(API_CALL_STATIC, LOCATE_BASE, API_CALL)
 
 LOCATE_LONGITUDE = tlv_custom_type(TLV_TYPE_STRING, LOCATE_BASE, API_TYPE)
 LOCATE_LATITUDE = tlv_custom_type(TLV_TYPE_STRING, LOCATE_BASE, API_TYPE + 1)
@@ -32,8 +30,6 @@ class HatSploitCommand(Command):
             'Usage': "locate <option>",
             'MinArgs': 1,
             'Options': {
-                'on': ['', 'Turn location ON.'],
-                'off': ['', 'Turn location OFF.'],
                 'info': ['', 'Get location.'],
             }
         }
@@ -50,9 +46,3 @@ class HatSploitCommand(Command):
                 self.print_information(f"Longitude: {longitude}")
                 self.print_information(f"Map:       %linehttp://maps.google.com/maps?q={latitude},{longitude}%end")
                 return
-
-        elif argv[1] == 'on':
-            self.session.send_command(tag=LOCATE_ON)
-
-        elif argv[1] == 'off':
-            self.session.send_command(tag=LOCATE_OFF)

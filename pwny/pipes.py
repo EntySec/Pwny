@@ -54,10 +54,10 @@ class Pipes(object):
         """
 
         if pipe_type not in self.pipes:
-            raise RuntimeError(f"Pipe {str(id)} type and ID mismatch!")
+            raise RuntimeError(f"Pipe {str(pipe_id)} type and ID mismatch!")
 
         if pipe_id not in self.pipes[pipe_type]:
-            raise RuntimeError(f"No such pipe with ID {str(id)}!")
+            raise RuntimeError(f"No such pipe with ID {str(pipe_id)}!")
 
     def heartbeat_pipe(self, pipe_type: int, pipe_id: int) -> bool:
         """ Check pipe is alive or not.

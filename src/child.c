@@ -253,7 +253,7 @@ static void child_from_image(child_t *child, unsigned char *image,
     ev_loop_fork(EV_DEFAULT);
     ev_loop_destroy(EV_DEFAULT_UC);
 
-#if defined(IS_MACOS) || defined(IS_IPHONE)
+#if defined(IS_MACOS)
 #error "Darwin-like systems are not supported yet"
 #elif IS_LINUX
     pawn_exec_fd(image, argv, NULL);
