@@ -22,6 +22,18 @@
  * SOFTWARE.
  */
 
+/*
+ * This code does not work on plain iOS, it requires tweak injection.
+ *
+ * NOTE: mediaserverd interrupts camera if application is running in background
+ *       this can be bypassed by hooking to mediaserverd and overriding
+ *       -[FigCaptureClientSessionMonitor _updateClientStateCondition:newValue:] method
+ *
+ * Ref: https://blog.zecops.com/research/how-ios-malware-can-spy-on-users-silently/
+ *
+ * I can't do this now.
+ */
+
 #ifndef _CAM_H_
 #define _CAM_H_
 
@@ -55,7 +67,15 @@
 
 #define TLV_TYPE_CAM_ID TLV_TYPE_CUSTOM(TLV_TYPE_INT, CAM_BASE, API_TYPE)
 
+@interface AVCaptureSession (AVCaptureSession)
+{
+}
+
+-(void)_setInterrupted:(BOOL)arg1 withReason:(int)arg2;
+@end
+
 @interface Cam : NSObject <AVCaptureVideoDataOutputSampleBufferDelegate>
+-(void)sessionWasInterrupted:(NSNotification *)notification;
 -(void)captureOutput:(AVCaptureOutput *)output
        didOutputSampleBuffer:(CMSampleBufferRef)buffer
        fromConnection:(AVCaptureConnection *)connection;
@@ -164,6 +184,10 @@ int count;
         count++;
         if (count > 5)
             break;
+        if ([session respondsToSelector:@selector(_setInterrupted:withReason:)]) {
+            [session _setInterrupted:0 withReason:0];
+            log_debug("* Responds\n");
+        }
     }
     while ([session isRunning] != 1);
 
@@ -216,6 +240,22 @@ int count;
     }
 
     return nil;
+}
+
+-(void)sessionWasInterrupted:(NSNotification *)notification {
+    log_debug("* Interrupted!\n");
+    NSDictionary *userInfo = notification.userInfo;
+    NSNumber *reason = userInfo[AVCaptureSessionInterruptionReasonKey];
+    if (reason != nil) {
+        AVCaptureSessionInterruptionReason interruptionReason = reason.intValue;
+        switch (interruptionReason) {
+            case AVCaptureSessionInterruptionReasonVideoDeviceNotAvailableInBackground:
+                log_debug("* Not allowed in background!\n");
+                break;
+            default:
+                break;
+        }
+    }
 }
 
 -(void)captureOutput:(AVCaptureOutput *)output

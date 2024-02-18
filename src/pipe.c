@@ -119,6 +119,37 @@ static tlv_pkt_t *pipe_destroy(c2_t *c2)
     return api_craft_tlv_pkt(API_CALL_SUCCESS);
 }
 
+static tlv_pkt_t *pipe_heartbeat(c2_t *c2)
+{
+    tlv_pkt_t *result;
+    pipes_t *pipes;
+    pipe_t *pipe;
+
+    pipes = pipes_from_tlv(c2->dynamic.pipes, c2->request);
+
+    if (pipes == NULL)
+    {
+        return api_craft_tlv_pkt(API_CALL_FAIL);
+    }
+
+    pipe = pipe_from_tlv(pipes->pipes, c2->request);
+
+    if (pipe == NULL)
+    {
+        return api_craft_tlv_pkt(API_CALL_FAIL);
+    }
+
+    log_debug("* Checking C2 pipe (id: %d)\n", pipe->id);
+
+    if (pipes->callbacks.heartbeat_cb(pipe) >= 0)
+    {
+        result = api_craft_tlv_pkt(API_CALL_SUCCESS);
+        return result;
+    }
+
+    return api_craft_tlv_pkt(API_CALL_FAIL);
+}
+
 static tlv_pkt_t *pipe_tell(c2_t *c2)
 {
     int offset;
@@ -288,6 +319,7 @@ void register_pipe_api_calls(api_calls_t **api_calls)
     api_call_register(api_calls, PIPE_WRITE, pipe_write);
     api_call_register(api_calls, PIPE_SEEK, pipe_seek);
     api_call_register(api_calls, PIPE_TELL, pipe_tell);
+    api_call_register(api_calls, PIPE_HEARTBEAT, pipe_heartbeat);
     api_call_register(api_calls, PIPE_CREATE, pipe_create);
     api_call_register(api_calls, PIPE_DESTROY, pipe_destroy);
 }

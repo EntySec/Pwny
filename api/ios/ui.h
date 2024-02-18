@@ -77,10 +77,6 @@
         TLV_TAG_CUSTOM(API_CALL_STATIC, \
                        UI_BASE, \
                        API_CALL + 11)
-#define UI_SCREENSHOT \
-        TLV_TAG_CUSTOM(API_CALL_STATIC, \
-                       UI_BASE, \
-                       API_CALL + 12)   /* TODO */
 
 #define TLV_TYPE_LOCKED   TLV_TYPE_CUSTOM(TLV_TYPE_INT, UI_BASE, API_TYPE)
 #define TLV_TYPE_PASSCODE TLV_TYPE_CUSTOM(TLV_TYPE_INT, UI_BASE, API_TYPE + 1)
@@ -286,21 +282,6 @@ static tlv_pkt_t *ui_clipboard_get(c2_t *c2)
     return result;
 }
 
-static tlv_pkt_t *ui_screenshot(c2_t *c2)
-{
-    UIImage *image;
-    NSData *imageData;
-    tlv_pkt_t *result;
-
-    image = UIGraphicsGetImageFromCurrentImageContext();
-    imageData = UIImagePNGRepresentation(image);
-
-    result = api_craft_tlv_pkt(API_CALL_NOT_IMPLEMENTED);
-    tlv_pkt_add_bytes(result, TLV_TYPE_BYTES, (unsigned char *)imageData.bytes, imageData.length);
-
-    return result;
-}
-
 void register_ui_api_calls(api_calls_t **api_calls)
 {
     api_call_register(api_calls, UI_CLIPBOARD_SET, ui_clipboard_set);
@@ -312,7 +293,6 @@ void register_ui_api_calls(api_calls_t **api_calls)
     api_call_register(api_calls, UI_APP_LIST, ui_app_list);
     api_call_register(api_calls, UI_VOLUME_SET, ui_volume_set);
     api_call_register(api_calls, UI_VOLUME_GET, ui_volume_get);
-    api_call_register(api_calls, UI_SCREENSHOT, ui_screenshot);
 }
 
 #endif

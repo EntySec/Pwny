@@ -1,6 +1,6 @@
 libpawn:
 	@echo "[Building libpawn]"
-	@cd ../deps/$(PLATFORM)/$(ARCH); \
+	@cd ../deps/build/; \
 	git clone https://github.com/entysec/libpawn; \
 	cd libpawn; \
 	cmake -DARCH=$(ARCH) -DCMAKE_TOOLCHAIN_FILE=../../../../toolchain/cmake/$(PLATFORM)_$(ARCH).cmake -DDEBUG=ON -B build; \

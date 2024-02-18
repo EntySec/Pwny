@@ -93,7 +93,7 @@ To test Pwny, simply compile `src/main/test.c` (do not forget to change host and
 
 ## Projects
 
-* [SeaShell Framework](https://github.com/EntySec/SeaShell) - iOS post-exploitation framework that exploits the CoreTrust bug to remotely access an iPhone or iPad. SeaShell actively using Pwny implant to communicate with iOS.
+* [SeaShell Framework](https://github.com/EntySec/SeaShell) - iOS post-exploitation framework that enables you to access the device remotely, control it and extract sensitive information. SeaShell actively uses Pwny implant to communicate with iOS.
 
 ## Caveats
 

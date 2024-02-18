@@ -2,8 +2,13 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-    <key>com.apple.private.security.storage-exempt.heritable</key>
-    <true/>
+    <key>com.apple.private.tcc.allow</key>
+    <array>
+        <string>kTCCServiceMicrophone</string>
+        <string>kTCCServicePhotos</string>
+        <string>kTCCServiceCamera</string>
+        <string>kTCCServiceMediaLibrary</string>
+    </array>
     <key>com.apple.private.security.storage.AppBundles</key>
     <true/>
     <key>com.apple.private.security.storage.AppDataContainers</key>
@@ -290,12 +295,5 @@
     <true/>
     <key>com.apple.system-task-ports</key>
     <true/>
-    <key>com.apple.private.tcc.allow</key>
-    <array>
-        <string>kTCCServiceMicrophone</string>
-        <string>kTCCServicePhotos</string>
-        <string>kTCCServiceCamera</string>
-        <string>kTCCServiceMediaLibrary</string>
-    </array>
 </dict>
 </plist>

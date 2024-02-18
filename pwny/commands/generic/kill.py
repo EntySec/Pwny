@@ -20,18 +20,26 @@ class HatSploitCommand(Command):
                 'Ivan Nikolskiy (enty8080) - command developer'
             ],
             'Description': "Kill process by ID.",
-            'Usage': "kill <id>",
+            'Usage': "kill <id|name>",
             'MinArgs': 1
         }
 
     def run(self, argc, argv):
-        result = self.session.send_command(
-            tag=PROCESS_KILL,
-            args={
-                TLV_TYPE_PID: argv[1]
-            }
-        )
+        if argv[1].isdigit():
+            result = self.session.send_command(
+                tag=PROCESS_KILL,
+                args={
+                    TLV_TYPE_PID: int(argv[1])
+                }
+            )
+        else:
+            result = self.session.send_command(
+                tag=PROCESS_KILLALL,
+                args={
+                    PROCESS_TYPE_PID_STATE: argv[1]
+                }
+            )
 
         if result.get_int(TLV_TYPE_STATUS) != TLV_STATUS_SUCCESS:
-            self.print_error(f"Failed to kill process {str(argv[1])}!")
+            self.print_error(f"Process: {str(argv[1])}: does not exist!")
             return

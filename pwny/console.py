@@ -22,6 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
+import os
 import cmd
 
 from pwny.types import *
@@ -51,7 +52,7 @@ class Console(cmd.Cmd):
     Pwny main console.
     """
 
-    def __init__(self, prompt: str = '%linepwny%end > ') -> None:
+    def __init__(self, prompt: str = '%removepwny:%line$dir%end %blue$user%end$prompt ') -> None:
         """ Initialize Pwny console.
 
         :param str prompt: prompt line (supports ColorScript)
@@ -61,8 +62,15 @@ class Console(cmd.Cmd):
         super().__init__()
         cmd.Cmd.__init__(self)
 
+        self.version = '1.0.0'
+
         self.scheme = prompt
-        self.prompt = self.parse_prompt(prompt)
+        self.prompt = prompt
+
+        self.motd = f"""%end
+Pwny interactive shell %greenv{self.version}%end
+Running as %blue$user%end on %line$dir%end
+"""
 
         self.plugins = Plugins()
         self.commands = Commands()
@@ -80,6 +88,7 @@ class Console(cmd.Cmd):
             ('plugins', 'List Pwny plugins.'),
             ('quit', 'Stop interaction.'),
             ('prompt', 'Set prompt.'),
+            ('exec', 'Execute path.'),
             ('unload', 'Unload Pwny plugin.')
         ]
 
@@ -96,7 +105,16 @@ class Console(cmd.Cmd):
         """
 
         self.scheme = prompt
-        self.prompt = self.parse_prompt(prompt)
+        self.prompt = self.parse_message(prompt)
+
+    def set_motd(self, message: str) -> None:
+        """ Set message of the day.
+
+        :param str message: message to set
+        :return None: None
+        """
+
+        self.motd = self.parse_message(message)
 
     def whoami(self) -> str:
         """ Get current session username.
@@ -130,26 +148,39 @@ class Console(cmd.Cmd):
 
         return '???'
 
-    def parse_prompt(self, prompt: str) -> str:
-        """ Parse prompt.
+    def parse_message(self, message: str) -> str:
+        """ Parse message.
 
-        :param str prompt: prompt to parse
-        :return str: parsed prompt
+        :param str message: message to parse
+        :return str: parsed message
         """
 
-        prompt = prompt.strip("'\"")
-        prompt = ColorScript().parse_input(prompt)
+        message = message.strip("'\"")
+        message = ColorScript().parse_input(message)
 
-        if '$dir' in prompt:
-            prompt = prompt.replace('$dir', self.pwd())
+        if '$dir' in message:
+            path = self.pwd()
 
-        if '$user' in prompt:
-            prompt = prompt.replace('$user', self.whoami())
+            if len(path) > 32:
+                paths = path.split('/')
+                pointer = 0
 
-        if '$prompt' in prompt:
-            prompt = prompt.replace('$prompt', '#' if self.whoami() == 'root' else '$')
+                while len(path) > 32:
+                    paths = paths[pointer:]
+                    path = os.path.join(*paths)
+                    pointer += 1
 
-        return prompt
+                path = '*/' + path
+
+            message = message.replace('$dir', path)
+
+        if '$user' in message:
+            message = message.replace('$user', self.whoami())
+
+        if '$prompt' in message:
+            message = message.replace('$prompt', '#' if self.whoami() == 'root' else '$')
+
+        return message
 
     def do_help(self, _) -> None:
         """ Show available commands.
@@ -213,6 +244,25 @@ class Console(cmd.Cmd):
 
         self.plugins.unload_plugin(plugin)
 
+    def do_exec(self, line: str) -> None:
+        """ Execute path.
+
+        :param str line: path with arguments
+        :return None: None
+        """
+
+        line = line.split()
+
+        if len(line) > 1:
+            self.badges.print_usage("exec <path>")
+            return
+
+        if self.check_session():
+            if len(line) >= 2:
+                self.session.spawn(line[0], line[1:])
+            else:
+                self.session.spawn(line[0], [])
+
     def do_prompt(self, prompt: str) -> None:
         """ Set current prompt line.
 
@@ -275,6 +325,14 @@ class Console(cmd.Cmd):
 
         if self.check_session():
             command = line.split()
+
+            if os.path.isabs(command[0]):
+                if len(command) >= 2:
+                    self.session.spawn(command[0], command[1:])
+                else:
+                    self.session.spawn(command[0], [])
+
+                return
 
             if not self.commands.execute_custom_command(
                     command, self.custom_commands, False):
@@ -367,6 +425,12 @@ class Console(cmd.Cmd):
 
         :return None: None
         """
+
+        self.set_prompt(self.prompt)
+        self.set_motd(self.motd)
+
+        if self.motd:
+            self.badges.print_empty(self.motd)
 
         while True:
             result = self.runtime.catch(self.pwny_shell)

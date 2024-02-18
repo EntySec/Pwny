@@ -35,6 +35,26 @@ if (DEBUG)
 endif()
 
 file(GLOB PWNY_SOURCES src/*.c)
+
+if(CMAKE_SYSTEM_NAME STREQUAL Windows)
+    include_directories(include/compat)
+    file(GLOB PWNY_SOURCES src/*.c src/compat/*.c)
+
+    add_compile_definitions(IS_WINDOWS)
+
+elseif(CMAKE_SYSTEM_NAME STREQUAL Darwin)
+    add_compile_definitions(IS_MACOS)
+
+elseif(CMAKE_SYSTEM_NAME STREQUAL iOS)
+    add_compile_definitions(IS_IPHONE)
+    add_compile_definitions(IS_BUNDLE)
+    add_compile_options(-arch arm64)
+
+elseif(CMAKE_SYSTEM_NAME STREQUAL Linux)
+    add_compile_definitions(IS_LINUX)
+
+endif()
+
 add_library(pwny STATIC ${PWNY_SOURCES})
 
 set_property(TARGET pwny PROPERTY C_STANDART 99)
@@ -45,20 +65,21 @@ include_directories(include api deps/build)
 
 if(MAIN)
     file(GLOB MAIN_SOURCES ${SOURCE})
-    file(GLOB MAIN_LIBS deps/build/*.a)
-
     add_executable(main ${MAIN_SOURCES})
 
-    target_link_options(main PRIVATE ${MAIN_LIBS})
-    target_link_libraries(main PRIVATE pwny)
+    target_link_directories(main PRIVATE deps/build/)
+    target_link_libraries(main PRIVATE pwny ev eio sigar mbedtls mbedx509 mbedcrypto)
 
     if(CMAKE_SYSTEM_NAME STREQUAL Windows)
+        target_link_libraries(main PRIVATE injector pawn)
         target_link_libraries(main PRIVATE ws2_32 imagehlp)
 
     elseif(CMAKE_SYSTEM_NAME STREQUAL iOS)
         target_link_libraries(main PRIVATE "-framework Foundation"
-                                           "-framework UIKit"
-                                           "-framework AVFoundation"
+                                           "-framework UIKitCore"
+                                           "-framework AVFCapture"
+                                           "-framework AVFCore"
+                                           "-framework AVFAudio"
                                            "-framework CoreMedia"
                                            "-framework CoreVideo"
                                            "-framework CoreGraphics"
@@ -67,28 +88,14 @@ if(MAIN)
                                            "-framework MediaRemote"
                                            "-framework MediaPlayer"
                                            "-framework SpringBoardServices"
-                                           "-framework BulletinBoard")
-
+                                           "-framework CoreLocation"
+                                           "MobileGestalt")
 
     elseif(CMAKE_SYSTEM_NAME STREQUAL Linux)
+        target_link_libraries(main PRIVATE injector pawn)
         target_compile_options(main PRIVATE -static -no-pie
                                             -Wl,-Ttext-section=0x1000000)
     endif()
-endif()
-
-if(CMAKE_SYSTEM_NAME STREQUAL Windows)
-    add_compile_definitions(IS_WINDOWS)
-
-elseif(CMAKE_SYSTEM_NAME STREQUAL Darwin)
-    add_compile_definitions(IS_MACOS)
-
-elseif(CMAKE_SYSTEM_NAME STREQUAL iOS)
-    add_compile_definitions(IS_IPHONE)
-    add_compile_options(-arch arm64)
-
-elseif(CMAKE_SYSTEM_NAME STREQUAL Linux)
-    add_compile_definitions(IS_LINUX)
-
 endif()
 
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})
