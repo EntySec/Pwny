@@ -38,8 +38,6 @@ class HatSploitCommand(Command):
         if argv[1] == 'info':
             result = self.session.send_command(tag=LOCATE_GET)
 
-            print(LOCATE_GET)
-
             latitude = result.get_string(LOCATE_LATITUDE)
             longitude = result.get_string(LOCATE_LONGITUDE)
 
