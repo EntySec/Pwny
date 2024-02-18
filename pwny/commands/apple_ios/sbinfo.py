@@ -21,7 +21,7 @@ class HatSploitCommand(Command):
         super().__init__()
 
         self.details = {
-            'Category': "UI",
+            'Category': "gather",
             'Name': "sbinfo",
             'Authors': [
                 'Ivan Nikolskiy (enty8080) - command developer'
