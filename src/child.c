@@ -22,6 +22,8 @@
  * SOFTWARE.
  */
 
+#define _GNU_SOURCE
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <signal.h>
@@ -30,12 +32,15 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <unistd.h>
-#include <termios.h>
 
+#ifndef IS_WINDOWS
+#include <termios.h>
+#include <spawn.h>
 #if defined(IS_IPHONE) || defined(IS_MACOS)
 #include <util.h>
 #else
 #include <pty.h>
+#endif
 #endif
 
 #include <ev.h>
@@ -48,8 +53,6 @@
 
 #ifndef IS_IPHONE
 #include <pawn.h>
-#else
-#include <spawn.h>
 #endif
 
 static char **argv_split(char *args, char **argv, size_t *argc)
@@ -253,9 +256,7 @@ static void child_from_image(child_t *child, unsigned char *image,
     ev_loop_fork(EV_DEFAULT);
     ev_loop_destroy(EV_DEFAULT_UC);
 
-#if defined(IS_MACOS)
-#error "Darwin-like systems are not supported yet"
-#elif IS_LINUX
+#if IS_LINUX
     pawn_exec_fd(image, argv, NULL);
 #elif IS_WINDOWS
     pawn_exec(image, argv);
@@ -279,11 +280,18 @@ static pid_t child_spawn(char *filename, unsigned char *image,
                          child_options_t *options,
                          child_pipes_t *pipes)
 {
+#ifndef IS_WINDOWS
     pid_t pid;
     int posix_stat;
 
     posix_spawn_file_actions_t actions;
     posix_spawnattr_t attr;
+
+    if (filename == NULL)
+    {
+        log_debug("* Image loading is not supported with posix_spawn()\n");
+        return -1;
+    }
 
     posix_spawnattr_init(&attr);
     posix_spawnattr_setflags(&attr, POSIX_SPAWN_SETPGROUP);
@@ -312,6 +320,10 @@ static pid_t child_spawn(char *filename, unsigned char *image,
     posix_spawnattr_destroy(&attr);
 
     return pid;
+#endif
+
+    log_debug("* posix_spawn() is not supported on Windows\n");
+    return -1;
 }
 
 static pid_t child_fork(child_t *child, char *filename, unsigned char *image,
@@ -319,8 +331,35 @@ static pid_t child_fork(child_t *child, char *filename, unsigned char *image,
                         child_pipes_t *pipes)
 {
     pid_t pid;
+    int master;
 
+#ifndef IS_WINDOWS
+    struct termios tios;
+
+    if (options->flags & CHILD_FAKE_PTY)
+    {
+        pid = forkpty(&master, NULL, NULL, NULL);
+
+        if (pid == 0)
+        {
+            tcgetattr(master, &tios);
+            tcsetattr(master, TCSADRAIN, &tios);
+        }
+
+        pipes->in_pair[0] = master;
+        pipes->in_pair[1] = master;
+        pipes->out_pair[0] = master;
+        pipes->out_pair[1] = master;
+        pipes->err_pair[0] = master;
+        pipes->err_pair[1] = master;
+    }
+    else
+    {
+        pid = fork();
+    }
+#else
     pid = fork();
+#endif
 
     if (pid == 0)
     {

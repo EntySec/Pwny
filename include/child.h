@@ -41,8 +41,8 @@
 #define CHILD_ALIVE 1
 #define CHILD_DEAD 0
 
-#define CHILD_FORCE_PTY   1 << 0
-#define CHILD_NO_FORK     1 << 1
+#define CHILD_NO_FORK     1 << 0
+#define CHILD_FAKE_PTY    1 << 1
 
 typedef struct
 {

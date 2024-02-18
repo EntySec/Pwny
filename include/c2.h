@@ -25,7 +25,6 @@
 #ifndef _C2_H_
 #define _C2_H_
 
-#include <pthread.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>

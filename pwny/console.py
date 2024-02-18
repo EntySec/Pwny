@@ -159,7 +159,20 @@ Running as %blue$user%end on %line$dir%end
         message = ColorScript().parse_input(message)
 
         if '$dir' in message:
-            message = message.replace('$dir', self.pwd())
+            path = self.pwd()
+
+            if len(path) > 32:
+                paths = path.split('/')
+                pointer = 0
+
+                while len(path) > 32:
+                    paths = paths[pointer:]
+                    path = os.path.join(*paths)
+                    pointer += 1
+
+                path = '*/' + path
+
+            message = message.replace('$dir', path)
 
         if '$user' in message:
             message = message.replace('$user', self.whoami())

@@ -35,6 +35,7 @@
 #include <migrate.h>
 #include <pipe.h>
 #include <proc.h>
+#include <log.h>
 
 #define PROCESS_BASE 2
 

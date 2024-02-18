@@ -41,7 +41,7 @@
 
 int net_block_sock(int sock)
 {
-#ifdef _WIN32
+#ifdef IS_WINDOWS
     unsigned long non_block;
 
     non_block = 1;

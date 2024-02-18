@@ -170,7 +170,8 @@ class PwnySession(Pwny, Session, Console):
             self.pipes.seek_pipe(FS_PIPE_FILE, pipe_id, 0, 0)
 
             with open(local_path, 'wb') as f:
-                with alive_bar(int(size / TLV_FILE_CHUNK) + 1, receipt=False, ctrl_c=False,
+                with alive_bar(int(size / TLV_FILE_CHUNK) + 1, receipt=False,
+                               ctrl_c=False, monitor="{percent:.0%}", stats=False,
                                title=os.path.split(remote_file)[1]) as bar:
                     while size > 0:
                         bar()
@@ -209,7 +210,8 @@ class PwnySession(Pwny, Session, Console):
                 }
             )
 
-            with alive_bar(int(size / TLV_FILE_CHUNK) + 1, receipt=False, ctrl_c=False,
+            with alive_bar(int(size / TLV_FILE_CHUNK) + 1, receipt=False,
+                           ctrl_c=False, monitor="{percent:.0%}", stats=False,
                            title=os.path.split(local_file)[1]) as bar:
                 for step in range(0, size, TLV_FILE_CHUNK):
                     bar()

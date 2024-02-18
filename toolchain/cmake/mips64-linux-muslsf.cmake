@@ -1,7 +1,7 @@
 set(CMAKE_SYSTEM_NAME Linux)
 set(CMAKE_SYSTEM_PROCESSOR mips64)
 
-set(TOOLCHAIN_PREFIX /etc/cross/mips64/bin/mips64-linux-musl)
+set(TOOLCHAIN_PREFIX /etc/cross/mips64/bin/mips64-linux-muslsf)
 
 set(CMAKE_C_COMPILER ${TOOLCHAIN_PREFIX}-gcc)
 set(CMAKE_CXX_COMPILER ${TOOLCHAIN_PREFIX}-g++)

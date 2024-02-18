@@ -75,11 +75,6 @@ typedef NS_ENUM(NSInteger, MRCommand) {
 };
 Boolean MRMediaRemoteSendCommand(MRCommand command, id userInfo);
 
-@interface VolumeControl : NSObject
-+(id)sharedVolumeControl;
--(void)toggleMute;
-@end
-
 static tlv_pkt_t *player_info(c2_t *c2)
 {
     tlv_pkt_t *result;
