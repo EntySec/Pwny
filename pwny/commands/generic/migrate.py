@@ -18,7 +18,7 @@ class HatSploitCommand(Command):
             'Authors': [
                 'Ivan Nikolskiy (enty8080) - command developer'
             ],
-            'Description': "Migrate into a process by ID.",
+            'Description': "Migrate into a process.",
             'Usage': "migrate <pid>",
             'MinArgs': 1
         }

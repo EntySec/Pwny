@@ -21,7 +21,7 @@ class HatSploitCommand(Command):
             'Authors': [
                 'Ivan Nikolskiy (enty8080) - command developer'
             ],
-            'Description': "Read file.",
+            'Description': "Read specific file.",
             'Usage': "cat <file>",
             'MinArgs': 1
         }

@@ -30,12 +30,12 @@ class HatSploitCommand(Command):
         super().__init__()
 
         self.details = {
-            'Category': "UI",
+            'Category': "manage",
             'Name': "player",
             'Authors': [
                 'Ivan Nikolskiy (enty8080) - command developer'
             ],
-            'Description': "Manipulate MediaPlayer.",
+            'Description': "Manage media player.",
             'Usage': "player <option> [arguments]",
             'MinArgs': 1,
             'Options': {

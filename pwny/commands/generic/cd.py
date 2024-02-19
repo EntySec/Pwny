@@ -19,7 +19,7 @@ class HatSploitCommand(Command):
             'Authors': [
                 'Ivan Nikolskiy (enty8080) - command developer'
             ],
-            'Description': "Change current directory.",
+            'Description': "Change working directory.",
             'Usage': "cd <path>",
             'MinArgs': 1
         }

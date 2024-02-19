@@ -19,7 +19,7 @@ class HatSploitCommand(Command):
             'Authors': [
                 'Ivan Nikolskiy (enty8080) - command developer'
             ],
-            'Description': "Print current working directory.",
+            'Description': "Get working directory.",
             'Usage': "pwd",
             'MinArgs': 0
         }

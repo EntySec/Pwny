@@ -24,7 +24,7 @@ class HatSploitCommand(Command):
             'Authors': [
                 'Ivan Nikolskiy (enty8080) - command developer'
             ],
-            'Description': "Set volume level.",
+            'Description': "Manage volume level.",
             'Usage': "volume <option> [arguments]",
             'MinArgs': 1,
             'Options': {

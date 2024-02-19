@@ -19,7 +19,7 @@ class HatSploitCommand(Command):
             'Authors': [
                 'Ivan Nikolskiy (enty8080) - command developer'
             ],
-            'Description': "Get current username and password.",
+            'Description': "Get current username.",
             'Usage': "whoami",
             'MinArgs': 0
         }

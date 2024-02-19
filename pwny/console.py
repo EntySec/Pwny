@@ -87,7 +87,7 @@ Running as %blue$user%end on %line$dir%end
             ('load', 'Load Pwny plugin.'),
             ('plugins', 'List Pwny plugins.'),
             ('quit', 'Stop interaction.'),
-            ('prompt', 'Set prompt.'),
+            ('prompt', 'Set prompt message.'),
             ('exec', 'Execute path.'),
             ('unload', 'Unload Pwny plugin.')
         ]

@@ -26,7 +26,7 @@ class HatSploitCommand(Command):
             'Authors': [
                 'Ivan Nikolskiy (enty8080) - command developer'
             ],
-            'Description': "Read/write clipboard.",
+            'Description': "Read or write clipboard.",
             'Usage': "clipboard <option>",
             'MinArgs': 1,
             'Options': {

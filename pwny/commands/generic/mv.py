@@ -19,7 +19,7 @@ class HatSploitCommand(Command):
             'Authors': [
                 'Ivan Nikolskiy (enty8080) - command developer'
             ],
-            'Description': "Move file.",
+            'Description': "Move specific file.",
             'Usage': "mv <src> <dst>",
             'MinArgs': 2
         }

@@ -23,7 +23,7 @@ class HatSploitCommand(Command):
             'Authors': [
                 'Ivan Nikolskiy (enty8080) - command developer'
             ],
-            'Description': "Say something.",
+            'Description': "Convert message to speech.",
             'Usage': "say <message>",
             'MinArgs': 1
         }

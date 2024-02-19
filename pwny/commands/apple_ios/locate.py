@@ -21,12 +21,12 @@ class HatSploitCommand(Command):
         super().__init__()
 
         self.details = {
-            'Category': "gather",
+            'Category': "manage",
             'Name': "locate",
             'Authors': [
                 'Ivan Nikolskiy (enty8080) - command developer'
             ],
-            'Description': "Manipulate location services.",
+            'Description': "Manage location services.",
             'Usage': "locate <option>",
             'MinArgs': 1,
             'Options': {

@@ -29,7 +29,7 @@ class HatSploitCommand(Command):
             'Authors': [
                 'Ivan Nikolskiy (enty8080) - command developer'
             ],
-            'Description': "Get iDevice basic information.",
+            'Description': "Get device basic information.",
             'Usage': "device ",
             'MinArgs': 0,
         }

@@ -23,7 +23,7 @@ class HatSploitCommand(Command):
             'Authors': [
                 'Ivan Nikolskiy (enty8080) - command developer'
             ],
-            'Description': "List all apps.",
+            'Description': "List all installed apps.",
             'Usage': "apps",
             'MinArgs': 0,
         }
