@@ -73,11 +73,14 @@ class PwnySession(Pwny, Session, Console):
             }
         )
 
-    def open(self, client: socket.socket, loader: bool = True) -> None:
+    def open(self, client: socket.socket, loader: bool = True,
+             keyfile: str = 'pwny.key', certfile: str = 'pwny.crt') -> None:
         """ Open the Pwny session.
 
         :param socket.socket client: client to open session with
         :param bool loader: True if executed from loader else False
+        :param str keyfile: key file for SSL
+        :param str certfile: certificate file for SSL
         :return None: None
         :raises RuntimeError: with trailing error message
         """
@@ -88,7 +91,10 @@ class PwnySession(Pwny, Session, Console):
                 arch=self.details['Arch']
             ))
 
-        client = self.ssl.wrap_client(client)
+        client = self.ssl.wrap_client(client,
+                                      keyfile=keyfile,
+                                      certfile=certfile)
+
         self.channel = TLV(TLVClient(client))
 
         tlv = self.channel.read()
