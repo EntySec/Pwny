@@ -1,4 +1,8 @@
-# Pwny
+<h3 align="left">
+    <img src="https://github.com/EntySec/Pwny/blob/main/docs/logo.png" alt="logo" height="250px">
+</h3>
+
+*- Friendly like a Pony, Mighty like a Knight*
 
 [![Developer](https://img.shields.io/badge/developer-EntySec-blue.svg)](https://entysec.com)
 [![Language](https://img.shields.io/badge/language-C-grey.svg)](https://github.com/EntySec/Pwny)
