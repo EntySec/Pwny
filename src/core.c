@@ -41,47 +41,47 @@ static struct ev_async eio_async_watcher;
 
 static void eio_idle_cb(struct ev_loop *loop, struct ev_idle *w, int revents)
 {
-	if (eio_poll() != -1) {
-		ev_idle_stop(loop, w);
-	}
+    if (eio_poll() != -1) {
+        ev_idle_stop(loop, w);
+    }
 }
 
 static void eio_async_cb(struct ev_loop *loop, struct ev_async *w, int revents)
 {
-	if (eio_poll() == -1) {
-		ev_idle_start(loop, &eio_idle_watcher);
-	}
+    if (eio_poll() == -1) {
+        ev_idle_start(loop, &eio_idle_watcher);
+    }
 
-	ev_async_start(ev_default_loop(CORE_EV_FLAGS), &eio_async_watcher);
+    ev_async_start(ev_default_loop(CORE_EV_FLAGS), &eio_async_watcher);
 }
 
 static void eio_want_poll(void)
 {
-	ev_async_send(ev_default_loop(CORE_EV_FLAGS), &eio_async_watcher);
+    ev_async_send(ev_default_loop(CORE_EV_FLAGS), &eio_async_watcher);
 }
 
 static void eio_done_poll(void)
 {
-	ev_async_stop(ev_default_loop(CORE_EV_FLAGS), &eio_async_watcher);
+    ev_async_stop(ev_default_loop(CORE_EV_FLAGS), &eio_async_watcher);
 }
 
 static void core_signal_handler(struct ev_loop *loop, ev_signal *w, int revents)
 {
     switch (w->signum)
     {
-		case SIGINT:
-		    log_debug("* Core has SIGINT caught\n");
-		    ev_break(loop, EVBREAK_ALL);
-		    break;
+        case SIGINT:
+            log_debug("* Core has SIGINT caught\n");
+            ev_break(loop, EVBREAK_ALL);
+            break;
 
-		case SIGTERM:
-		    log_debug("* Core has SIGTERM caught\n");
-			ev_break(loop, EVBREAK_ALL);
-			break;
+        case SIGTERM:
+            log_debug("* Core has SIGTERM caught\n");
+            ev_break(loop, EVBREAK_ALL);
+            break;
 
-		default:
-			break;
-	}
+        default:
+            break;
+    }
 }
 
 void core_write(void *data)
