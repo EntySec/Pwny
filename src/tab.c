@@ -44,19 +44,19 @@ static void tab_signal_handler(struct ev_loop *loop, ev_signal *w, int revents)
 {
     switch (w->signum)
     {
-		case SIGINT:
-		    log_debug("* TAB has SIGINT caught\n");
-		    ev_break(loop, EVBREAK_ALL);
-		    break;
+        case SIGINT:
+            log_debug("* TAB has SIGINT caught\n");
+            ev_break(loop, EVBREAK_ALL);
+            break;
 
-		case SIGTERM:
-		    log_debug("* TAB has SIGTERM caught\n");
-			ev_break(loop, EVBREAK_ALL);
-			break;
+        case SIGTERM:
+            log_debug("* TAB has SIGTERM caught\n");
+            ev_break(loop, EVBREAK_ALL);
+            break;
 
-		default:
-			break;
-	}
+        default:
+            break;
+    }
 }
 
 void tab_read(void *data)
