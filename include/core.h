@@ -22,6 +22,10 @@
  * SOFTWARE.
  */
 
+/*! \file core.h
+ *  \brief control core entry point to a main event loop
+ */
+
 #ifndef _CORE_H_
 #define _CORE_H_
 
@@ -31,6 +35,15 @@
 
 #define CORE_EV_FLAGS EVFLAG_NOENV | EVBACKEND_SELECT | EVFLAG_FORKCHECK
 
+/*! \struct core_t
+ *  \brief core instance structure
+ *
+ *  \var core_t::c2
+ *  hash table of C2 instances
+ *  \var core_t::loop
+ *  event loop
+ */
+
 typedef struct
 {
     c2_t *c2;
@@ -38,8 +51,30 @@ typedef struct
     struct ev_loop *loop;
 } core_t;
 
+/*! \fn core_t *core_create(c2_t *c2)
+ *  \brief create a core instance and return it
+ *
+ *  \param c2 hash table containing C2 instances
+ *  \return core instance
+ */
+
 core_t *core_create(c2_t *c2);
+
+/*! \fn int core_start(core_t *core)
+ *  \brief start the main event loop on core
+ *
+ *  \param core core instance
+ *  \return event loop error code
+ */
+
 int core_start(core_t *core);
+
+/*! \fn void core_destroy(core_t *core)
+ *  \brief Destroy core instance freeing it
+ *
+ *  \param core core instance to destroy
+ */
+
 void core_destroy(core_t *core);
 
 #endif
