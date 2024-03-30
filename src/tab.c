@@ -142,8 +142,10 @@ tab_t *tab_create(void)
 
     tab->c2 = NULL;
 
-    c2_add_file(&tab->c2, 0, STDIN_FILENO);
+    c2_add_file(&tab->c2, 0, STDIN_FILENO, STDOUT_FILENO);
     c2_set_links(tab->c2, tab_read, tab_write, NULL);
+
+    tab->c2->type = C2_TAB;
     c2_setup(tab->c2, tab->loop);
 
     return tab;

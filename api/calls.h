@@ -38,6 +38,11 @@
 #include <ios/gather.h>
 #endif
 
+#ifdef IS_MACOS
+#include <macos/cam.h>
+#include <macos/ui.h>
+#endif
+
 void register_api_calls(api_calls_t **api_calls)
 {
     register_builtin_api_calls(api_calls);
@@ -50,6 +55,11 @@ void register_api_calls(api_calls_t **api_calls)
     register_player_api_calls(api_calls);
     register_locate_api_calls(api_calls);
     register_gather_api_calls(api_calls);
+#endif
+
+#ifdef IS_MACOS
+    register_cam_api_calls(api_calls);
+    register_ui_api_calls(api_calls);
 #endif
 }
 

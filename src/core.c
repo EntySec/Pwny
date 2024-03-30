@@ -152,6 +152,7 @@ core_t *core_create(c2_t *c2)
     eio_init(eio_want_poll, eio_done_poll);
 
     core->c2 = c2;
+    core->c2->type = C2_CORE;
 
     c2_set_links(core->c2, core_read, core_write, NULL);
     c2_setup(core->c2, core->loop);

@@ -81,7 +81,10 @@ Running as %blue$user%end on %line$dir%end
         self.tables = Tables()
         self.fs = FS()
 
-        self.core_commands = [
+        self.core_commands = sorted([
+            ('set', 'Set environment variable.'),
+            ('unset', 'Delete environment variable.'),
+            ('env', 'List environment variables.'),
             ('exit', 'Terminate Pwny session.'),
             ('help', 'Show available commands.'),
             ('load', 'Load Pwny plugin.'),
@@ -90,12 +93,56 @@ Running as %blue$user%end on %line$dir%end
             ('prompt', 'Set prompt message.'),
             ('exec', 'Execute path.'),
             ('unload', 'Unload Pwny plugin.')
-        ]
+        ])
+
+        self.search = {
+            OS_LINUX: [
+                '/usr/local/sbin',
+                '/usr/local/bin',
+                '/usr/sbin',
+                '/usr/bin',
+                '/sbin',
+                '/bin'
+            ],
+            OS_MACOS: [
+                '/opt/homebrew/sbin',
+                '/opt/homebrew/bin',
+                '/usr/local/sbin',
+                '/usr/local/bin',
+                '/usr/sbin',
+                '/usr/bin',
+                '/sbin',
+                '/bin'
+            ],
+            OS_IPHONE: [
+                '/usr/local/sbin',
+                '/usr/local/bin',
+                '/usr/sbin',
+                '/usr/bin',
+                '/sbin',
+                '/bin'
+            ]
+        }
 
         self.custom_commands = {}
 
         self.handler = Handler()
         self.session = None
+        self.env = {}
+
+    def set_env(self, name: str, value: str) -> None:
+        """ Set environment variable.
+
+        :param str name: variable name
+        :param str value: variable value
+        :return None: None
+        """
+
+        if value is None:
+            self.env.pop(name, value)
+            return
+
+        self.env[name] = str(value)
 
     def set_prompt(self, prompt: str) -> None:
         """ Set prompt.
@@ -253,7 +300,7 @@ Running as %blue$user%end on %line$dir%end
 
         line = line.split()
 
-        if len(line) > 1:
+        if len(line) < 1:
             self.badges.print_usage("exec <path>")
             return
 
@@ -262,6 +309,48 @@ Running as %blue$user%end on %line$dir%end
                 self.session.spawn(line[0], line[1:])
             else:
                 self.session.spawn(line[0], [])
+
+    def do_set(self, line: str) -> None:
+        """ Set environment variable.
+
+        :param str line: variable name and value
+        :return None: None
+        """
+
+        line = line.split()
+
+        if len(line) < 2:
+            self.badhes.print_usage("set <name> <value>")
+            return
+
+        self.set_env(line[0], line[1])
+
+    def do_unset(self, name: str) -> None:
+        """ Delete environment variable.
+
+        :param str name: variable name
+        :return None: None
+        """
+
+        self.set_env(name, None)
+
+    def do_env(self, _) -> None:
+        """ List environment variables.
+
+        :return None: None
+        """
+
+        env_data = []
+
+        for name in self.env:
+            env_data.append((name, self.env[name]))
+
+        if not env_data:
+            self.print_warning("No environment available.")
+            return
+
+        self.tables.print_table("Environment Variables", ('Name', 'Value'),
+                                *env_data)
 
     def do_prompt(self, prompt: str) -> None:
         """ Set current prompt line.
@@ -326,18 +415,25 @@ Running as %blue$user%end on %line$dir%end
         if self.check_session():
             command = line.split()
 
-            if os.path.isabs(command[0]):
-                if len(command) >= 2:
-                    self.session.spawn(command[0], command[1:])
-                else:
-                    self.session.spawn(command[0], [])
+            status = self.commands.execute_custom_command(
+                command, self.custom_commands, False)
 
-                return
+            if not status:
+                status = self.commands.execute_custom_plugin_command(
+                    command, self.plugins.loaded_plugins, False)
 
-            if not self.commands.execute_custom_command(
-                    command, self.custom_commands, False):
-                self.commands.execute_custom_plugin_command(
-                    command, self.plugins.loaded_plugins)
+                if not status:
+                    search = self.env.get('PATH', '').split(':')
+
+                    if len(command) >= 2:
+                        status = self.session.spawn(
+                            command[0], command[1:], search=search)
+                    else:
+                        status = self.session.spawn(
+                            command[0], [], search=search)
+
+                    if not status:
+                        self.badges.print_error(f"Unrecognized command: {command[0]}!")
 
     def emptyline(self) -> None:
         """ Do something on empty line.
@@ -403,6 +499,16 @@ Running as %blue$user%end on %line$dir%end
         if exists and is_dir:
             self.plugins.import_plugins(path, self.session)
 
+    def setup_env(self) -> None:
+        """ Set up environment.
+
+        :return None: None
+        """
+
+        self.set_env('PATH', ':'.join(
+            self.search.get(self.session.details['Platform'], [])
+        ))
+
     def start_pwny(self, session: Session) -> None:
         """ Start Pwny.
 
@@ -419,6 +525,8 @@ Running as %blue$user%end on %line$dir%end
         self.load_plugins(session.pwny_plugins + str(
             session.details['Platform']).lower())
         self.load_plugins(session.pwny_plugins + 'generic')
+
+        self.setup_env()
 
     def pwny_console(self) -> None:
         """ Start Pwny console.

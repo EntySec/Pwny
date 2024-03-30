@@ -22,14 +22,22 @@
 # SOFTWARE.
 #
 
-CC = gcc
-CFLAGS = -std=c99 -pedantic-errors -I$(PWNY)
-LDFLAGS = -lpwny -lpawn -linjector
+include make/Makefile.common
 
-all: test
+all: setup libev libeio mbedtls sigar libpawn
 
-test: test.c
-	$(CC) $(CFLAGS) -o test test.c $(LDFLAGS)
+setup:
+	$(QUIET) $(LOG) "[Creating workspace]"
+	$(MKDIR) $(BUILD) $(BUILD_LIB) $(BUILD_INCLUDE)
+	$(QUIET) $(LOG) "[Done creating workspace]"
 
 clean:
-	rm test
+	$(QUIET) $(LOG) "[Cleaning old build]"
+	$(RM) $(BUILD)
+	$(QUIET) $(LOG) "[Done cleaning old build]"
+
+include make/Makefile.libev
+include make/Makefile.libeio
+include make/Makefile.mbedtls
+include make/Makefile.sigar
+include make/Makefile.libpawn

@@ -2,7 +2,7 @@
     <img src="https://github.com/EntySec/Pwny/blob/main/docs/logo.png" alt="logo" height="250px">
 </h3>
 
-*- Friendly like a Pony, Mighty like a Knight*
+*Friendly like a Pony, Mighty like a Knight*
 
 [![Developer](https://img.shields.io/badge/developer-EntySec-blue.svg)](https://entysec.com)
 [![Language](https://img.shields.io/badge/language-C-grey.svg)](https://github.com/EntySec/Pwny)
@@ -13,14 +13,14 @@
 
 Pwny is an implementation of an advanced payload written in pure C and designed for portability and extensibility.
 
-That repository contains Pwny, which is supposed to work on `macOS`, `Linux`, `Windows` and `iOS`, but can be ported to almost every Posix system. Pwny is optimized to work with or without [HatSploit Framework](https://github.com/EntySec/HatSploit).
+This repository contains Pwny, which is supposed to work on **macOS**, **Linux**, **Windows** and **iOS**, but can be ported to almost every POSIX system. Pwny is optimized to work with or without [HatSploit Framework](https://github.com/EntySec/HatSploit).
 
 ## Features
 
-* Portable C code, that can be compiled for a big range of CPUs and platforms.
-* Support for `macOS`, `Linux`, `Windows` and `iOS` targets.
-* Small executable with low resource utilization which is good on embedded systems.
-* Dynamically-extendable, might load plugins which will extend its functions.
+* Portable C code, that can be compiled for a big range of targets.
+* Support for **macOS**, **Linux**, **Windows** and **iOS** targets.
+* Small executable with low resource utilization optimized for embedded systems.
+* Dynamically-extendable, supports loading plugins which extend its functionality.
 * Evasion techniques such as process migration and in-memory loading.
 
 ## Installing
@@ -31,43 +31,76 @@ To install Pwny you simply need to install [HatSploit Framework](https://github.
 pip3 install git+https://github.com/EntySec/HatSploit
 ```
 
-## Building Pwny
+## Building
 
-First, you need to build dependencies for your platform, so do this:
+**Building dependencies:**
 
-```shell
-cd make
-make PLATFORM=<platform> ARCH=<arch> MAKE_TOOLCHAIN_FILE=<toolchain>
+```
+make TARGET=<tuple>
 ```
 
-For `macOS` and `iOS` targets you will need to set `SDK` to the desired SDK path before running `make`. For example:
+**NOTE:** For **macOS / iOS** targets you will need to set `SDK` to the desired SDK path before running `make`. For example:
 
-```shell
-export SDK=<path>
+```
+make TARGET=<target> SDK=<path>
 ```
 
-**NOTE:** Make toolchains are located at `toolchain/make/`.
+You can find list of supported `TARGET` values for different platforms.
 
-Then you need to execute these commands to build Pwny executable:
+<details>
+    <summary>Linux</summary><br>
+    <code>aarch64-linux-musl</code><br>
+    <code>armv5l-linux-musleabi</code><br>
+    <code>armv5b-linux-musleabi</code><br>
+    <code>i486-linux-musl</code><br>
+    <code>x86_64-linux-musl</code><br>
+    <code>powerpc-linux-muslsf</code><br>
+    <code>powerpc64le-linux-musl</code><br>
+    <code>mips-linux-muslsf</code><br>
+    <code>mipsel-linux-muslsf</code><br>
+    <code>mips64-linux-musl</code><br>
+    <code>s390x-linux-musl</code><br>
+    <br>
+</details>
+
+<details>
+    <summary>Windows</summary><br>
+    <code>x86_64-w64-mingw32</code><br>
+    <code>x86_64-w64-mingw32</code><br>
+    <br>
+</details>
+
+<details>
+    <summary>macOS / iOS</summary><br>
+    <code>arm-iphone-darwin</code><br>
+    <code>aarch64-iphone-darwin</code><br>
+    <code>i386-apple-darwin</code><br>
+    <code>x86_64-apple-darwin</code><br>
+    <code>aarch64-apple-darwin</code><br>
+    <br>
+</details>
+
+**Building sources:**
 
 ```shell
 cmake -DCMAKE_TOOLCHAIN_FILE=<toolchain> -B build
 cmake --build build
 ```
 
-For `macOS` and `iOS` targets you will need to set `CMAKE_OSX_SYSROOT` to the desired SDK path with `-D`. For example:
+**NOTE:** For **macOS / iOS** targets you will need to set `CMAKE_OSX_SYSROOT` to the desired SDK path with `-D`. For example:
 
 ```shell
 cmake -DCMAKE_TOOLCHAIN_FILE=<toolchain> -DCMAKE_OSX_SYSROOT=<path> -B build
 ```
 
-**NOTE:** CMake toolchains are located at `toolchain/cmake/`.
+**NOTE:** Toolchains are located at `toolchain/cmake/`.
 
 These are other `cmake` build options:
 
 * `MAIN` - Should be `ON` if you want to build a source file to executable.
 * `SOURCE` - Custom executable source file (default are in `src/main/`).
 * `DEBUG` - Should be `ON` if you want to build Pwny in debug mode.
+* `BUNDLE` - Build as bundle (macOS specific flag, adds `-bundle`)
 
 ## Basic usage
 
@@ -83,7 +116,7 @@ from pwny.session import PwnySession
 
 ## Executing Pwny
 
-Pwny is an advanced payload that may be loaded in-memory, so all you need to do is to build Pwny, place the DLL (for Windows) or executable (for other OS) to `pwny/templates/<platform>/<arch>.bin` and then generate the loader from `payloads/`. After this, all you need to do is to set up the listener on attacker's machine and execute the generated loader on the target.
+Pwny is an advanced payload that may be loaded in-memory, so all you need to do is to build Pwny, place the DLL (for Windows) or executable (for other OS) to `pwny/templates/<target>.bin` and then generate the loader from `payloads/`. After this, all you need to do is to set up the listener on attacker's machine and execute the generated loader on the target.
 
 You can find examples of listeners at `examples/`.
 

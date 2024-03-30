@@ -45,7 +45,6 @@ queue_t *queue_create(void)
     return calloc(1, sizeof(queue_t));
 }
 
-
 void queue_drain_all(queue_t *queue)
 {
     queue_data_t *buffer;

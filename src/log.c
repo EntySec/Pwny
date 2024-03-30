@@ -33,7 +33,7 @@ void log_debug(const char *fmt __attribute__((unused)), ...)
     va_list args;
     va_start(args, fmt);
 
-    vprintf(fmt, args);
+    vfprintf(stderr, fmt, args);
 
     va_end(args);
     #endif

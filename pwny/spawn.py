@@ -35,11 +35,13 @@ from pwny.api import *
 
 from pex.string import String
 
-from typing import Any
+from typing import Any, Union
 from badges import Badges
 
+FLAG_FORK = 0 << 0
+FLAG_NO_FORK = 1 << 0
+FLAG_FAKE_PTY = 1 << 1
 
-# TODO: chunked read
 
 class Spawn(object):
     """ Subclass of pwny module.
@@ -117,24 +119,25 @@ class Spawn(object):
 
         while not self.closed:
             for key, events in selector.select():
-                if key.fileobj is sys.stdin:
+                if key.fileobj is not sys.stdin:
+                    continue
 
-                    try:
-                        line = sys.stdin.readline()
+                try:
+                    line = sys.stdin.readline()
 
-                        if not line:
-                            pass
-
-                        self.interrupt = True
-
-                        while not self.interrupted:
-                            pass
-
-                        self.pipes.write_pipe(PROCESS_PIPE, pipe_id, (line + '\n').encode())
-                        self.interrupt = False
-
-                    except EOFError:
+                    if not line:
                         pass
+
+                    self.interrupt = True
+
+                    while not self.interrupted:
+                        pass
+
+                    self.pipes.write_pipe(PROCESS_PIPE, pipe_id, (line + '\n').encode())
+                    self.interrupt = False
+
+                except EOFError:
+                    pass
 
     def change_dir(self, path: str) -> None:
         """ Change directory.
@@ -178,6 +181,32 @@ class Spawn(object):
 
         return False
 
+    def search_path(self, path: str, name: str) -> Union[str, None]:
+        """ Search binary if path by name.
+
+        :param str path: path to search for binary in
+        :param str name: binary name to search for
+        :return Union[str, None]: full path if found else None
+        """
+
+        result = self.session.send_command(
+            tag=FS_LIST,
+            args={
+                TLV_TYPE_PATH: path
+            }
+        )
+
+        if result.get_int(TLV_TYPE_STATUS) != TLV_STATUS_SUCCESS:
+            return
+
+        stat = result.get_tlv(TLV_TYPE_GROUP)
+
+        while stat:
+            if stat.get_string(TLV_TYPE_FILENAME) == name:
+                return stat.get_string(TLV_TYPE_PATH)
+
+            stat = result.get_tlv(TLV_TYPE_GROUP)
+
     def spawn(self, path: str, args: list = []) -> bool:
         """ Execute path.
 
@@ -194,6 +223,7 @@ class Spawn(object):
             pipe_id = self.pipes.create_pipe(
                 pipe_type=PROCESS_PIPE,
                 args={
+                    TLV_TYPE_INT: FLAG_NO_FORK,  # TODO: check for platform
                     TLV_TYPE_FILENAME: path,
                     PROCESS_TYPE_PROCESS_ARGV: ' '.join(args)
                 }

@@ -37,6 +37,8 @@
 #include <child.h>
 #include <queue.h>
 
+#define TAB_BASE 1
+
 #define TAB_EV_FLAGS EVFLAG_NOENV | EVBACKEND_SELECT
 
 typedef struct

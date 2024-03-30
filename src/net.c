@@ -118,18 +118,18 @@ int net_tls_start(net_t *net)
         goto fail;
     }
 
-    mbedtls_ssl_set_bio(&net_tls->ssl, &net->sock, mbedtls_net_send, mbedtls_net_recv, NULL);
+    mbedtls_ssl_set_bio(&net_tls->ssl, &net->in, mbedtls_net_send, mbedtls_net_recv, NULL);
 
     while ((error = mbedtls_ssl_handshake(&net_tls->ssl)) != 0)
     {
         if (error != MBEDTLS_ERR_SSL_WANT_READ && error != MBEDTLS_ERR_SSL_WANT_WRITE)
         {
+            log_debug("* TLS SSL handshake failed (%d)\n", error);
             goto fail;
         }
     }
 
     net->tls = net_tls;
-
     return 0;
 
 fail:
@@ -160,7 +160,7 @@ void net_start(net_t *net)
         }
     }
 
-    ev_io_init(&net->io, net_read, net->sock, EV_READ);
+    ev_io_init(&net->io, net_read, net->in, EV_READ);
     net->io.data = net;
     ev_io_start(net->loop, &net->io);
 }
@@ -170,7 +170,7 @@ void net_setup(net_t *net, struct ev_loop *loop)
     net->loop = loop;
 }
 
-net_t *net_create(int sock, int proto)
+net_t *net_create(int in, int out, int proto)
 {
     net_t *net;
 
@@ -188,7 +188,8 @@ net_t *net_create(int sock, int proto)
             goto fail;
         }
 
-        net->sock = sock;
+        net->in = in;
+        net->out = out;
         net->proto = proto;
 
         return net;
@@ -205,11 +206,11 @@ void net_read_file(net_t *net)
 {
     size_t bytes;
 
-    log_debug("* Read FILE event initialized (%d)\n", net->sock);
+    log_debug("* Read FILE event initialized (%d)\n", net->in);
 
-    if ((bytes = queue_from_fd(net->ingress, net->sock)) > 0)
+    if ((bytes = queue_from_fd(net->ingress, net->in)) > 0)
     {
-        log_debug("* Read bytes via FILE (%d) - (%d)\n", net->sock, bytes);
+        log_debug("* Read bytes via FILE (%d) - (%d)\n", net->in, bytes);
 
         if (net->read_link)
         {
@@ -224,11 +225,11 @@ void net_read_tls(net_t *net)
     int bytes;
     char buffer[NET_QUEUE_SIZE];
 
-    log_debug("* Read TLS event initialized (%d)\n", net->sock);
+    log_debug("* Read TLS event initialized (%d)\n", net->in);
 
     while ((stat = mbedtls_ssl_read(&net->tls->ssl, (unsigned char *)buffer, sizeof(buffer))) > 0)
     {
-        log_debug("* Read bytes via TLS (%d) - (%d)\n", net->sock, stat);
+        log_debug("* Read bytes via TLS (%d) - (%d)\n", net->in, stat);
         queue_add_raw(net->ingress, buffer, stat);
         bytes += stat;
     }
@@ -246,11 +247,11 @@ void net_read_tcp(net_t *net)
     ssize_t stat;
     char buffer[NET_QUEUE_SIZE];
 
-    log_debug("* Read TCP event initialized (%d)\n", net->sock);
+    log_debug("* Read TCP event initialized (%d)\n", net->in);
 
-    while ((stat = read(net->sock, buffer, sizeof(buffer))) > 0)
+    while ((stat = read(net->in, buffer, sizeof(buffer))) > 0)
     {
-        log_debug("* Read bytes via TCP (%d) - (%d)\n", net->sock, stat);
+        log_debug("* Read bytes via TCP (%d) - (%d)\n", net->in, stat);
         queue_add_raw(net->ingress, buffer, stat);
         bytes += stat;
     }
@@ -264,12 +265,12 @@ void net_read_tcp(net_t *net)
 
     if (stat == 0)
     {
-        log_debug("* Read TCP connection shutdown (%d)\n", net->sock);
+        log_debug("* Read TCP connection shutdown (%d)\n", net->in);
         ev_io_stop(net->loop, &net->io);
     }
     else if (stat == -1 && error != EAGAIN && error != EINPROGRESS && error != EWOULDBLOCK)
     {
-        log_debug("* Read TCP connection terminated (%d)\n", net->sock);
+        log_debug("* Read TCP connection terminated (%d)\n", net->in);
         ev_io_stop(net->loop, &net->io);
     }
 }
@@ -286,8 +287,8 @@ void net_write_file(net_t *net)
 
     while ((size = queue_remove_all(net->egress, &buffer)) > 0)
     {
-        log_debug("* Writing bytes to FILE (%d) - (%d)\n", net->sock, size);
-        write(net->sock, buffer, size);
+        log_debug("* Writing bytes to FILE (%d) - (%d)\n", 1, size);
+        write(net->out, buffer, size);
         free(buffer);
     }
 }
@@ -309,7 +310,7 @@ void net_write_tls(net_t *net)
 
     while ((size = queue_remove_all(net->egress, &buffer)) > 0)
     {
-        log_debug("* Writing bytes to TLS (%d) - (%d)\n", net->sock, size);
+        log_debug("* Writing bytes to TLS (%d) - (%d)\n", net->out, size);
 
         do
         {
@@ -320,7 +321,7 @@ void net_write_tls(net_t *net)
                 offset += stat;
             }
 
-            log_debug("* Write bytes via TLS (%d) - (%d)\n", net->sock, stat);
+            log_debug("* Write bytes via TLS (%d) - (%d)\n", net->out, stat);
         }
         while (stat > 0);
 
@@ -345,18 +346,18 @@ void net_write_tcp(net_t *net)
 
     while ((size = queue_remove_all(net->egress, &buffer)) > 0)
     {
-        log_debug("* Writing bytes to TCP (%d) - (%d)\n", net->sock, size);
+        log_debug("* Writing bytes to TCP (%d) - (%d)\n", net->out, size);
 
         do
         {
-            stat = send(net->sock, buffer + offset, size - offset, 0);
+            stat = send(net->out, buffer + offset, size - offset, 0);
 
             if (stat > 0)
             {
                 offset += stat;
             }
 
-            log_debug("* Write bytes via TCP (%d) - (%d)\n", net->sock, stat);
+            log_debug("* Write bytes via TCP (%d) - (%d)\n", net->out, stat);
         }
         while (stat > 0);
 
@@ -424,7 +425,9 @@ void net_free(net_t *net)
             net_tls_free(net->tls);
         }
 
-        close(net->sock);
+        close(net->in);
+        close(net->out);
+
         free(net);
     }
 }

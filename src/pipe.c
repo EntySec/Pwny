@@ -141,7 +141,7 @@ static tlv_pkt_t *pipe_heartbeat(c2_t *c2)
 
     log_debug("* Checking C2 pipe (id: %d)\n", pipe->id);
 
-    if (pipes->callbacks.heartbeat_cb(pipe) >= 0)
+    if (pipes->callbacks.heartbeat_cb(pipe, c2) >= 0)
     {
         result = api_craft_tlv_pkt(API_CALL_SUCCESS);
         return result;

@@ -79,14 +79,14 @@ int c2_add_sock(c2_t **c2_table, int id, int sock, int proto)
 
     if (c2 != NULL)
     {
-        c2->net = net_create(sock, proto);
+        c2->net = net_create(sock, sock, proto);
 
         if (c2->net == NULL)
         {
             goto fail;
         }
 
-        if (net_block_sock(c2->net->sock) != 0)
+        if (net_block_sock(c2->net->in) != 0)
         {
             goto fail;
         }
@@ -101,7 +101,7 @@ fail:
     return -1;
 }
 
-int c2_add_file(c2_t **c2_table, int id, int fd)
+int c2_add_file(c2_t **c2_table, int id, int in, int out)
 {
     c2_t *c2;
 
@@ -109,7 +109,7 @@ int c2_add_file(c2_t **c2_table, int id, int fd)
 
     if (c2 != NULL)
     {
-        c2->net = net_create(fd, NET_PROTO_FILE);
+        c2->net = net_create(in, out, NET_PROTO_FILE);
 
         if (c2->net == NULL)
         {
@@ -197,9 +197,10 @@ int c2_enqueue_tlv(c2_t *c2, tlv_pkt_t *tlv_pkt)
 void c2_enqueue_uuid(c2_t *c2_table)
 {
     c2_t *c2;
+    c2_t *c2_tmp;
     tlv_pkt_t *tlv_pkt;
 
-    for (c2 = c2_table; c2 != NULL; c2 = c2->hh.next)
+    HASH_ITER(hh, c2_table, c2, c2_tmp)
     {
         log_debug("* Sending UUID to C2 (%d) - (%s)\n",
                   c2->id, c2->uuid);
@@ -214,8 +215,9 @@ void c2_enqueue_uuid(c2_t *c2_table)
 void c2_setup(c2_t *c2_table, struct ev_loop *loop)
 {
     c2_t *c2;
+    c2_t *c2_tmp;
 
-    for (c2 = c2_table; c2 != NULL; c2 = c2->hh.next)
+    HASH_ITER(hh, c2_table, c2, c2_tmp)
     {
         log_debug("* Initializing C2 server (%d) - (%s)\n",
                   c2->id, c2->uuid);
@@ -227,16 +229,27 @@ void c2_setup(c2_t *c2_table, struct ev_loop *loop)
         net_setup(c2->net, c2->loop);
 
         register_pipe_api_calls(&c2->dynamic.api_calls);
-        api_calls_register(&c2->dynamic.api_calls);
-        api_pipes_register(&c2->dynamic.pipes);
+
+        switch (c2->type)
+        {
+            case C2_CORE:
+                api_calls_register(&c2->dynamic.api_calls);
+                api_pipes_register(&c2->dynamic.pipes);
+                break;
+            case C2_TAB:
+                break;
+            default:
+                break;
+        }
     }
 }
 
 void c2_free(c2_t *c2_table)
 {
     c2_t *c2;
+    c2_t *c2_tmp;
 
-    for (c2 = c2_table; c2 != NULL; c2 = c2->hh.next)
+    HASH_ITER(hh, c2_table, c2, c2_tmp)
     {
         log_debug("* Freeing C2 server (%d) - (%s)\n",
                   c2->id, c2->uuid);

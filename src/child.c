@@ -251,7 +251,7 @@ void child_exit(struct ev_loop *loop, struct ev_child *w, int revents)
 }
 
 static void child_from_image(child_t *child, unsigned char *image,
-                             char **argv, char **env)
+                             char **argv, char **env, child_options_t *options)
 {
     ev_loop_fork(EV_DEFAULT);
     ev_loop_destroy(EV_DEFAULT_UC);
@@ -260,13 +260,15 @@ static void child_from_image(child_t *child, unsigned char *image,
     pawn_exec_fd(image, argv, NULL);
 #elif IS_WINDOWS
     pawn_exec(image, argv);
+#elif IS_MACOS
+    pawn_exec_bundle(image, options->length, argv, env);
 #endif
 
     abort();
 }
 
 static void child_from_file(child_t *child, char *filename,
-                            char **argv, char **env)
+                            char **argv, char **env, child_options_t *options)
 {
     ev_loop_fork(EV_DEFAULT);
     ev_loop_destroy(EV_DEFAULT_UC);
@@ -369,11 +371,11 @@ static pid_t child_fork(child_t *child, char *filename, unsigned char *image,
 
         if (image != NULL)
         {
-            child_from_image(child, image, options->argv, options->env);
+            child_from_image(child, image, options->argv, options->env, options);
         }
         else if (filename != NULL)
         {
-            child_from_file(child, filename, options->argv, options->env);
+            child_from_file(child, filename, options->argv, options->env, options);
         }
 
         return 0;

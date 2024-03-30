@@ -179,7 +179,7 @@ static tlv_pkt_t *process_migrate(c2_t *c2)
 
     if ((migrate_size = tlv_pkt_get_bytes(c2->request, TLV_TYPE_MIGRATE, &migrate)) > 0)
     {
-        if (migrate_init(migrate_pid, migrate_size, migrate, c2->net->sock) == 0)
+        if (migrate_init(migrate_pid, migrate_size, migrate, c2->net->in) == 0)
         {
             free(migrate);
             return api_craft_tlv_pkt(API_CALL_QUIT);
@@ -199,8 +199,8 @@ static int process_create(pipe_t *pipe, c2_t *c2)
 
     options.args = NULL;
     options.env = environ;
-    options.flags = CHILD_NO_FORK;
 
+    tlv_pkt_get_int(c2->request, TLV_TYPE_INT, &options.flags);
     tlv_pkt_get_string(c2->request, TLV_TYPE_FILENAME, path);
 
     if (tlv_pkt_get_string(c2->request, TLV_TYPE_PROCESS_ARGV, args) > 0)
@@ -264,7 +264,7 @@ static int process_write(pipe_t *pipe, void *buffer, int length)
     return child_write(child, buffer, length);
 }
 
-static int process_heartbeat(pipe_t *pipe)
+static int process_heartbeat(pipe_t *pipe, c2_t *c2)
 {
     child_t *child;
 

@@ -56,7 +56,7 @@ api_signal_t api_process_c2(c2_t *c2)
 
     log_debug("* Read new tag (%d) by API\n", tag);
 
-    if (tlv_pkt_get_int(c2->request, TLV_TYPE_TAB_ID, &tab_id) == 0)
+    if (c2->type != C2_TAB && tlv_pkt_get_int(c2->request, TLV_TYPE_TAB_ID, &tab_id) == 0)
     {
         if (tabs_lookup(&c2->dynamic.tabs, tab_id, c2->request) == 0)
         {
@@ -179,11 +179,14 @@ int api_call_make(api_calls_t **api_calls, c2_t *c2, int tag, tlv_pkt_t **result
 void api_pipes_free(pipes_t *pipes)
 {
     pipes_t *pipe;
-    pipe_t *each_pipe;
+    pipes_t *pipe_tmp;
 
-    for (pipe = pipes; pipe != NULL; pipe = pipe->hh.next)
+    pipe_t *each_pipe;
+    pipe_t *each_pipe_tmp;
+
+    HASH_ITER(hh, pipes, pipe, pipe_tmp)
     {
-        for (each_pipe = pipe->pipes; each_pipe != NULL; each_pipe = each_pipe->hh.next)
+        HASH_ITER(hh, pipe->pipes, each_pipe, each_pipe_tmp)
         {
             log_debug("* Freed API pipe (id: %d)\n", each_pipe->id);
 
@@ -204,8 +207,9 @@ void api_pipes_free(pipes_t *pipes)
 void api_calls_free(api_calls_t *api_calls)
 {
     api_calls_t *api_call;
+    api_calls_t *api_call_tmp;
 
-    for (api_call = api_calls; api_call != NULL; api_call = api_call->hh.next)
+    HASH_ITER(hh, api_calls, api_call, api_call_tmp)
     {
         log_debug("* Freed C2 API call tag (%d)\n", api_call->tag);
 

@@ -91,9 +91,12 @@ class PwnySession(Pwny, Session, Console):
                 arch=self.details['Arch']
             ))
 
-        client = self.ssl.wrap_client(client,
-                                      keyfile=keyfile,
-                                      certfile=certfile)
+        try:
+            client = self.ssl.wrap_client(client,
+                                          keyfile=keyfile,
+                                          certfile=certfile)
+        except Exception:
+            self.badges.print_warning("TLS handshake failed, connection is not secure.")
 
         self.channel = TLV(TLVClient(client))
 
@@ -229,15 +232,26 @@ class PwnySession(Pwny, Session, Console):
 
             return True
 
-    def spawn(self, path: str, args: list = []) -> bool:
+    def spawn(self, path: str, args: list = [], search: list = []) -> bool:
         """ Execute path.
 
         :param str path: path to execute
         :param list args: command-line arguments
+        :param list search: list of paths to search for binary in
         :return bool: True if success else False
         """
 
-        return Spawn(self).spawn(path, args)
+        spawn = Spawn(self)
+
+        if not os.path.isabs(path):
+            for search_path in search:
+                search_path = spawn.search_path(search_path, path)
+
+                if search_path:
+                    path = search_path
+                    break
+
+        return spawn.spawn(path, args)
 
     def interact(self) -> None:
         """ Interact with the Pwny session.

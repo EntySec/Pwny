@@ -30,10 +30,11 @@
 #include <syscall.h>
 #endif
 
+/*
 #ifndef IS_IPHONE
 #include <injector.h>
 #include <injector_internal.h>
-#endif
+#endif*/
 
 #include <c2.h>
 #include <log.h>
@@ -43,8 +44,10 @@
 #include <dlfcn.h>
 #endif
 
+/* I like it rough :P */
+
 int migrate_init(pid_t pid, int length, unsigned char *buffer, int fd)
-{
+{/*
 #if IS_LINUX
     int memfd;
     char image[PATH_MAX];
@@ -59,13 +62,13 @@ int migrate_init(pid_t pid, int length, unsigned char *buffer, int fd)
         migrate_inject(pid, image, fd);
         return 0;
     }
-#endif
+#endif*/
 
     return -1;
 }
 
 int migrate_inject(pid_t pid, char *image, int fd)
-{
+{/*
 #ifndef IS_IPHONE
 #ifndef IS_WINDOWS
     long retval;
@@ -129,6 +132,6 @@ fail:
     log_debug("* Failed to do inject (%s)\n", injector_error());
     injector_detach(injector);
 
-#endif
+#endif*/
     return -1;
 }

@@ -41,11 +41,14 @@
 
 #include <uthash/uthash.h>
 
-#ifndef WINDOWS
+#ifndef IS_WINDOWS
 #include <netinet/in.h>
 #else
 #include <winsock2.h>
 #endif
+
+#define C2_CORE 1
+#define C2_TAB 2
 
 #define PACK_IPV4(o1,o2,o3,o4) (htonl((o1 << 24) | (o2 << 16) | (o3 << 8) | (o4 << 0)))
 
@@ -55,9 +58,10 @@ typedef void (*c2_read_t)(void *data);
  *  \brief C2 (command & control) instance structure
  */
 
-typedef struct c2_table
+struct c2_table
 {
     int id;
+    int type;
     char *uuid;
     const char *path;
 
@@ -83,7 +87,9 @@ typedef struct c2_table
     link_t write_link;
 
     UT_hash_handle hh;
-} c2_t;
+};
+
+typedef struct c2_table c2_t;
 
 /*! \fn c2_t *c2_create(int id)
  *  \brief create C2 instance
@@ -99,23 +105,24 @@ c2_t *c2_create(int id);
  *
  *  \param c2_table C2 table to search instance in
  *  \param id ID of an instance to add sock to
- *  \param sock socket file descriptor to add
+ *  \param sock socket file descriptor to read/write
  *  \param proto protocol to use for C2
  *  \return error code
  */
 
 int c2_add_sock(c2_t **c2_table, int id, int sock, int proto);
 
-/*! \fn int c2_add_file(c2_t **c2_table, int id, int fd)
+/*! \fn int c2_add_file(c2_t **c2_table, int id, int in, int out)
  *  \brief add file descriptor to C2 instance
  *
  *  \param c2_table C2 table to search instance in
  *  \param id ID of an instance to add sock to
- *  \param fd file descriptor to add
+ *  \param in file descriptor to read from
+ *  \param out file descriptor to write to
  *  \return error code
  */
 
-int c2_add_file(c2_t **c2_table, int id, int fd);
+int c2_add_file(c2_t **c2_table, int id, int in, int out);
 
 /*! \fn int c2_add(c2_t **c2_table, c2_t *c2_new)
  *  \brief add C2 instance to hash table

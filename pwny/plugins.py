@@ -101,8 +101,8 @@ class Plugins(Tables, Badges):
                 details = plugin_object.details
 
                 tab_path = (session.pwny_libs +
-                            session.details['Platform'] +
-                            '/' + session.details['Arch'] +
+                            str(session.details['Platform']) +
+                            '/' + str(session.details['Arch']) +
                             '/' + details['Plugin'])
 
                 if os.path.exists(tab_path):
@@ -120,7 +120,6 @@ class Plugins(Tables, Badges):
                         raise RuntimeError(f"Failed to load plugin: {plugin}!")
 
                     tab_id = tlv.get_int(TLV_TYPE_TAB_ID)
-
                     plugin_object.plugin = tab_id
 
                     self.loaded_plugins[plugin] = plugin_object
@@ -153,7 +152,7 @@ class Plugins(Tables, Badges):
             tlv = session.send_command(
                 tag=BUILTIN_DEL_TAB,
                 args={
-                    TLV_TYPE_TAB_ID: self.plugin_ids[plugin]
+                    TLV_TYPE_INT: self.plugin_ids[plugin]
                 }
             )
 

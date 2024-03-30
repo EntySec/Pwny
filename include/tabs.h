@@ -53,6 +53,7 @@ void tabs_out(void *data);
 int tabs_add(tabs_t **tabs, int id,
              char *filename,
              unsigned char *image,
+             size_t length,
              c2_t *c2);
 
 int tabs_delete(tabs_t **tabs, int id);

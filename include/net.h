@@ -60,7 +60,8 @@ typedef struct
     struct ev_loop *loop;
 
     int proto;
-    int sock;
+    int in;
+    int out;
 
     queue_t *ingress;
     queue_t *egress;
@@ -74,7 +75,7 @@ typedef struct
 
 int net_block_sock(int sock);
 
-net_t *net_create(int sock, int proto);
+net_t *net_create(int in, int out, int proto);
 
 void net_setup(net_t *net, struct ev_loop *loop);
 int net_tls_start(net_t *net);
