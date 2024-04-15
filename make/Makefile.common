@@ -35,18 +35,19 @@ SED = sed
 
 ROOT = $(shell pwd)
 
+TARGET := native
+
 DEPS = $(ROOT)/deps
-BUILD = $(DEPS)/build
+BUILD = $(DEPS)/build/$(TARGET)
 BUILD_LIB = $(BUILD)/lib
 BUILD_INCLUDE = $(BUILD)/include
 TOOLCHAIN = $(ROOT)/toolchain
 CMAKE_TOOLCHAIN = $(TOOLCHAIN)/cmake
 
-TARGET := native
 ifneq "$(TARGET)" "native"
-	TARGET_BUILD_DIR=$(TARGET)
+	TARGET=$(TARGET)
 else
-	TARGET_BUILD_DIR=$(shell uname -s|tr '[:upper:]' '[:lower:]').$(shell uname -m)
+	TARGET=$(shell uname -s|tr '[:upper:]' '[:lower:]').$(shell uname -m)
 endif
 
 CFLAGS := $(CFLAGS) -Os -Wno-attributes
@@ -139,4 +140,4 @@ ifneq "$(TARGET)" "native"
 	endif
 endif
 
-ENV := $(ENV) ARFLAGS="cr" AR_FLAGS="cr" LDFLAGS="-L$(BUILD)/lib $(LDFLAGS)" CC="$(CC)" CPP="$(CPP)" AR="$(AR)" RANLIB="$(RANLIB)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" OBJCFLAGS="$(OBJCFLAGS)"
+ENV := $(ENV) ARFLAGS="cr" AR_FLAGS="cr" LDFLAGS="-L$(BUILD)/lib $(LDFLAGS)" CC="$(CC)" CPP="$(CPP)" AR="$(AR)" RANLIB="$(RANLIB)" CFLAGS="$(CFLAGS) -DFIND_LEAKS" CPPFLAGS="$(CPPFLAGS)" OBJCFLAGS="$(OBJCFLAGS)"

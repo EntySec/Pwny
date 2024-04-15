@@ -33,7 +33,7 @@ class HatSploitCommand(Command):
             'MinArgs': 1,
             'Options': {
                 '-s': ['<path>', 'Take a screenshot.'],
-                '-r': ['<viewer> <path>', 'Stream screen in real time.']
+                '-r': ['', 'Stream screen in real time.']
             }
         }
 
@@ -63,45 +63,49 @@ class HatSploitCommand(Command):
 
     def run(self, argc, argv):
         if argv[1] == '-r':
-            if argc > 3:
-                thread = threading.Thread(target=self.read_thread, args=(argv[3],))
-                thread.setDaemon(True)
-                thread.start()
+            file = self.session.loot.random_loot('png')
+            path = self.session.loot.random_loot('html')
 
-                client = StreamClient(path=argv[2], image=argv[3])
-                client.create_video()
+            thread = threading.Thread(target=self.read_thread, args=(file,))
+            thread.setDaemon(True)
+            thread.start()
 
-                self.print_process(f"Streaming screen...")
-                self.print_information("Press Ctrl-C to stop.")
+            client = StreamClient(path=path, image=file)
+            client.create_video()
 
-                try:
-                    client.stream()
-                    for _ in sys.stdin:
-                        pass
+            self.print_process(f"Streaming screen...")
+            self.print_information("Press Ctrl-C to stop.")
 
-                except KeyboardInterrupt:
-                    self.print_process("Stopping...")
-                    self.stop = True
+            try:
+                client.stream()
+                for _ in sys.stdin:
+                    pass
 
-                thread.join()
+            except KeyboardInterrupt:
+                self.print_process("Stopping...")
+                self.stop = True
+
+            thread.join()
+
+            self.session.loot.remove_loot(file)
+            self.session.loot.remove_loot(path)
 
         elif argv[1] == '-s':
-            if argc > 2:
-                result = self.session.send_command(
-                    tag=UI_SCREENSHOT,
-                    args={
-                        TLV_TYPE_INT: 1,
-                    }
-                )
+            result = self.session.send_command(
+                tag=UI_SCREENSHOT,
+                args={
+                    TLV_TYPE_INT: 1,
+                }
+            )
 
-                if result.get_int(TLV_TYPE_STATUS) != TLV_STATUS_SUCCESS:
-                    self.print_error(f"Failed to take screenshot!")
-                    return
+            if result.get_int(TLV_TYPE_STATUS) != TLV_STATUS_SUCCESS:
+                self.print_error(f"Failed to take screenshot!")
+                return
 
-                frame = result.get_raw(TLV_TYPE_BYTES)
+            frame = result.get_raw(TLV_TYPE_BYTES)
 
-                try:
-                    with open(argv[2], 'wb') as f:
-                        f.write(frame)
-                except Exception:
-                    self.print_error(f"Failed to write image to {argv[2]}!")
+            try:
+                with open(argv[2], 'wb') as f:
+                    f.write(frame)
+            except Exception:
+                self.print_error(f"Failed to write image to {argv[2]}!")

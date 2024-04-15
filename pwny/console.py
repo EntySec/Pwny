@@ -23,6 +23,7 @@ SOFTWARE.
 """
 
 import os
+import io
 import cmd
 
 from pwny.types import *
@@ -30,7 +31,7 @@ from pwny.api import *
 from pwny.plugins import Plugins
 from pwny.migrate import Migrate
 
-from hatsploit.lib.session import Session
+from contextlib import redirect_stdout
 
 from colorscript import ColorScript
 from badges import Badges, Tables
@@ -39,6 +40,7 @@ from pex.platform.types import *
 from pex.arch.types import *
 
 from hatsploit.lib.runtime import Runtime
+from hatsploit.lib.session import Session
 from hatsploit.lib.commands import Commands
 from hatsploit.lib.handler import Handler
 
@@ -115,6 +117,7 @@ Running as %blue$user%end on %line$dir%end
                 '/bin'
             ],
             OS_IPHONE: [
+                '/var/lib/filza/bins/bin',
                 '/usr/local/sbin',
                 '/usr/local/bin',
                 '/usr/sbin',
@@ -130,6 +133,15 @@ Running as %blue$user%end on %line$dir%end
         self.session = None
         self.env = {}
 
+    def get_env(self, name: str) -> str:
+        """ Get environment variable.
+
+        :param str name: variable name
+        :return str: variable value if exists else empty string
+        """
+
+        return self.env.get(name.upper(), '')
+
     def set_env(self, name: str, value: str) -> None:
         """ Set environment variable.
 
@@ -139,10 +151,10 @@ Running as %blue$user%end on %line$dir%end
         """
 
         if value is None:
-            self.env.pop(name, value)
+            self.env.pop(name.upper(), value)
             return
 
-        self.env[name] = str(value)
+        self.env[name.upper()] = str(value)
 
     def set_prompt(self, prompt: str) -> None:
         """ Set prompt.
@@ -169,13 +181,14 @@ Running as %blue$user%end on %line$dir%end
         :return str: username
         """
 
-        if self.session:
-            result = self.session.send_command(
-                tag=BUILTIN_WHOAMI
-            )
+        self.check_session()
 
-            if result.get_int(TLV_TYPE_STATUS) == TLV_STATUS_SUCCESS:
-                return result.get_string(TLV_TYPE_STRING)
+        result = self.session.send_command(
+            tag=BUILTIN_WHOAMI
+        )
+
+        if result.get_int(TLV_TYPE_STATUS) == TLV_STATUS_SUCCESS:
+            return result.get_string(TLV_TYPE_STRING)
 
         return '???'
 
@@ -185,13 +198,14 @@ Running as %blue$user%end on %line$dir%end
         :return str: working directory
         """
 
-        if self.session:
-            result = self.session.send_command(
-                tag=FS_GETWD
-            )
+        self.check_session()
 
-            if result.get_int(TLV_TYPE_STATUS) == TLV_STATUS_SUCCESS:
-                return result.get_string(TLV_TYPE_PATH)
+        result = self.session.send_command(
+            tag=FS_GETWD
+        )
+
+        if result.get_int(TLV_TYPE_STATUS) == TLV_STATUS_SUCCESS:
+            return result.get_string(TLV_TYPE_PATH)
 
         return '???'
 
@@ -214,7 +228,8 @@ Running as %blue$user%end on %line$dir%end
 
                 while len(path) > 32:
                     paths = paths[pointer:]
-                    path = os.path.join(*paths)
+                    if paths:
+                        path = os.path.join(*paths)
                     pointer += 1
 
                 path = '*/' + path
@@ -304,11 +319,12 @@ Running as %blue$user%end on %line$dir%end
             self.badges.print_usage("exec <path>")
             return
 
-        if self.check_session():
-            if len(line) >= 2:
-                self.session.spawn(line[0], line[1:])
-            else:
-                self.session.spawn(line[0], [])
+        self.check_session()
+
+        if len(line) >= 2:
+            self.session.spawn(line[0], line[1:])
+        else:
+            self.session.spawn(line[0], [])
 
     def do_set(self, line: str) -> None:
         """ Set environment variable.
@@ -320,7 +336,7 @@ Running as %blue$user%end on %line$dir%end
         line = line.split()
 
         if len(line) < 2:
-            self.badhes.print_usage("set <name> <value>")
+            self.badges.print_usage("set <name> <value>")
             return
 
         self.set_env(line[0], line[1])
@@ -331,6 +347,10 @@ Running as %blue$user%end on %line$dir%end
         :param str name: variable name
         :return None: None
         """
+
+        if not name:
+            self.badges.print_usage("unset <name>")
+            return
 
         self.set_env(name, None)
 
@@ -372,6 +392,8 @@ Running as %blue$user%end on %line$dir%end
         :raises EOFError: EOF error
         """
 
+        self.check_session()
+
         self.session.send_command(
             tag=BUILTIN_QUIT
         )
@@ -412,28 +434,30 @@ Running as %blue$user%end on %line$dir%end
         :return None: None
         """
 
-        if self.check_session():
-            command = line.split()
+        self.check_session()
 
-            status = self.commands.execute_custom_command(
-                command, self.custom_commands, False)
+        command = line.split()
 
-            if not status:
-                status = self.commands.execute_custom_plugin_command(
-                    command, self.plugins.loaded_plugins, False)
+        if self.commands.execute_custom_command(
+                command, self.custom_commands, False):
+            return
 
-                if not status:
-                    search = self.env.get('PATH', '').split(':')
+        if self.commands.execute_custom_plugin_command(
+                command, self.plugins.loaded_plugins, False):
+            return
 
-                    if len(command) >= 2:
-                        status = self.session.spawn(
-                            command[0], command[1:], search=search)
-                    else:
-                        status = self.session.spawn(
-                            command[0], [], search=search)
+        self.badges.print_process(f"Translating {command[0]} via PATH...")
+        search = self.get_env('PATH').split(':')
 
-                    if not status:
-                        self.badges.print_error(f"Unrecognized command: {command[0]}!")
+        if len(command) >= 2:
+            status = self.session.spawn(
+                command[0], command[1:], search=search)
+        else:
+            status = self.session.spawn(
+                command[0], [], search=search)
+
+        if not status:
+            self.badges.print_error(f"Unrecognized command: {command[0]}!")
 
     def emptyline(self) -> None:
         """ Do something on empty line.
@@ -453,22 +477,20 @@ Running as %blue$user%end on %line$dir%end
         self.set_prompt(self.scheme)
         return stop
 
-    def check_session(self) -> bool:
+    def check_session(self) -> None:
         """ Check is session alive.
 
-        :return bool: True if session is alive
+        :return None: None
+        :raises RuntimeError: with trailing error message
+        :raises RuntimeWarning: with trailing warning message
         """
 
         if not self.session:
-            self.badges.print_error("Session is dead (reason unknown)")
-            return False
+            raise RuntimeError(f"Session is dead ({self.session.reason})!")
 
         if self.session.terminated:
-            self.badges.print_warning("Connection terminated.")
             self.session.close()
-
-            return False
-        return True
+            raise RuntimeWarning(f"Connection terminated ({self.session.reason}).")
 
     def load_commands(self, path: str) -> None:
         """ Load custom Pwny commands.
@@ -476,6 +498,8 @@ Running as %blue$user%end on %line$dir%end
         :param str path: commands path
         :return None: None
         """
+
+        self.check_session()
 
         exists, is_dir = self.fs.exists(path)
 
@@ -494,6 +518,8 @@ Running as %blue$user%end on %line$dir%end
         :return None: None
         """
 
+        self.check_session()
+
         exists, is_dir = self.fs.exists(path)
 
         if exists and is_dir:
@@ -504,6 +530,8 @@ Running as %blue$user%end on %line$dir%end
 
         :return None: None
         """
+
+        self.check_session()
 
         self.set_env('PATH', ':'.join(
             self.search.get(self.session.details['Platform'], [])
@@ -527,6 +555,19 @@ Running as %blue$user%end on %line$dir%end
         self.load_plugins(session.pwny_plugins + 'generic')
 
         self.setup_env()
+
+    def pwny_exec(self, command: str) -> str:
+        """ Execute single Pwny command.
+
+        :param str command: command to execute (with arguments)
+        :return str: command output
+        """
+
+        self.check_session()
+
+        with io.StringIO() as buffer, redirect_stdout(buffer):
+            self.onecmd(command)
+            return buffer.getvalue()
 
     def pwny_console(self) -> None:
         """ Start Pwny console.
@@ -553,7 +594,7 @@ Running as %blue$user%end on %line$dir%end
         """
 
         try:
-            cmd.Cmd.cmdloop(self)
+            self.cmdloop()
 
         except (EOFError, KeyboardInterrupt):
             self.badges.print_empty(end='')

@@ -25,6 +25,12 @@
 #include <limits.h>
 #include <unistd.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <stddef.h>
+
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <sys/un.h>
 
 #if IS_LINUX
 #include <syscall.h>
@@ -44,9 +50,68 @@
 #include <dlfcn.h>
 #endif
 
-/* I like it rough :P */
+ssize_t shared_read_sock(int shared, void *buf,
+                         size_t length, int *sock)
+{
+    ssize_t bytes_read;
 
-int migrate_init(pid_t pid, int length, unsigned char *buffer, int fd)
+    struct iovec iov;
+    struct msghdr msg;
+    struct cmsghdr *pcmsghdr;
+
+    char buffer[CMSG_SPACE(sizeof(int))];
+
+    iov.iov_base = buf;
+    iov.iov_len = length;
+    msg.msg_name = NULL;
+    msg.msg_namelen = 0;
+    msg.msg_iov = &iov;
+    msg.msg_iovlen = 1;
+    msg.msg_control = buffer;
+    msg.msg_controllen = sizeof(buffer);
+    msg.msg_flags = 0;
+
+    bytes_read = recvmsg(shared, &msg, 0);
+    if (bytes_read < 0)
+    {
+        return -1;
+    }
+
+    pcmsghdr = CMSG_FIRSTHDR(&msg);
+    *sock = *((int*)CMSG_DATA(pcmsghdr));
+
+    return bytes_read;
+}
+
+ssize_t shared_send_sock(int shared, const void *buf,
+                         size_t length, int sock)
+{
+    struct iovec iov;
+    struct msghdr msg;
+    struct cmsghdr *pcmsghdr;
+
+    char buffer[CMSG_SPACE(sizeof(int))];
+
+    iov.iov_base = (void*)buf;
+    iov.iov_len = length;
+    msg.msg_name = NULL;
+    msg.msg_namelen = 0;
+    msg.msg_iov = &iov;
+    msg.msg_iovlen = 1;
+    msg.msg_control = buffer;
+    msg.msg_controllen = sizeof(buffer);
+    msg.msg_flags = 0;
+
+    pcmsghdr = CMSG_FIRSTHDR(&msg);
+    pcmsghdr->cmsg_len = CMSG_LEN(sizeof(int));
+    pcmsghdr->cmsg_level = SOL_SOCKET;
+    pcmsghdr->cmsg_type = SCM_RIGHTS;
+
+    *((int*)CMSG_DATA(pcmsghdr)) = sock;
+    return sendmsg(shared, &msg, 0);
+}
+
+int migrate_init(pid_t pid, int length, unsigned char *buffer)
 {/*
 #if IS_LINUX
     int memfd;
@@ -59,7 +124,7 @@ int migrate_init(pid_t pid, int length, unsigned char *buffer, int fd)
         write(memfd, buffer, length);
         sprintf(image, "/proc/self/fd/%d", memfd);
 
-        migrate_inject(pid, image, fd);
+        migrate_inject(pid, image);
         return 0;
     }
 #endif*/
@@ -67,7 +132,7 @@ int migrate_init(pid_t pid, int length, unsigned char *buffer, int fd)
     return -1;
 }
 
-int migrate_inject(pid_t pid, char *image, int fd)
+int migrate_inject(pid_t pid, char *image)
 {/*
 #ifndef IS_IPHONE
 #ifndef IS_WINDOWS
@@ -98,34 +163,8 @@ int migrate_inject(pid_t pid, char *image, int fd)
 #endif
 
     log_debug("* Injected to the process (%d)\n", pid);
-
-#if IS_MACOS
-    if (injector__write(injector, injector->text, "init", 4) != 0)
-    {
-        goto fail;
-    }
-
-    injector__call_function(injector, &retval, (long)dlsym, handle, injector->text);
-
-    if (retval == 0)
-    {
-        goto fail;
-    }
-
-    log_debug("* Calling init with socket (%d)\n", fd);
-    injector__call_function(injector, &retval, retval, fd);
-
-#elif IS_LINUX
-    if (injector_remote_func_addr(injector, handle, "init", &func_addr) != 0)
-    {
-        goto fail;
-    }
-
-    log_debug("* Calling init with socket (%d)\n", fd);
-    injector__call_function(injector, NULL, func_addr, fd);
-#endif
-
     injector_detach(injector);
+
     return 0;
 
 fail:

@@ -28,6 +28,7 @@ project(libpwny VERSION 1.0.0)
 option(DEBUG "Build in debug mode" OFF)
 option(MAIN "Build main executable" OFF)
 option(BUNDLE "Build as bundle (macOS)" OFF)
+option(GC "Build with GC" OFF)
 
 set(SOURCE src/main/test.c CACHE STRING "File to build as executable")
 
@@ -44,8 +45,6 @@ if(CMAKE_SYSTEM_NAME STREQUAL Windows)
     add_compile_definitions(IS_WINDOWS)
 
 elseif(CMAKE_SYSTEM_NAME STREQUAL Darwin)
-    include_directories(include/tccgun)
-    file(GLOB PWNY_SOURCES src/*.c src/tccgun/*.m)
     add_compile_definitions(IS_MACOS)
 
     if(BUNDLE)
@@ -54,11 +53,19 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL Darwin)
 
 elseif(CMAKE_SYSTEM_NAME STREQUAL iOS)
     add_compile_definitions(IS_IPHONE)
-    add_compile_definitions(IS_BUNDLE)
+    #add_compile_definitions(IS_BUNDLE)
 
 elseif(CMAKE_SYSTEM_NAME STREQUAL Linux)
     add_compile_definitions(IS_LINUX)
 
+endif()
+
+if(GC)
+    if(DEBUG)
+        add_compile_definitions(GC_DEBUG GC_INUSE)
+    endif()
+
+    add_compile_options(-DREDIRECT_MALLOC=GC_malloc)
 endif()
 
 add_library(pwny STATIC ${PWNY_SOURCES})
@@ -67,20 +74,29 @@ set_property(TARGET pwny PROPERTY C_STANDART 99)
 set_property(TARGET pwny PROPERTY POSITION_INDEPENDENT_CODE ON)
 
 set_target_properties(pwny PROPERTIES OUTPUT_NAME pwny)
-include_directories(include api deps/build/include/)
+include_directories(include api deps/build/${CMAKE_SYSTEM_TARGET}/include)
 
 if(MAIN)
     file(GLOB MAIN_SOURCES ${SOURCE})
     add_executable(main ${MAIN_SOURCES})
 
-    target_link_directories(main PRIVATE deps/build/lib/)
-    target_link_libraries(main PRIVATE pwny mbedtls mbedx509 mbedcrypto ev eio sigar pawn)
+    target_link_directories(main PRIVATE deps/build/${CMAKE_SYSTEM_TARGET}/lib)
+    target_link_libraries(main PRIVATE pwny mbedtls mbedx509 mbedcrypto ev eio sigar)
+
+    if(NOT CMAKE_SYSTEM_NAME STREQUAL iOS)
+        target_link_libraries(main PRIVATE pawn)
+    endif()
+
+    if(GC)
+        target_link_libraries(main PRIVATE gc)
+    endif()
 
     if(CMAKE_SYSTEM_NAME STREQUAL Windows)
         target_link_libraries(main PRIVATE injector pawn)
         target_link_libraries(main PRIVATE ws2_32 imagehlp)
 
     elseif(CMAKE_SYSTEM_NAME STREQUAL Darwin)
+        target_compile_options(main PRIVATE -fobjc-arc)
         target_link_libraries(main PRIVATE "-framework Foundation"
                                            "-framework IOKit"
                                            "-framework AVFoundation"

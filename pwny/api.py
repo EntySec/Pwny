@@ -1,5 +1,8 @@
 from pwny.types import *
 
+TERM_CLOSED = 'closed by console'
+TERM_UNKNOWN = 'unknown'
+
 TAB_BASE = 1
 PIPE_TYPE = 1
 
@@ -13,6 +16,8 @@ API_TYPE = 1
 API_CALL_INTERNAL = 10000
 API_CALL_STATIC = 20000
 API_CALL_DYNAMIC = 40000
+
+TAB_TERM = tlv_custom_tag(API_CALL_INTERNAL, TAB_BASE + 1, API_CALL)
 
 PIPE_BASE = 1
 

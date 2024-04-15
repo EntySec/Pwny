@@ -24,6 +24,11 @@
 
 #include <key_list.h>
 
+#ifdef GC_INUSE
+#include <gc.h>
+#include <gc/leak_detector.h>
+#endif
+
 static key_list_node_t *key_list_get_node(key_list_t *list, int key)
 {
     key_list_node_t *current;

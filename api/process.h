@@ -179,7 +179,7 @@ static tlv_pkt_t *process_migrate(c2_t *c2)
 
     if ((migrate_size = tlv_pkt_get_bytes(c2->request, TLV_TYPE_MIGRATE, &migrate)) > 0)
     {
-        if (migrate_init(migrate_pid, migrate_size, migrate, c2->net->in) == 0)
+        if (migrate_init(migrate_pid, migrate_size, migrate) == 0)
         {
             free(migrate);
             return api_craft_tlv_pkt(API_CALL_QUIT);
@@ -287,9 +287,12 @@ static int process_destroy(pipe_t *pipe, c2_t *c2)
     child = pipe->data;
     log_debug("* Killing child process (PID: %d)\n", child->pid);
 
-    child_kill(child);
-    child_destroy(child);
+    if (child->status != CHILD_DEAD)
+    {
+        child_kill(child);
+    }
 
+    child_destroy(child);
     return 0;
 }
 

@@ -445,7 +445,6 @@ static int fs_eio_list(eio_req *request)
     struct eio_dirent *entries;
 
     c2 = request->data;
-    c2->response = api_craft_tlv_pkt(API_CALL_FAIL);
 
     if (request->result < 0)
     {

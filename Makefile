@@ -24,7 +24,11 @@
 
 include make/Makefile.common
 
-all: setup libev libeio mbedtls sigar libpawn
+ifneq (,$(findstring iphone,$(TARGET)))
+all: setup libev libeio mbedtls sigar
+else
+all: setup libev libeio mbedtls sigar libpawn bdwgc
+endif
 
 setup:
 	$(QUIET) $(LOG) "[Creating workspace]"
@@ -41,3 +45,4 @@ include make/Makefile.libeio
 include make/Makefile.mbedtls
 include make/Makefile.sigar
 include make/Makefile.libpawn
+include make/Makefile.bdwgc

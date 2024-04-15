@@ -1,7 +1,8 @@
 set(CMAKE_SYSTEM_NAME Linux)
 set(CMAKE_SYSTEM_PROCESSOR mipsel)
+set(CMAKE_SYSTEM_TARGET mipsel-linux-muslsf)
 
-set(TOOLCHAIN_PREFIX /etc/cross/mipsel/bin/mipsel-linux-muslsf)
+set(TOOLCHAIN_PREFIX /etc/cross/${CMAKE_SYSTEM_TARGET}/bin/${CMAKE_SYSTEM_TARGET})
 
 set(CMAKE_C_COMPILER ${TOOLCHAIN_PREFIX}-gcc)
 set(CMAKE_CXX_COMPILER ${TOOLCHAIN_PREFIX}-g++)

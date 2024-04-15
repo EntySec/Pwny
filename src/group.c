@@ -30,6 +30,11 @@
 #include <queue.h>
 #include <tlv_types.h>
 
+#ifdef GC_INUSE
+#include <gc.h>
+#include <gc/leak_detector.h>
+#endif
+
 group_t *group_create(tlv_pkt_t *tlv_pkt)
 {
     group_t *group;
@@ -133,6 +138,7 @@ ssize_t group_dequeue(queue_t *queue, group_t **group)
     }
 
     total += queue_drain(queue, length);
+    free(buffer);
     return total;
 
 fail:

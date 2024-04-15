@@ -55,91 +55,83 @@
 #include <pawn.h>
 #endif
 
-static char **argv_split(char *args, char **argv, size_t *argc)
-{
-    char *p = NULL;
-    char *start_of_word = NULL;
-    int c;
+#ifdef GC_INUSE
+#include <gc.h>
+#include <gc/leak_detector.h>
+#endif
 
-    enum states
-    {
-        DULL,
-        IN_WORD,
-        IN_STRING,
-        IN_STRING_LIT
+static char **argv_split(char *args, char **argv, size_t *argc) {
+    char *p;
+    int c;
+    int prev_backslash = 0;
+
+    enum states {
+        DULL, // Outside of a word
+        IN_WORD, // Inside a word
+        IN_STRING // Inside a string
     } state = DULL;
 
-    for (p = args; *p != '\0'; p++)
-    {
-        c = (unsigned char) *p;
+    *argc = 0; // Initialize argument count
 
-        switch (state)
-        {
+    for (p = args; *p != '\0'; ++p) {
+        c = (unsigned char)*p;
+
+        // Toggle backslash flag if we're not already processing a backslash
+        if (c == '\\' && !prev_backslash) {
+            prev_backslash = 1;
+            continue; // Skip further processing, handle in the next iteration
+        }
+
+        switch (state) {
             case DULL:
-                if (isspace(c))
-                {
+                if (isspace(c)) {
                     continue;
                 }
-
-                if (c == '"')
-                {
+                if (c == '"') {
                     state = IN_STRING;
-                    start_of_word = p + 1;
+                    argv = realloc(argv, sizeof(char *) * (*argc + 1));
+                    argv[*argc] = p; // Start after the quote p + 1
                     continue;
                 }
-
-                if (c == '\'')
-                {
-                    state = IN_STRING_LIT;
-                    start_of_word = p + 1;
-                    continue;
-                }
-
                 state = IN_WORD;
-                start_of_word = p;
-                continue;
+                argv = realloc(argv, sizeof(char *) * (*argc + 1));
+                argv[*argc] = p; // Start of a new word
+                break;
 
             case IN_STRING:
-                if (c == '"')
-                {
-                    *p = 0;
-                    argv = realloc(argv, sizeof(char *) * (*argc + 1));
-                    argv[(*argc)++] = start_of_word;
+                if (c == '"' && !prev_backslash) {
+                	p++;
+                    *p = 0; // Terminate the string
+                    (*argc)++;
                     state = DULL;
+                } else if (prev_backslash) {
+                    memmove(p - 1, p, strlen(p) + 1); // Shift back if escaped quote
+                    p--; // Adjust pointer since we've shifted the string
                 }
-
-                continue;
-
-            case IN_STRING_LIT:
-                if (c == '\'')
-                {
-                    *p = 0;
-                    argv = realloc(argv, sizeof(char *) * (*argc + 1));
-                    argv[(*argc)++] = start_of_word;
-                    state = DULL;
-                }
-                continue;
+                break;
 
             case IN_WORD:
-                if (isspace(c))
-                {
-                    *p = 0;
-                    argv = realloc(argv, sizeof(char *) * (*argc + 1));
-                    argv[(*argc)++] = start_of_word;
+                if (isspace(c)) {
+                    *p = 0; // Terminate the word
+                    (*argc)++;
                     state = DULL;
                 }
-                continue;
+                break;
         }
+
+        // If current character wasn't a backslash or we're just processing one,
+        // reset backslash flag.
+        prev_backslash = (c == '\\' && prev_backslash == 1) ? 1 : 0;
     }
 
-    if (state != DULL)
-    {
-        argv = realloc(argv, sizeof(char *) * (*argc + 1));
-        argv[(*argc)++] = start_of_word;
+    // Handle case where input ends in a word or string without trailing space
+    if (state != DULL) {
+        (*argc)++;
     }
 
-    argv = realloc(argv, sizeof(char *) * (*argc + 2));
-    argv[(*argc)] = NULL;
+    // Allocate space for a NULL pointer at the end
+    argv = realloc(argv, sizeof(char *) * (*argc + 1));
+    argv[*argc] = NULL;
 
     return argv;
 }
@@ -238,7 +230,6 @@ void child_exit(struct ev_loop *loop, struct ev_child *w, int revents)
     child = w->data;
     log_debug("* Child exit event initialized\n");
 
-    ev_child_stop(loop, w);
     child->status = CHILD_DEAD;
 
     if (child->exit_link)
@@ -246,6 +237,7 @@ void child_exit(struct ev_loop *loop, struct ev_child *w, int revents)
         child->exit_link(child->link_data);
     }
 
+    ev_child_stop(loop, w);
     ev_io_stop(child->loop, &child->out_queue.io);
     ev_io_stop(child->loop, &child->err_queue.io);
 }
@@ -420,29 +412,34 @@ child_t *child_create(char *filename, unsigned char *image, child_options_t *opt
         options->argv[1] = NULL;
     }
 
+    for (int i = 0; i < argc; i++)
+    {
+        log_debug("* %d: %s\n", i, options->argv[i]);
+    }
+
     if (pipe(pipes.err_pair) == -1)
     {
         log_debug("* Failed to create err pair for child\n");
-        return NULL;
+        goto fail;
     }
 
     if (pipe(pipes.in_pair) == -1)
     {
         log_debug("* Failed to create in pair for child\n");
-        return NULL;
+        goto fail;
     }
 
     if (pipe(pipes.out_pair) == -1)
     {
         log_debug("* Failed to create out pair for child\n");
-        return NULL;
+        goto fail;
     }
 
     child = calloc(1, sizeof(*child));
 
     if (child == NULL)
     {
-        return NULL;
+        goto fail;
     }
 
     if (options->flags & CHILD_NO_FORK)
@@ -453,6 +450,8 @@ child_t *child_create(char *filename, unsigned char *image, child_options_t *opt
     {
         child->pid = child_fork(child, filename, image, options, &pipes);
     }
+
+    free(options->argv);
 
     if (child->pid == -1)
     {
@@ -494,6 +493,10 @@ child_t *child_create(char *filename, unsigned char *image, child_options_t *opt
     child->status = CHILD_ALIVE;
 
     return child;
+
+fail:
+    free(options->argv);
+    return NULL;
 }
 
 void child_kill(child_t *child)
@@ -509,4 +512,6 @@ void child_destroy(child_t *child)
 
     queue_free(child->out_queue.queue);
     queue_free(child->err_queue.queue);
+
+    free(child);
 }

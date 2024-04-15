@@ -23,6 +23,7 @@ SOFTWARE.
 """
 
 import os
+import pathlib
 
 from typing import Union, Optional
 
@@ -30,6 +31,7 @@ from pex.arch.types import Arch
 from pex.platform.types import Platform
 
 from hatsploit.lib.payload import Payload
+from hatsploit.lib.loot import Loot
 
 
 class Pwny(object):
@@ -45,43 +47,27 @@ class Pwny(object):
         self.pwny = f'{os.path.dirname(os.path.dirname(__file__))}/pwny/'
 
         self.pwny_data = self.pwny + 'data/'
-        self.pwny_libs = self.pwny + 'libs/'
+        self.pwny_tabs = self.pwny + 'tabs/'
+        self.pwny_loot = f'{pathlib.Path.home()}/.pwny/'
 
         self.pwny_plugins = self.pwny + 'plugins/'
         self.pwny_commands = self.pwny + 'commands/'
 
         self.templates = self.pwny + 'templates/'
 
-    def get_template(self, platform: Union[Platform, str],
-                     arch: Union[Arch, str], extension: str = '') -> bytes:
+    def get_template(self, target: str, extension: str = '') -> bytes:
         """ Get Pwny template.
 
-        :param Union[Platform, str] platform: platform to get Pwny template for
-        :param Union[Arch, str] arch: architecture to get Pwny template for
-        :param str extension: extension of the file
+        :param str target: target (e.g. x86_64-linux-musl, list - README.md)
+        :param str extension: extension of the file (e.g. bin, exe, so)
         :return bytes: Pwny template
         """
 
-        payload = self.templates + '/'.join((str(platform), str(arch) + '.' + extension))
+        template = self.templates + target
 
-        if os.path.exists(payload):
-            return open(payload, 'rb').read()
+        if extension:
+            target += '.' + extension
+
+        if os.path.exists(template):
+            return open(template, 'rb').read()
         return b''
-
-    def get_implant(self, platform: Optional[Union[Platform, str]] = None,
-                    arch: Optional[Union[Arch, str]] = None,
-                    payload: Optional[Payload] = None) -> bytes:
-        """ Get Pwny implant.
-
-        :param Optional[Union[Platform, str]] platform: platform to get Pwny implant for
-        :param Optional[Union[Arch, str]] arch: architecture to get Pwny implant for
-        :param Optional[Payload] payload: if payload object is not None, ignore
-            platform and arch
-        :return bytes: Pwny implant
-        """
-
-        if payload is not None:
-            platform = payload.details['Platform']
-            arch = payload.details['Arch']
-
-        return self.get_template(platform, arch, 'bin')

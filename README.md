@@ -36,7 +36,7 @@ pip3 install git+https://github.com/EntySec/HatSploit
 **Building dependencies:**
 
 ```
-make TARGET=<tuple>
+make TARGET=<target>
 ```
 
 **NOTE:** For **macOS / iOS** targets you will need to set `SDK` to the desired SDK path before running `make`. For example:

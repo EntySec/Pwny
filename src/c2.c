@@ -36,6 +36,7 @@
 
 #include <log.h>
 #include <tlv.h>
+#include <tab.h>
 #include <api.h>
 #include <c2.h>
 #include <pipe.h>
@@ -45,6 +46,11 @@
 #include <machine.h>
 
 #include <uthash/uthash.h>
+
+#ifdef GC_INUSE
+#include <gc.h>
+#include <gc/leak_detector.h>
+#endif
 
 c2_t *c2_create(int id)
 {
@@ -237,6 +243,7 @@ void c2_setup(c2_t *c2_table, struct ev_loop *loop)
                 api_pipes_register(&c2->dynamic.pipes);
                 break;
             case C2_TAB:
+                register_tab_api_calls(&c2->dynamic.api_calls);
                 break;
             default:
                 break;

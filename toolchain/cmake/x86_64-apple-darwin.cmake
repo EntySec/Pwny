@@ -1,5 +1,6 @@
 set(CMAKE_SYSTEM_NAME Darwin)
 set(CMAKE_SYSTEM_PROCESSOR x86_64)
+set(CMAKE_SYSTEM_TARGET x86_64-apple-darwin)
 
 set(CMAKE_C_COMPILER clang)
 set(CMAKE_CXX_COMPILER clang)

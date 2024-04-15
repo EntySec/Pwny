@@ -31,9 +31,14 @@
 
 #include <uthash/utlist.h>
 
+#ifdef GC_INUSE
+#include <gc.h>
+#include <gc/leak_detector.h>
+#endif
+
 static void queue_data_free(queue_data_t *data)
 {
-    if (data->buffer)
+    if (data->buffer != NULL)
     {
         free(data->buffer);
         free(data);
@@ -231,6 +236,7 @@ ssize_t queue_remove_all(queue_t *queue, void **data)
     size_t bytes;
 
     buffer = malloc(queue->bytes);
+
     if (buffer == NULL)
     {
         return -1;

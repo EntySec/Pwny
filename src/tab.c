@@ -40,6 +40,11 @@
 #include <link.h>
 #include <queue.h>
 
+#ifdef GC_INUSE
+#include <gc.h>
+#include <gc/leak_detector.h>
+#endif
+
 static void tab_signal_handler(struct ev_loop *loop, ev_signal *w, int revents)
 {
     switch (w->signum)
@@ -153,7 +158,6 @@ tab_t *tab_create(void)
 
 int tab_start(tab_t *tab)
 {
-    int status;
     ev_signal sigint_w, sigterm_w;
 
     ev_signal_init(&sigint_w, tab_signal_handler, SIGINT);
@@ -162,11 +166,7 @@ int tab_start(tab_t *tab)
     ev_signal_start(tab->loop, &sigterm_w);
 
     net_start(tab->c2->net);
-
-    status = ev_run(tab->loop, 0);
-    c2_free(tab->c2);
-
-    return status;
+    return ev_run(tab->loop, 0);
 }
 
 void tab_destroy(tab_t *tab)
@@ -174,4 +174,14 @@ void tab_destroy(tab_t *tab)
     ev_break(tab->loop, EVBREAK_ALL);
     c2_free(tab->c2);
     free(tab);
+}
+
+static tlv_pkt_t *tab_term(c2_t *c2)
+{
+    return api_craft_tlv_pkt(API_CALL_QUIT);
+}
+
+void register_tab_api_calls(api_calls_t **api_calls)
+{
+    api_call_register(api_calls, TAB_TERM, tab_term);
 }

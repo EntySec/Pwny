@@ -45,6 +45,7 @@ from pex.ssl import OpenSSL
 from pex.proto.tlv import TLVClient, TLVPacket
 
 from hatsploit.lib.session import Session
+from hatsploit.lib.loot import Loot
 
 
 class PwnySession(Pwny, Session, Console):
@@ -60,8 +61,10 @@ class PwnySession(Pwny, Session, Console):
         self.channel = None
         self.uuid = None
         self.terminated = False
+        self.reason = TERM_UNKNOWN
 
         self.pipes = Pipes(self)
+        self.loot = Loot(self.pwny_loot)
 
         self.badges = Badges()
         self.fs = FS()
@@ -100,10 +103,11 @@ class PwnySession(Pwny, Session, Console):
 
         self.channel = TLV(TLVClient(client))
 
-        tlv = self.channel.read()
+        tlv = self.channel.read(verbose=self.get_env('VERBOSE'))
         self.uuid = tlv.get_string(TLV_TYPE_UUID)
 
         if self.uuid:
+            self.loot.create_loot()
             self.start_pwny(self)
             return
 
@@ -116,6 +120,7 @@ class PwnySession(Pwny, Session, Console):
         """
 
         self.channel.client.close()
+        self.reason = TERM_CLOSED
         self.terminated = True
 
     def heartbeat(self) -> bool:
@@ -143,8 +148,15 @@ class PwnySession(Pwny, Session, Console):
         tlv.add_int(TLV_TYPE_TAG, tag)
         tlv.add_from_dict(args)
 
-        self.channel.send(tlv)
-        return self.channel.read(error=True)
+        try:
+            self.channel.send(tlv, verbose=self.get_env('VERBOSE'))
+        except Exception as e:
+            self.terminated = True
+            self.reason = str(e)
+
+            raise RuntimeWarning(f"Connection terminated ({self.reason}).")
+
+        return self.channel.read(error=True, verbose=self.get_env('VERBOSE'))
 
     def download(self, remote_file: str, local_path: str) -> bool:
         """ Download file from the Pwny session.

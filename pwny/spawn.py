@@ -98,11 +98,10 @@ class Spawn(object):
                 continue
 
             self.interrupted = False
-
-            if not self.pipes.heartbeat_pipe(PROCESS_PIPE, pipe_id):
-                break
-
             self.read_pipe(pipe_id)
+
+            if not self.pipes.heartbeat_pipe(PROCESS_PIPE, pipe_id) or self.closed:
+                break
 
         self.read_pipe(pipe_id)
         self.closed = True
@@ -216,6 +215,7 @@ class Spawn(object):
         """
 
         if self.is_dir(path):
+            self.badges.print_information(f"Changed directory to {path}")
             self.change_dir(path)
             return True
 
@@ -223,7 +223,7 @@ class Spawn(object):
             pipe_id = self.pipes.create_pipe(
                 pipe_type=PROCESS_PIPE,
                 args={
-                    TLV_TYPE_INT: FLAG_NO_FORK,  # TODO: check for platform
+                    TLV_TYPE_INT: FLAG_NO_FORK,
                     TLV_TYPE_FILENAME: path,
                     PROCESS_TYPE_PROCESS_ARGV: ' '.join(args)
                 }
@@ -243,8 +243,12 @@ class Spawn(object):
         write_thread.setDaemon(True)
         write_thread.start()
 
-        while not self.closed:
-            pass
+        try:
+            while not self.closed:
+                pass
+        except KeyboardInterrupt:
+            self.badges.print_process("Cleaning up...")
+            self.closed = True
 
         if write_thread.is_alive():
             exc = ctypes.py_object(SystemExit)
@@ -254,7 +258,6 @@ class Spawn(object):
                 ctypes.pythonapi.PyThreadState_SetAsyncExc(write_thread.ident, None)
 
         read_thread.join()
-
         self.pipes.destroy_pipe(PROCESS_PIPE, pipe_id)
 
         return True

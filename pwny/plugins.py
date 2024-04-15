@@ -100,7 +100,7 @@ class Plugins(Tables, Badges):
                 session = plugin_object.session
                 details = plugin_object.details
 
-                tab_path = (session.pwny_libs +
+                tab_path = (session.pwny_tabs +
                             str(session.details['Platform']) +
                             '/' + str(session.details['Arch']) +
                             '/' + details['Plugin'])
@@ -121,13 +121,14 @@ class Plugins(Tables, Badges):
 
                     tab_id = tlv.get_int(TLV_TYPE_TAB_ID)
                     plugin_object.plugin = tab_id
-
-                    self.loaded_plugins[plugin] = plugin_object
                     self.plugin_ids[plugin] = tab_id
 
-                    plugin_object.load()
                 else:
-                    raise RuntimeError(f"Plugin executable link does not exist at {tab_path}!")
+                    self.print_warning("No TAB was sent to a client.")
+                    self.plugin_ids[plugin] = -len(self.loaded_plugins)
+
+                self.loaded_plugins[plugin] = plugin_object
+                plugin_object.load()
             else:
                 raise RuntimeError(f"Invalid plugin: {plugin}!")
         else:
@@ -149,15 +150,26 @@ class Plugins(Tables, Badges):
             plugin_object = self.loaded_plugins[plugin]
             session = plugin_object.session
 
-            tlv = session.send_command(
-                tag=BUILTIN_DEL_TAB,
-                args={
-                    TLV_TYPE_INT: self.plugin_ids[plugin]
-                }
-            )
+            if self.plugin_ids[plugin] >= 0:
+                tlv = session.send_command(
+                    tag=TAB_TERM,
+                    args={
+                        TLV_TYPE_TAB_ID: self.plugin_ids[plugin]
+                    }
+                )
 
-            if tlv.get_int(TLV_TYPE_STATUS) != TLV_STATUS_SUCCESS:
-                raise RuntimeError(f"Failed to unload plugin: {plugin}!")
+                if tlv.get_int(TLV_TYPE_STATUS) != TLV_STATUS_QUIT:
+                    raise RuntimeError(f"Failed to quit plugin: {plugin}!")
+
+                tlv = session.send_command(
+                    tag=BUILTIN_DEL_TAB,
+                    args={
+                        TLV_TYPE_INT: self.plugin_ids[plugin]
+                    }
+                )
+
+                if tlv.get_int(TLV_TYPE_STATUS) != TLV_STATUS_SUCCESS:
+                    raise RuntimeError(f"Failed to unload plugin: {plugin}!")
 
             self.loaded_plugins.pop(plugin)
             self.plugin_ids.pop(plugin)

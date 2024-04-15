@@ -36,6 +36,11 @@
 #include <queue.h>
 #include <key_list.h>
 
+#ifdef GC_INUSE
+#include <gc.h>
+#include <gc/leak_detector.h>
+#endif
+
 static void tlv_pkt_release(value_t value)
 {
     tlv_t *tlv;

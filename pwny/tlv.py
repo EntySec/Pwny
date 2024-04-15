@@ -23,7 +23,9 @@ SOFTWARE.
 """
 
 from pwny.types import *
+from badges import Badges
 
+from pex.string import String
 from pex.proto.tlv import TLVPacket, TLVClient
 
 
@@ -41,18 +43,28 @@ class TLV(object):
         :return None: None
         """
 
+        self.string = String()
+        self.badges = Badges()
+
         self.client = client
 
-    def read(self, error: bool = False) -> TLVPacket:
+    def read(self, error: bool = False, verbose: bool = False) -> TLVPacket:
         """ Read TLV packet.
 
         :param bool error: raise errors if status is wrong
+        :param bool verbose: verbose dump packet for inspection
         :return TLVPacket: TLV packet
         :raises RuntimeError: with trailing error message
         """
 
         tlv = self.client.read()
         group = tlv.get_tlv(TLV_TYPE_GROUP)
+
+        if verbose:
+            self.badges.print_information(f"Read TLV packet ({str(len(group.buffer))} bytes, "
+                                          f"{str(len(group))} objects)")
+            for line in self.string.hexdump(group.buffer):
+                self.badges.print_information(line)
 
         if error:
             status = group.get_int(TLV_TYPE_STATUS, delete=False)
@@ -62,14 +74,21 @@ class TLV(object):
 
         return group
 
-    def send(self, packet: TLVPacket) -> None:
+    def send(self, packet: TLVPacket, verbose: bool = False) -> None:
         """ Send TLV packet.
 
         :param TLVPacket packet: TLV packet
+        :param bool verbose: verbose dump packet for inspection
         :return None: None
         """
 
         tlv = TLVPacket()
         tlv.add_tlv(TLV_TYPE_GROUP, packet)
+
+        if verbose:
+            self.badges.print_information(f"Sent TLV packet ({str(len(packet.buffer))} bytes, "
+                                          f"{str(len(packet))} objects)")
+            for line in self.string.hexdump(packet.buffer):
+                self.badges.print_information(line)
 
         self.client.send(tlv)

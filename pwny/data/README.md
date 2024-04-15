@@ -1,3 +1,3 @@
 ## `pwny/data`
 
-This endpoint is needed for storing different data files.
+This path is used to store data files for Pwny.

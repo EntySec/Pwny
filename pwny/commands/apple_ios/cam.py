@@ -53,33 +53,32 @@ class HatSploitCommand(Command):
                 device = result.get_string(TLV_TYPE_STRING)
 
         elif argv[1] == '-s':
-            if argc > 3:
-                result = self.session.send_command(
-                    tag=CAM_START,
-                    args={
-                        CAM_ID: int(argv[2]),
-                    }
-                )
+            result = self.session.send_command(
+                tag=CAM_START,
+                args={
+                    CAM_ID: int(argv[2]),
+                }
+            )
 
-                if result.get_int(TLV_TYPE_STATUS) != TLV_STATUS_SUCCESS:
-                    self.print_error(f"Failed to open device #{argv[2]}!")
-                    return
+            if result.get_int(TLV_TYPE_STATUS) != TLV_STATUS_SUCCESS:
+                self.print_error(f"Failed to open device #{argv[2]}!")
+                return
 
-                result = self.session.send_command(
-                    tag=CAM_FRAME
-                )
+            result = self.session.send_command(
+                tag=CAM_FRAME
+            )
 
-                if result.get_int(TLV_TYPE_STATUS) != TLV_STATUS_SUCCESS:
-                    self.print_error(f"Failed to read device #{argv[2]}!")
-                    self.session.send_command(tag=CAM_STOP)
-                    return
-
-                frame = result.get_raw(TLV_TYPE_BYTES)
-
-                try:
-                    with open(argv[3], 'wb') as f:
-                        f.write(frame)
-                except Exception:
-                    self.print_error(f"Failed to write image to {argv[3]}!")
-
+            if result.get_int(TLV_TYPE_STATUS) != TLV_STATUS_SUCCESS:
+                self.print_error(f"Failed to read device #{argv[2]}!")
                 self.session.send_command(tag=CAM_STOP)
+                return
+
+            frame = result.get_raw(TLV_TYPE_BYTES)
+
+            try:
+                with open(argv[3], 'wb') as f:
+                    f.write(frame)
+            except Exception:
+                self.print_error(f"Failed to write image to {argv[3]}!")
+
+            self.session.send_command(tag=CAM_STOP)

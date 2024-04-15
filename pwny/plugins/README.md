@@ -1,3 +1,3 @@
 ## `pwny/plugins`
 
-This endpoint is needed for storing different plugins.
+This path is used to store Pwny plugins.

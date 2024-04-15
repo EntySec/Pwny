@@ -36,6 +36,11 @@
 #include <tlv.h>
 #include <tlv_types.h>
 
+#ifdef GC_INUSE
+#include <gc.h>
+#include <gc/leak_detector.h>
+#endif
+
 static struct ev_idle eio_idle_watcher;
 static struct ev_async eio_async_watcher;
 
@@ -99,6 +104,11 @@ void core_read(void *data)
 
     c2 = data;
 
+#ifdef GC_INUSE
+    log_debug("* We will collect garbage!\n");
+    GC_set_find_leak(1);
+#endif
+
     while (c2_dequeue_tlv(c2, &c2->request) > 0)
     {
         switch (api_process_c2(c2))
@@ -112,6 +122,9 @@ void core_read(void *data)
                 tlv_pkt_destroy(c2->response);
                 tlv_pkt_destroy(c2->request);
 
+#ifdef GC_INUSE
+                GC_gcollect();
+#endif
                 break;
 
             case API_CALLBACK:
@@ -122,10 +135,17 @@ void core_read(void *data)
                 tlv_pkt_destroy(c2->response);
                 tlv_pkt_destroy(c2->request);
 
+#ifdef GC_INUSE
+                GC_gcollect();
+#endif
                 break;
 
             case API_SILENT:
                 log_debug("* Received API_SILENT signal (%d)\n", API_SILENT);
+
+#ifdef GC_INUSE
+                GC_gcollect();
+#endif
                 break;
 
             default:

@@ -39,6 +39,11 @@
 #include <link.h>
 #include <queue.h>
 
+#ifdef GC_INUSE
+#include <gc.h>
+#include <gc/leak_detector.h>
+#endif
+
 int net_block_sock(int sock)
 {
 #ifdef IS_WINDOWS
@@ -291,6 +296,8 @@ void net_write_file(net_t *net)
         write(net->out, buffer, size);
         free(buffer);
     }
+
+    free(buffer);
 }
 
 void net_write_tls(net_t *net)
@@ -327,6 +334,8 @@ void net_write_tls(net_t *net)
 
         free(buffer);
     }
+
+    free(buffer);
 }
 
 void net_write_tcp(net_t *net)
@@ -363,6 +372,8 @@ void net_write_tcp(net_t *net)
 
         free(buffer);
     }
+
+    free(buffer);
 }
 
 void net_read(struct ev_loop *loop, struct ev_io *w, int events)

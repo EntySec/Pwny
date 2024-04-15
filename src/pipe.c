@@ -31,6 +31,11 @@
 
 #include <uthash/uthash.h>
 
+#ifdef GC_INUSE
+#include <gc.h>
+#include <gc/leak_detector.h>
+#endif
+
 static pipe_t *pipe_from_tlv(pipe_t *pipes, tlv_pkt_t *tlv_pkt)
 {
     int id;
@@ -80,6 +85,10 @@ static tlv_pkt_t *pipe_create(c2_t *c2)
     if (pipes->callbacks.create_cb(pipe, c2) != 0)
     {
         log_debug("* Failed to create C2 pipe (id: %d)\n", id);
+
+        HASH_DEL(pipes->pipes, pipe);
+        free(pipe);
+
         return api_craft_tlv_pkt(API_CALL_FAIL);
     }
 
