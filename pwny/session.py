@@ -24,13 +24,15 @@ SOFTWARE.
 
 import os
 import socket
+import pathlib
 
 from alive_progress import alive_bar
+from cryptography.hazmat.primitives import serialization, hashes
+from cryptography.hazmat.primitives.asymmetric import padding
+from cryptography.hazmat.backends import default_backend
 
 from badges import Badges
 from typing import Optional
-
-from pwny import Pwny
 
 from pwny.types import *
 from pwny.api import *
@@ -42,13 +44,14 @@ from pwny.console import Console
 
 from pex.fs import FS
 from pex.ssl import OpenSSL
+from pex.string import String
 from pex.proto.tlv import TLVClient, TLVPacket
 
 from hatsploit.lib.session import Session
 from hatsploit.lib.loot import Loot
 
 
-class PwnySession(Pwny, Session, Console):
+class PwnySession(Session, Console):
     """ Subclass of pwny module.
 
     This subclass of pwny module represents an implementation
@@ -58,6 +61,17 @@ class PwnySession(Pwny, Session, Console):
     def __init__(self) -> None:
         super().__init__()
 
+        self.pwny = f'{os.path.dirname(os.path.dirname(__file__))}/pwny/'
+
+        self.pwny_data = self.pwny + 'data/'
+        self.pwny_tabs = self.pwny + 'tabs/'
+        self.pwny_loot = f'{pathlib.Path.home()}/.pwny/'
+
+        self.pwny_plugins = self.pwny + 'plugins/'
+        self.pwny_commands = self.pwny + 'commands/'
+
+        self.templates = self.pwny + 'templates/'
+
         self.channel = None
         self.uuid = None
         self.terminated = False
@@ -65,10 +79,11 @@ class PwnySession(Pwny, Session, Console):
 
         self.pipes = Pipes(self)
         self.loot = Loot(self.pwny_loot)
+        self.ssl = OpenSSL()
+        self.string = String()
 
         self.badges = Badges()
         self.fs = FS()
-        self.ssl = OpenSSL()
 
         self.details.update(
             {
@@ -76,42 +91,87 @@ class PwnySession(Pwny, Session, Console):
             }
         )
 
-    def open(self, client: socket.socket, loader: bool = True,
-             keyfile: str = 'pwny.key', certfile: str = 'pwny.crt') -> None:
+    def open(self, client: socket.socket,) -> None:
         """ Open the Pwny session.
 
         :param socket.socket client: client to open session with
-        :param bool loader: True if executed from loader else False
-        :param str keyfile: key file for SSL
-        :param str certfile: certificate file for SSL
         :return None: None
         :raises RuntimeError: with trailing error message
         """
 
-        if loader:
-            client.send(self.get_implant(
-                platform=self.details['Platform'],
-                arch=self.details['Arch']
-            ))
-
-        try:
-            client = self.ssl.wrap_client(client,
-                                          keyfile=keyfile,
-                                          certfile=certfile)
-        except Exception:
-            self.badges.print_warning("TLS handshake failed, connection is not secure.")
-
         self.channel = TLV(TLVClient(client))
 
-        tlv = self.channel.read(verbose=self.get_env('VERBOSE'))
+        tlv = self.send_command(BUILTIN_UUID)
         self.uuid = tlv.get_string(TLV_TYPE_UUID)
 
-        if self.uuid:
-            self.loot.create_loot()
-            self.start_pwny(self)
-            return
+        if not self.uuid:
+            raise RuntimeError("No UUID received or UUID broken!")
 
-        raise RuntimeError("No UUID received or UUID broken!")
+        if not self.channel.secure:
+            self.badges.print_warning(
+                "TLS not enabled, connection is not secure.")
+
+            proceed = self.badges.input_question(
+                "Do you wish to continue anyway [y/N]: ")
+
+            if proceed.lower() not in ['y', 'yes']:
+                self.send_command(tag=BUILTIN_QUIT)
+                self.close()
+
+                raise RuntimeWarning("Closing due to the lack of security.")
+
+        self.loot.create_loot()
+        self.start_pwny(self)
+
+    def secure(self) -> bool:
+        """ Establish secure TLS communication.
+
+        :return bool: True if success else False
+        """
+
+        if self.channel.secure:
+            self.print_process("Initializing re-exchange of keys...")
+
+        self.badges.print_process("Generating RSA keys...")
+        key = self.ssl.generate_key()
+
+        priv_key = self.ssl.dump_key(key)
+        pub_key = self.ssl.dump_public_key(key)
+
+        self.badges.print_process("Exchanging RSA keys for TLS...")
+
+        result = self.send_command(
+            tag=BUILTIN_SECURE,
+            args={
+                BUILTIN_TYPE_PUBLIC_KEY: pub_key,
+            }
+        )
+
+        if result.get_int(TLV_TYPE_STATUS) != TLV_STATUS_SUCCESS:
+            self.badges.print_error("Failed to exchange keys!")
+            return False
+
+        self.badges.print_success("RSA keys exchange success!")
+        sym_key = result.get_raw(BUILTIN_TYPE_KEY)
+
+        if not sym_key:
+            self.badges.print_error("Symmetric key was not received!")
+            return False
+
+        context = serialization.load_pem_private_key(
+            priv_key,
+            password=None,
+        )
+        sym_key_plain = context.decrypt(
+            sym_key,
+            padding.PKCS1v15()
+        )
+
+        self.badges.print_success("Communication secured with TLS!")
+        self.channel.secure = True
+        self.channel.key = sym_key_plain
+
+        return True
 
     def close(self) -> None:
         """ Close the Pwny session.
@@ -203,7 +263,6 @@ class PwnySession(Pwny, Session, Console):
                         size -= chunk
 
             self.pipes.destroy_pipe(FS_PIPE_FILE, pipe_id)
-
             return True
 
         self.fs.check_file(local_path)

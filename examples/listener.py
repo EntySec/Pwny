@@ -21,7 +21,7 @@ def main():
     p = PwnySession()
     p.details['Platform'] = sys.argv[3]
     p.details['Arch'] = sys.argv[4]
-    p.open(c, loader=False)
+    p.open(c)
     p.set_env('verbose', 'yes')
     p.set_prompt('pwny %red%bold% %end')
     p.interact()

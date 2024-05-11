@@ -546,7 +546,7 @@ static void fs_eio_file_copy(struct eio_req *request)
     if (source == NULL)
     {
         status = API_CALL_FAIL;
-        goto fail;
+        goto finalize;
     }
 
     dest = fopen(dst, "wb");
@@ -554,7 +554,7 @@ static void fs_eio_file_copy(struct eio_req *request)
     if (dest == NULL)
     {
         status = API_CALL_FAIL;
-        goto fail;
+        goto finalize;
     }
 
     while ((bytes = fread(buffer, sizeof(char), sizeof(buffer), source)) > 0)
@@ -564,14 +564,14 @@ static void fs_eio_file_copy(struct eio_req *request)
             fclose(source);
             fclose(dest);
             status = API_CALL_FAIL;
-            goto fail;
+            goto finalize;
         }
     }
 
     fclose(source);
     fclose(dest);
 
-fail:
+finalize:
     c2->response = api_craft_tlv_pkt(status);
     c2_enqueue_tlv(c2, c2->response);
 
@@ -641,7 +641,7 @@ static tlv_pkt_t *fs_chmod(c2_t *c2)
     char path[PATH_MAX];
 
     tlv_pkt_get_string(c2->request, TLV_TYPE_PATH, path);
-    tlv_pkt_get_int(c2->request, TLV_TYPE_INT, &mode);
+    tlv_pkt_get_u32(c2->request, TLV_TYPE_INT, &mode);
 
     eio_chmod(path, mode, 0, fs_eio, c2);
     return NULL;

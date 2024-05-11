@@ -275,7 +275,7 @@ static tlv_pkt_t *cam_start(c2_t *c2)
     int camID;
     NSData *frame;
 
-    tlv_pkt_get_int(c2->request, TLV_TYPE_CAM_ID, &camID);
+    tlv_pkt_get_u32(c2->request, TLV_TYPE_CAM_ID, &camID);
 
     @autoreleasepool
     {

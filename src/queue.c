@@ -27,6 +27,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <queue.h>
+#include <errno.h>
 #include <log.h>
 
 #include <uthash/utlist.h>
@@ -271,6 +272,7 @@ ssize_t queue_move_all(queue_t *queue, queue_t *new_queue)
 
 size_t queue_from_fd(queue_t *queue, int fd)
 {
+    int error;
     char buffer[QUEUE_FD_MAX];
     ssize_t count;
     size_t length;
@@ -282,6 +284,10 @@ size_t queue_from_fd(queue_t *queue, int fd)
         queue_add_raw(queue, buffer, count);
         length += count;
     }
+
+    error = errno;
+    log_debug("* Error reading from queue (fd: %d, errno: %d)\n",
+              fd, error);
 
     return length;
 }

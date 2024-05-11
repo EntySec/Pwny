@@ -32,48 +32,39 @@
 #include <c2.h>
 #include <tlv.h>
 #include <ev.h>
+#include <sigar.h>
+#include <tabs.h>
+#include <pipe.h>
+#include <tunnel.h>
 
 #define CORE_EV_FLAGS EVFLAG_NOENV | EVBACKEND_SELECT | EVFLAG_FORKCHECK
-
-/*! \struct core_t
- *  \brief core instance structure
- *
- *  \var core_t::c2
- *  hash table of C2 instances
- *  \var core_t::loop
- *  event loop
- */
 
 typedef struct
 {
     c2_t *c2;
+    sigar_t *sigar;
+    char *path;
+    char *uuid;
+
+    int t_count;
+    int c_count;
+
+    tabs_t *tabs;
+    api_calls_t *api_calls;
+    tunnels_t *tunnels;
 
     struct ev_loop *loop;
 } core_t;
 
-/*! \fn core_t *core_create(c2_t *c2)
- *  \brief create a core instance and return it
- *
- *  \param c2 hash table containing C2 instances
- *  \return core instance
- */
+core_t *core_create(void);
 
-core_t *core_create(c2_t *c2);
+void core_set_path(core_t *core, char *path);
+void core_set_uuid(core_t *core, char *uuid);
 
-/*! \fn int core_start(core_t *core)
- *  \brief start the main event loop on core
- *
- *  \param core core instance
- *  \return event loop error code
- */
+int core_add_uri(core_t *core, char *uri);
 
+void core_setup(core_t *core);
 int core_start(core_t *core);
-
-/*! \fn void core_destroy(core_t *core)
- *  \brief Destroy core instance freeing it
- *
- *  \param core core instance to destroy
- */
 
 void core_destroy(core_t *core);
 

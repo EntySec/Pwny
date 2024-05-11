@@ -26,12 +26,13 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <signal.h>
 #include <string.h>
+#include <signal.h>
 #include <ctype.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <sys/ioctl.h>
 
 #ifndef IS_WINDOWS
 #include <termios.h>
@@ -44,7 +45,7 @@
 #endif
 
 #include <ev.h>
-
+#include <misc.h>
 #include <log.h>
 #include <queue.h>
 #include <child.h>
@@ -59,82 +60,6 @@
 #include <gc.h>
 #include <gc/leak_detector.h>
 #endif
-
-static char **argv_split(char *args, char **argv, size_t *argc) {
-    char *p;
-    int c;
-    int prev_backslash = 0;
-
-    enum states {
-        DULL, // Outside of a word
-        IN_WORD, // Inside a word
-        IN_STRING // Inside a string
-    } state = DULL;
-
-    *argc = 0; // Initialize argument count
-
-    for (p = args; *p != '\0'; ++p) {
-        c = (unsigned char)*p;
-
-        // Toggle backslash flag if we're not already processing a backslash
-        if (c == '\\' && !prev_backslash) {
-            prev_backslash = 1;
-            continue; // Skip further processing, handle in the next iteration
-        }
-
-        switch (state) {
-            case DULL:
-                if (isspace(c)) {
-                    continue;
-                }
-                if (c == '"') {
-                    state = IN_STRING;
-                    argv = realloc(argv, sizeof(char *) * (*argc + 1));
-                    argv[*argc] = p; // Start after the quote p + 1
-                    continue;
-                }
-                state = IN_WORD;
-                argv = realloc(argv, sizeof(char *) * (*argc + 1));
-                argv[*argc] = p; // Start of a new word
-                break;
-
-            case IN_STRING:
-                if (c == '"' && !prev_backslash) {
-                	p++;
-                    *p = 0; // Terminate the string
-                    (*argc)++;
-                    state = DULL;
-                } else if (prev_backslash) {
-                    memmove(p - 1, p, strlen(p) + 1); // Shift back if escaped quote
-                    p--; // Adjust pointer since we've shifted the string
-                }
-                break;
-
-            case IN_WORD:
-                if (isspace(c)) {
-                    *p = 0; // Terminate the word
-                    (*argc)++;
-                    state = DULL;
-                }
-                break;
-        }
-
-        // If current character wasn't a backslash or we're just processing one,
-        // reset backslash flag.
-        prev_backslash = (c == '\\' && prev_backslash == 1) ? 1 : 0;
-    }
-
-    // Handle case where input ends in a word or string without trailing space
-    if (state != DULL) {
-        (*argc)++;
-    }
-
-    // Allocate space for a NULL pointer at the end
-    argv = realloc(argv, sizeof(char *) * (*argc + 1));
-    argv[*argc] = NULL;
-
-    return argv;
-}
 
 void child_set_links(child_t *child,
                      link_t out_link,
@@ -191,7 +116,7 @@ void child_out(struct ev_loop *loop, struct ev_io *w, int events)
     int length;
 
     child = w->data;
-    log_debug("* Child read out event initialized\n");
+    log_debug("* Child read out event initialized (%d)\n", w->fd);
 
     while ((length = queue_from_fd(child->out_queue.queue, w->fd)) > 0)
     {
@@ -210,7 +135,7 @@ void child_err(struct ev_loop *loop, struct ev_io *w, int events)
     int length;
 
     child = w->data;
-    log_debug("* Child read err event initialized\n");
+    log_debug("* Child read err event initialized (%d)\n", w->fd);
 
     while ((length = queue_from_fd(child->err_queue.queue, w->fd)) > 0)
     {
@@ -326,12 +251,11 @@ static pid_t child_fork(child_t *child, char *filename, unsigned char *image,
 {
     pid_t pid;
     int master;
-
-#ifndef IS_WINDOWS
     struct termios tios;
 
     if (options->flags & CHILD_FAKE_PTY)
     {
+        log_debug("* Initializing fake PTY\n");
         pid = forkpty(&master, NULL, NULL, NULL);
 
         if (pid == 0)
@@ -339,6 +263,8 @@ static pid_t child_fork(child_t *child, char *filename, unsigned char *image,
             tcgetattr(master, &tios);
             tcsetattr(master, TCSADRAIN, &tios);
         }
+
+	    log_debug("* PID: %d, FD: %d\n", pid, master);
 
         pipes->in_pair[0] = master;
         pipes->in_pair[1] = master;
@@ -351,12 +277,13 @@ static pid_t child_fork(child_t *child, char *filename, unsigned char *image,
     {
         pid = fork();
     }
-#else
-    pid = fork();
-#endif
 
     if (pid == 0)
     {
+        /*int ttyfd = open("/dev/tty", O_RDWR);
+        close(ttyfd);*/
+        /* workaround for macOS */
+
         dup2(pipes->in_pair[0], STDIN_FILENO);
         dup2(pipes->out_pair[1], STDOUT_FILENO);
         dup2(pipes->err_pair[1], STDERR_FILENO);
@@ -402,7 +329,7 @@ child_t *child_create(char *filename, unsigned char *image, child_options_t *opt
             asprintf(&args, "pwny %s", options->args);
         }
 
-        options->argv = argv_split(args, options->argv, &argc);
+        options->argv = misc_argv_split(args, options->argv, &argc);
     }
 
     if (options->argv == NULL)

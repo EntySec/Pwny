@@ -26,5 +26,6 @@
 #define _LOG_H_
 
 void log_debug(const char *fmt __attribute__((unused)), ...);
+void log_hexdump(const void *data, size_t size);
 
 #endif

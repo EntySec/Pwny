@@ -26,8 +26,13 @@
 #define _TLV_H_
 
 #include <stdlib.h>
-#include <key_list.h>
+#include <stddef.h>
+
 #include <queue.h>
+#include <crypt.h>
+
+#define TLV_FIELD  4
+#define TLV_HEADER 8
 
 struct tlv_header
 {
@@ -37,59 +42,30 @@ struct tlv_header
 
 typedef struct
 {
-    int type;
-    int length;
-    unsigned char *value;
-} tlv_t;
-
-typedef struct
-{
-    key_list_t *list;
     unsigned char *buffer;
     int bytes;
     int count;
 } tlv_pkt_t;
 
 tlv_pkt_t *tlv_pkt_create(void);
-tlv_pkt_t *tlv_pkt_parse(unsigned char *buffer, int size);
-
 void tlv_pkt_destroy(tlv_pkt_t *tlv_pkt);
-int tlv_pkt_serialize(tlv_pkt_t *tlv_pkt);
 
-int tlv_pkt_add_raw(tlv_pkt_t *tlv_pkt, int type, void *value, int length);
+int tlv_pkt_add_raw(tlv_pkt_t *tlv_pkt, int type, void *value, size_t length);
 
-int tlv_pkt_add_char(tlv_pkt_t *tlv_pkt, int type, char value);
-int tlv_pkt_add_short(tlv_pkt_t *tlv_pkt, int type, short value);
-int tlv_pkt_add_int(tlv_pkt_t *tlv_pkt, int type, int value);
-int tlv_pkt_add_long(tlv_pkt_t *tlv_pkt, int type, long value);
+int tlv_pkt_add_u16(tlv_pkt_t *tlv_pkt, int type, int16_t value);
+int tlv_pkt_add_u32(tlv_pkt_t *tlv_pkt, int type, int32_t value);
+int tlv_pkt_add_u64(tlv_pkt_t *tlv_pkt, int type, int64_t value);
 
-int tlv_pkt_add_uchar(tlv_pkt_t *tlv_pkt, int type, unsigned char value);
-int tlv_pkt_add_ushort(tlv_pkt_t *tlv_pkt, int type, unsigned short value);
-int tlv_pkt_add_uint(tlv_pkt_t *tlv_pkt, int type, unsigned int value);
-int tlv_pkt_add_ulong(tlv_pkt_t *tlv_pkt, int type, unsigned long value);
-
-int tlv_pkt_add_longlong(tlv_pkt_t *tlv_pkt, int type, long long value);
-int tlv_pkt_add_float(tlv_pkt_t *tlv_pkt, int type, float value);
-int tlv_pkt_add_double(tlv_pkt_t *tlv_pkt, int type, double value);
 int tlv_pkt_add_string(tlv_pkt_t *tlv_pkt, int type, char *value);
-int tlv_pkt_add_bytes(tlv_pkt_t *tlv_pkt, int type, unsigned char *value, int length);
+int tlv_pkt_add_bytes(tlv_pkt_t *tlv_pkt, int type, unsigned char *value, size_t length);
 int tlv_pkt_add_tlv(tlv_pkt_t *tlv_pkt, int type, tlv_pkt_t *value);
 
-int tlv_pkt_get_char(tlv_pkt_t *tlv_pkt, int type, char *value);
-int tlv_pkt_get_short(tlv_pkt_t *tlv_pkt, int type, short *value);
-int tlv_pkt_get_int(tlv_pkt_t *tlv_pkt, int type, int *value);
-int tlv_pkt_get_long(tlv_pkt_t *tlv_pkt, int type, long *value);
+ssize_t tlv_pkt_get_u16(tlv_pkt_t *tlv_pkt, int type, int16_t *value);
+ssize_t tlv_pkt_get_u32(tlv_pkt_t *tlv_pkt, int type, int32_t *value);
+ssize_t tlv_pkt_get_u64(tlv_pkt_t *tlv_pkt, int type, int64_t *value);
 
-int tlv_pkt_get_uchar(tlv_pkt_t *tlv_pkt, int type, unsigned char *value);
-int tlv_pkt_get_ushort(tlv_pkt_t *tlv_pkt, int type, unsigned short *value);
-int tlv_pkt_get_uint(tlv_pkt_t *tlv_pkt, int type, unsigned int *value);
-int tlv_pkt_get_ulong(tlv_pkt_t *tlv_pkt, int type, unsigned long *value);
-
-int tlv_pkt_get_longlong(tlv_pkt_t *tlv_pkt, int type, long long *value);
-int tlv_pkt_get_float(tlv_pkt_t *tlv_pkt, int type, float *value);
-int tlv_pkt_get_double(tlv_pkt_t *tlv_pkt, int type, double *value);
-int tlv_pkt_get_string(tlv_pkt_t *tlv_pkt, int type, char *value);
-int tlv_pkt_get_bytes(tlv_pkt_t *tlv_pkt, int type, unsigned char **value);
-tlv_pkt_t *tlv_pkt_get_tlv(tlv_pkt_t *tlv_pkt, int type);
+ssize_t tlv_pkt_get_string(tlv_pkt_t *tlv_pkt, int type, char *value);
+ssize_t tlv_pkt_get_bytes(tlv_pkt_t *tlv_pkt, int type, unsigned char **value);
+ssize_t tlv_pkt_get_tlv(tlv_pkt_t *tlv_pkt, int type, tlv_pkt_t **value);
 
 #endif

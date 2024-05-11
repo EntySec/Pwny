@@ -23,51 +23,77 @@ SOFTWARE.
 """
 
 import os
-import pathlib
 
-from typing import Union, Optional
-
-from pex.arch.types import Arch
-from pex.platform.types import Platform
-
-from hatsploit.lib.payload import Payload
-from hatsploit.lib.loot import Loot
+from typing import Union
 
 
 class Pwny(object):
     """ Main class of pwny module.
 
-    This main class of pwny module is intended for providing
-    an implementation of Pwny manipulation methods.
+    This main class of pwny module is intended to provide an
+    interface to craft Pwny implant.
     """
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, target: str, options: dict = {}) -> None:
+        """ Initialize Pwny and select target.
 
-        self.pwny = f'{os.path.dirname(os.path.dirname(__file__))}/pwny/'
-
-        self.pwny_data = self.pwny + 'data/'
-        self.pwny_tabs = self.pwny + 'tabs/'
-        self.pwny_loot = f'{pathlib.Path.home()}/.pwny/'
-
-        self.pwny_plugins = self.pwny + 'plugins/'
-        self.pwny_commands = self.pwny + 'commands/'
-
-        self.templates = self.pwny + 'templates/'
-
-    def get_template(self, target: str, extension: str = '') -> bytes:
-        """ Get Pwny template.
-
-        :param str target: target (e.g. x86_64-linux-musl, list - README.md)
-        :param str extension: extension of the file (e.g. bin, exe, so)
-        :return bytes: Pwny template
+        :param str target: target to build for (e.g. aarch64-apple-darwin)
+        :param dict options: options (e.g. key -u, value tcp://127.0.0.1:8888)
+        :return None: None
         """
 
-        template = self.templates + target
+        self.root = f'{os.path.dirname(os.path.dirname(__file__))}/pwny/'
+        self.templates = self.root + 'templates/'
 
-        if extension:
-            target += '.' + extension
+        self.target = self.templates + target
+        self.options = options
 
-        if os.path.exists(template):
-            return open(template, 'rb').read()
-        return b''
+    @staticmethod
+    def shorten_option(option: str) -> Union[str, None]:
+        """ Produce shortened representation of an option.
+
+        :param str option: option to format
+        :return Union[str, None]: shortened option
+        """
+
+        if option.lower() == 'uri':
+            return '-u'
+
+    def add_options(self, binary: bytes) -> bytes:
+        """ Add options to binary.
+
+        :param bytes binary: binary data
+        :return bytes: updated binary data
+        """
+
+        if not self.options:
+            return binary
+
+        sign = b"INJECT_OPTIONS"
+        length = 2000
+        options = "pwny"
+
+        for key, value in self.options.items():
+            options += f" {self.shorten_option(key)} {str(value)}"
+
+        if len(options) > length:
+            raise RuntimeError(
+                f"Options list too big ({str(len(options))} > {str(length)})!")
+
+        options = options.encode()
+        options += b'\x00' * (length - len(options))
+
+        return binary.replace(sign + b' ' * (length - len(sign)), options)
+
+    def to_binary(self, format: str = 'exe') -> Union[bytes, None]:
+        """ Convert implant to binary image.
+
+        :param str format: format (e.g. exe, bin, so, dylib)
+        :return Union[bytes, None]: binary image if exists else None
+        """
+
+        binary = self.target + '.' + format
+
+        if os.path.exists(binary):
+            with open(binary, 'rb') as f:
+                return self.add_options(f.read())

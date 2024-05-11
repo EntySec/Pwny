@@ -88,7 +88,7 @@ void tabs_out(void *data)
     tab = data;
     queue = tab->child->out_queue.queue;
 
-    queue_move_all(queue, tab->c2->net->egress);
+    queue_move_all(queue, tab->c2->tunnel->egress);
 
     if (tab->c2->write_link)
     {
@@ -152,8 +152,7 @@ int tabs_lookup(tabs_t **tabs, int id, tlv_pkt_t *tlv_pkt)
     {
         log_debug("* Found TAB entry (%d)\n", id);
 
-        group = group_create(tlv_pkt);
-        tlv_pkt_serialize(group);
+        group = group_create(tlv_pkt, NULL);
 
         log_debug("* Writing (%d) bytes to TAB\n", group->bytes);
         child_write(tab->child, group->buffer, group->bytes);

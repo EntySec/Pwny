@@ -22,11 +22,18 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
+import os
+
 from pwny.types import *
 from badges import Badges
 
 from pex.string import String
 from pex.proto.tlv import TLVPacket, TLVClient
+
+from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.backends import default_backend
 
 
 class TLV(object):
@@ -47,6 +54,43 @@ class TLV(object):
         self.badges = Badges()
 
         self.client = client
+        self.key = None
+        self.secure = False
+
+    def encrypt(self, packet: TLVPacket) -> bytes:
+        """ Encrypt TLV packet with AES CBC 256-bit.
+
+        :param TLVPacket packet: TLV packet to encrypt
+        :return bytes: encrypted TLV packet data
+        """
+
+        if not self.key:
+            raise RuntimeError("No AES key set, unable to encrypt!")
+
+        iv = os.urandom(16)
+        data = packet.buffer
+
+        cipher = Cipher(algorithms.AES(self.key), modes.CBC(iv), backend=default_backend)
+        encryptor = cipher.encryptor()
+
+        padded_data = data + (16 - len(data) % 16) * bytes([16 - len(data) % 16])
+        return iv + encryptor.update(padded_data) + encryptor.finalize()
+
+    def decrypt(self, data: bytes) -> TLVPacket:
+        """ Decrypt TLV packet with AES CBC 256-bit.
+
+        :param bytes data: data to decrypt
+        :return TLVPacket: decrypted TLV packet
+        """
+
+        iv = data[:16]
+        data = data[16:]
+
+        cipher = Cipher(algorithms.AES(self.key), modes.CBC(iv), backend=default_backend)
+        decryptor = cipher.decryptor()
+
+        padded_data = decryptor.update(data) + decryptor.finalize()
+        return TLVPacket(padded_data)
 
     def read(self, error: bool = False, verbose: bool = False) -> TLVPacket:
         """ Read TLV packet.
@@ -58,7 +102,12 @@ class TLV(object):
         """
 
         tlv = self.client.read()
-        group = tlv.get_tlv(TLV_TYPE_GROUP)
+        group = tlv.get_raw(TLV_TYPE_GROUP)
+
+        if self.secure:
+            group = self.decrypt(group)
+        else:
+            group = TLVPacket(group)
 
         if verbose:
             self.badges.print_information(f"Read TLV packet ({str(len(group.buffer))} bytes, "
@@ -83,7 +132,11 @@ class TLV(object):
         """
 
         tlv = TLVPacket()
-        tlv.add_tlv(TLV_TYPE_GROUP, packet)
+
+        if self.secure:
+            tlv.add_raw(TLV_TYPE_GROUP, self.encrypt(packet))
+        else:
+            tlv.add_tlv(TLV_TYPE_GROUP, packet)
 
         if verbose:
             self.badges.print_information(f"Sent TLV packet ({str(len(packet.buffer))} bytes, "

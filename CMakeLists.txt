@@ -30,7 +30,7 @@ option(MAIN "Build main executable" OFF)
 option(BUNDLE "Build as bundle (macOS)" OFF)
 option(GC "Build with GC" OFF)
 
-set(SOURCE src/main/test.c CACHE STRING "File to build as executable")
+set(SOURCE src/main/main.c CACHE STRING "File to build as executable")
 
 if (DEBUG)
     add_compile_definitions(DEBUG)

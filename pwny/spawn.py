@@ -215,15 +215,16 @@ class Spawn(object):
         """
 
         if self.is_dir(path):
-            self.badges.print_information(f"Changed directory to {path}")
             self.change_dir(path)
             return True
 
         try:
+            flags = FLAG_FORK
+
             pipe_id = self.pipes.create_pipe(
                 pipe_type=PROCESS_PIPE,
                 args={
-                    TLV_TYPE_INT: FLAG_NO_FORK,
+                    TLV_TYPE_INT: flags,
                     TLV_TYPE_FILENAME: path,
                     PROCESS_TYPE_PROCESS_ARGV: ' '.join(args)
                 }
@@ -232,8 +233,6 @@ class Spawn(object):
         except RuntimeError:
             self.badges.print_error(f"Failed to spawn process for {path}!")
             return False
-
-        self.badges.print_process(f"Executing: {path}")
 
         read_thread = threading.Thread(target=self.read_thread, args=(pipe_id,))
         read_thread.setDaemon(True)

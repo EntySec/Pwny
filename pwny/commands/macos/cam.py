@@ -5,6 +5,7 @@ Current source: https://github.com/EntySec/HatSploit
 
 import os
 import sys
+import time
 import threading
 
 from pwny.api import *

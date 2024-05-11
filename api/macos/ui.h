@@ -52,7 +52,7 @@ static tlv_pkt_t *ui_screenshot(c2_t *c2)
     NSDictionary *properties;
     NSData *newImage;
 
-    tlv_pkt_get_int(c2->request, TLV_TYPE_INT, &quality);
+    tlv_pkt_get_u32(c2->request, TLV_TYPE_INT, &quality);
     compression = quality / 100;
 
     @autoreleasepool

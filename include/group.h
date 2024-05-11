@@ -28,17 +28,16 @@
 #include <tlv.h>
 #include <queue.h>
 #include <stdlib.h>
+#include <crypt.h>
 
 typedef tlv_pkt_t group_t;
 
-group_t *group_create(tlv_pkt_t *tlv_pkt);
-tlv_pkt_t *group_tlv(group_t *group);
+group_t *group_create(tlv_pkt_t *tlv_pkt, crypt_t *crypt);
 
-int group_enqueue(queue_t *queue, group_t *group);
-ssize_t group_dequeue(queue_t *queue, group_t **group);
-
-int group_tlv_enqueue(queue_t *queue, tlv_pkt_t *tlv_pkt);
-ssize_t group_tlv_dequeue(queue_t *queue, tlv_pkt_t **tlv_pkt);
+int group_tlv_enqueue(queue_t *queue, tlv_pkt_t *tlv_pkt,
+                      crypt_t *crypt);
+ssize_t group_tlv_dequeue(queue_t *queue, tlv_pkt_t **tlv_pkt,
+                          crypt_t *crypt);
 
 void group_destroy(group_t *group);
 

@@ -22,8 +22,8 @@
  * SOFTWARE.
  */
 
-#ifndef _MACHINE_H_
-#define _MACHINE_H_
+#ifndef _MISC_H_
+#define _MISC_H_
 
 #include <stdint.h>
 
@@ -37,6 +37,7 @@ typedef union
     uint64_t word[2];
 } seed_t;
 
-int machine_uuid(char *buffer);
+int misc_uuid(char *buffer);
+char **misc_argv_split(char *args, char **argv, size_t *argc);
 
 #endif

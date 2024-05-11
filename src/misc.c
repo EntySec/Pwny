@@ -23,10 +23,13 @@
  */
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 #include <stdint.h>
+#include <ctype.h>
 
-#include <machine.h>
+#include <misc.h>
 
 #ifdef GC_INUSE
 #include <gc.h>
@@ -48,7 +51,88 @@ static uint64_t xor_shift_128_plus(uint64_t *seed)
     return seed[1] + seed0;
 }
 
-int machine_uuid(char *buffer)
+char **misc_argv_split(char *args, char **argv, size_t *argc)
+{
+    char *p;
+    int c;
+    int prev_backslash = 0;
+
+    enum states {
+        DULL,
+        IN_WORD,
+        IN_STRING
+    } state = DULL;
+
+    *argc = 0;
+
+    for (p = args; *p != '\0'; ++p)
+    {
+        c = (unsigned char)*p;
+
+        if (c == '\\' && !prev_backslash)
+        {
+            prev_backslash = 1;
+            continue;
+        }
+
+        switch (state)
+        {
+            case DULL:
+                if (isspace(c))
+                {
+                    continue;
+                }
+                if (c == '"')
+                {
+                    state = IN_STRING;
+                    argv = realloc(argv, sizeof(char *) * (*argc + 1));
+                    argv[*argc] = p;
+                    continue;
+                }
+                state = IN_WORD;
+                argv = realloc(argv, sizeof(char *) * (*argc + 1));
+                argv[*argc] = p;
+                break;
+
+            case IN_STRING:
+                if (c == '"' && !prev_backslash)
+                {
+                	p++;
+                    *p = 0;
+                    (*argc)++;
+                    state = DULL;
+                } else if (prev_backslash)
+                {
+                    memmove(p - 1, p, strlen(p) + 1);
+                    p--;
+                }
+                break;
+
+            case IN_WORD:
+                if (isspace(c))
+                {
+                    *p = 0;
+                    (*argc)++;
+                    state = DULL;
+                }
+                break;
+        }
+
+        prev_backslash = (c == '\\' && prev_backslash == 1) ? 1 : 0;
+    }
+
+    if (state != DULL)
+    {
+        (*argc)++;
+    }
+
+    argv = realloc(argv, sizeof(char *) * (*argc + 1));
+    argv[*argc] = NULL;
+
+    return argv;
+}
+
+int misc_uuid(char *buffer)
 {
     char *uuid;
 

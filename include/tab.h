@@ -49,6 +49,9 @@ typedef struct
 {
     c2_t *c2;
 
+    api_calls_t *api_calls;
+    tunnels_t *tunnels;
+
     struct ev_loop *loop;
 } tab_t;
 
@@ -60,6 +63,7 @@ void tab_write(void *data);
 void tab_register_call(tab_t *tab, int tag, api_t handler);
 void tab_register_pipe(tab_t *tab, int type, pipe_callbacks_t callbacks);
 
+void tab_setup(tab_t *tab);
 int tab_start(tab_t *tab);
 void tab_destroy(tab_t *tab);
 

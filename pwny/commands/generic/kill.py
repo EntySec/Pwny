@@ -36,7 +36,7 @@ class HatSploitCommand(Command):
             result = self.session.send_command(
                 tag=PROCESS_KILLALL,
                 args={
-                    PROCESS_TYPE_PID_STATE: argv[1]
+                    PROCESS_TYPE_PID_NAME: argv[1]
                 }
             )
 

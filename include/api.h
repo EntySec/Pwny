@@ -70,7 +70,7 @@ typedef struct api_calls_table
     UT_hash_handle hh;
 } api_calls_t;
 
-api_signal_t api_process_c2(c2_t *c2);
+api_signal_t api_process_c2(c2_t *c2, api_calls_t *api_calls, tabs_t *tabs);
 
 tlv_pkt_t *api_craft_tlv_pkt(int status);
 int api_call_make(api_calls_t **api_calls, c2_t *c2, int tag, tlv_pkt_t **result);

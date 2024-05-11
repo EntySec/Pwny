@@ -30,6 +30,7 @@ from pwny.types import *
 from pwny.api import *
 from pwny.plugins import Plugins
 from pwny.migrate import Migrate
+from pwny.tips import Tips
 
 from contextlib import redirect_stdout
 
@@ -446,7 +447,6 @@ Running as %blue$user%end on %line$dir%end
                 command, self.plugins.loaded_plugins, False):
             return
 
-        self.badges.print_process(f"Translating {command[0]} via PATH...")
         search = self.get_env('PATH').split(':')
 
         if len(command) >= 2:
@@ -466,6 +466,18 @@ Running as %blue$user%end on %line$dir%end
         """
 
         pass
+
+    def precmd(self, line: str) -> str:
+        """ Do something before processing commands.
+
+        :param str line: commands
+        :return str: commands
+        """
+
+        for key, item in self.env.items():
+            line = line.replace(f'${key}', str(item))
+
+        return line
 
     def postcmd(self, stop: str, _) -> str:
         """ Do something after each command.
@@ -580,6 +592,8 @@ Running as %blue$user%end on %line$dir%end
 
         if self.motd:
             self.badges.print_empty(self.motd)
+
+        Tips(self.session).print_random_tip()
 
         while True:
             result = self.runtime.catch(self.pwny_shell)

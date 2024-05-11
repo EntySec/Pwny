@@ -22,53 +22,18 @@
  * SOFTWARE.
  */
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <unistd.h>
+#ifndef _TUNNELS_H_
+#define _TUNNELS_H_
 
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
+#include <tunnel.h>
 
-#include <c2.h>
-#include <net.h>
-#include <core.h>
+#include <tunnels/tcp.h>
+#include <tunnels/ipc.h>
 
-int connect_to(char *host, int port)
+void register_tunnels(tunnels_t **tunnels)
 {
-    int sockfd;
-    struct sockaddr_in hint;
-
-    sockfd = socket(AF_INET, SOCK_STREAM, 0);
-    if (sockfd == -1)
-        return -1;
-
-    hint.sin_family = AF_INET;
-    hint.sin_port = htons(port);
-    hint.sin_addr.s_addr = inet_addr(host);
-
-    if (connect(sockfd, (struct sockaddr *)&hint, sizeof(hint)) != 0)
-        return -1;
-
-    return sockfd;
+    register_tcp_tunnels(tunnels);
+    register_ipc_tunnels(tunnels);
 }
 
-int main(int argc, char *argv[])
-{
-    c2_t *c2;
-    core_t *core;
-    int sock;
-
-    c2 = NULL;
-    sock = connect_to(argv[1], atoi(argv[2]));
-
-    c2_add_sock(&c2, 0, sock, NET_PROTO_TLS);
-
-    core = core_create(c2);
-    core_start(core);
-
-    c2_free(c2);
-    core_destroy(core);
-
-    return 0;
-}
+#endif
