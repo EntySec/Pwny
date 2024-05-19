@@ -74,13 +74,13 @@ struct c2_table
 typedef struct c2_table c2_t;
 
 c2_t *c2_create(int id);
+c2_t *c2_add_uri(c2_t **c2_table, int id, char *uri, tunnels_t *tunnels);
 
-int c2_add_uri(c2_t **c2_table, int id, char *uri, tunnels_t *tunnels);
-int c2_add(c2_t **c2_table, c2_t *c2_new);
+void c2_setup(c2_t *c2, struct ev_loop *loop, struct pipes_table *pipes, void *data);
+void c2_start(c2_t *c2);
+void c2_stop(c2_t *c2);
 
-void c2_setup(c2_t *c2_table, struct ev_loop *loop, void *data);
-void c2_start(c2_t *c2_table);
-void c2_set_links(c2_t *c2_table,
+void c2_set_links(c2_t *c2,
                   link_t read_link,
                   link_t write_link,
                   link_event_t event_link,
@@ -88,6 +88,8 @@ void c2_set_links(c2_t *c2_table,
 
 ssize_t c2_dequeue_tlv(c2_t *c2, tlv_pkt_t **tlv_pkt);
 int c2_enqueue_tlv(c2_t *c2, tlv_pkt_t *tlv_pkt);
+
+int c2_active_tunnels(c2_t *c2_table);
 
 void c2_read(void *data);
 void c2_write(void *data);

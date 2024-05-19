@@ -27,6 +27,11 @@
 #include <tunnel.h>
 #include <log.h>
 
+#ifdef GC_INUSE
+#include <gc.h>
+#include <gc/leak_detector.h>
+#endif
+
 void register_tunnel(tunnels_t **tunnels, char *proto,
                      tunnel_callbacks_t callbacks)
 {
@@ -81,6 +86,9 @@ tunnel_t *tunnel_create(tunnels_t *tunnel)
     }
 
     new_tunnel->callbacks = tunnel->callbacks;
+    new_tunnel->keep_alive = 0;
+    new_tunnel->active = 0;
+    new_tunnel->delay = 1.0;
 
     return new_tunnel;
 }
@@ -137,13 +145,17 @@ void tunnel_write(tunnel_t *tunnel, queue_t *egress)
     }
 }
 
-void tunnel_free(tunnel_t *tunnel)
+void tunnel_exit(tunnel_t *tunnel)
 {
     if (tunnel->callbacks.exit_cb)
     {
         return tunnel->callbacks.exit_cb(tunnel);
     }
+}
 
+void tunnel_free(tunnel_t *tunnel)
+{
+    free(tunnel->uri);
     free(tunnel);
 }
 

@@ -31,6 +31,11 @@
 #include <misc.h>
 #include <log.h>
 
+#ifdef GC_INUSE
+#include <gc.h>
+#include <gc/leak_detector.h>
+#endif
+
 static void parse_argv(int argc, char *argv[], core_t *core)
 {
     int step;
@@ -125,7 +130,6 @@ int main(int argc, char *argv[])
     core_t *core;
 
     signal(SIGPIPE, SIG_IGN);
-
     core = core_create();
 
     if (core == NULL)

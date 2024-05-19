@@ -157,14 +157,22 @@ tab_t *tab_create(void)
 
 void tab_setup(tab_t *tab)
 {
+    c2_t *c2;
+
     tab->c2 = NULL;
 
     register_pipe_api_calls(&tab->api_calls);
-    register_tunnels(&tab->tunnels);
+    register_tab_tunnels(&tab->tunnels);
 
-    c2_add_uri(&tab->c2, 0, "ipc://", tab->tunnels);
-    c2_set_links(tab->c2, tab_read, tab_write, NULL, NULL);
-    c2_setup(tab->c2, tab->loop, tab);
+    c2 = c2_add_uri(&tab->c2, 0, "ipc://", tab->tunnels);
+    if (c2 == NULL)
+    {
+        return;
+    }
+
+    c2_set_links(c2, tab_read, tab_write, NULL, NULL);
+    c2_setup(c2, tab->loop, NULL, tab);
+    c2_start(c2);
 }
 
 int tab_start(tab_t *tab)
@@ -175,8 +183,6 @@ int tab_start(tab_t *tab)
     ev_signal_start(tab->loop, &sigint_w);
     ev_signal_init(&sigterm_w, tab_signal_handler, SIGTERM);
     ev_signal_start(tab->loop, &sigterm_w);
-
-    c2_start(tab->c2);
 
     return ev_run(tab->loop, 0);
 }

@@ -219,7 +219,7 @@ class Spawn(object):
             return True
 
         try:
-            flags = FLAG_FORK
+            flags = FLAG_NO_FORK
 
             pipe_id = self.pipes.create_pipe(
                 pipe_type=PROCESS_PIPE,

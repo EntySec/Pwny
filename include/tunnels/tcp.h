@@ -125,6 +125,8 @@ int tcp_tunnel_start(tunnel_t *tunnel)
     net_t *net;
 
     net = tunnel->data;
+
+    net_set_delay(net, tunnel->delay);
     net_start(net);
 
     return 0;
@@ -147,6 +149,7 @@ int tcp_tunnel_init(tunnel_t *tunnel)
     net_setup(net, tunnel->loop);
 
     tunnel->data = net;
+    tunnel->active = 1;
 
     tunnel->ingress = net->io->ingress;
     tunnel->egress = net->io->egress;
@@ -158,11 +161,18 @@ void tcp_tunnel_exit(tunnel_t *tunnel)
 {
     net_t *net;
 
+    if (!tunnel->active)
+    {
+        return;
+    }
+
     net = tunnel->data;
 
     net_stop(net);
     net_stop_timer(net);
     net_free(net);
+
+    tunnel->active = 0;
 }
 
 void register_tcp_tunnels(tunnels_t **tunnels)

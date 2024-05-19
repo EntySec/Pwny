@@ -44,6 +44,7 @@ from hatsploit.lib.runtime import Runtime
 from hatsploit.lib.session import Session
 from hatsploit.lib.commands import Commands
 from hatsploit.lib.handler import Handler
+from hatsploit.lib.show import Show
 
 from pex.fs import FS
 
@@ -77,6 +78,7 @@ Running as %blue$user%end on %line$dir%end
 
         self.plugins = Plugins()
         self.commands = Commands()
+        self.show = Show()
 
         self.runtime = Runtime()
 
@@ -254,24 +256,7 @@ Running as %blue$user%end on %line$dir%end
         self.tables.print_table("Core Commands", ('Command', 'Description'),
                                 *self.core_commands)
         self.commands.show_commands(self.custom_commands)
-
-        for plugin in self.plugins.loaded_plugins:
-            loaded_plugin = self.plugins.loaded_plugins[plugin]
-
-            if hasattr(loaded_plugin, "commands"):
-                commands_data = {}
-                headers = ("Command", "Description")
-                commands = loaded_plugin.commands
-
-                for label in sorted(commands):
-                    commands_data[label] = []
-
-                    for command in sorted(loaded_plugin.commands[label]):
-                        commands_data[label].append(
-                            (command, commands[label][command]['Description']))
-
-                for label in sorted(commands_data):
-                    self.tables.print_table(label.title() + " Commands", headers, *commands_data[label])
+        self.show.show_plugin_commands(self.plugins.loaded_plugins)
 
     def do_plugins(self, _) -> None:
         """ Show available plugins.
@@ -324,8 +309,9 @@ Running as %blue$user%end on %line$dir%end
 
         if len(line) >= 2:
             self.session.spawn(line[0], line[1:])
-        else:
-            self.session.spawn(line[0], [])
+            return
+
+        self.session.spawn(line[0], [])
 
     def do_set(self, line: str) -> None:
         """ Set environment variable.
@@ -367,7 +353,7 @@ Running as %blue$user%end on %line$dir%end
             env_data.append((name, self.env[name]))
 
         if not env_data:
-            self.print_warning("No environment available.")
+            self.badges.print_warning("No environment available.")
             return
 
         self.tables.print_table("Environment Variables", ('Name', 'Value'),
@@ -436,7 +422,6 @@ Running as %blue$user%end on %line$dir%end
         """
 
         self.check_session()
-
         command = line.split()
 
         if self.commands.execute_custom_command(
@@ -578,7 +563,9 @@ Running as %blue$user%end on %line$dir%end
         self.check_session()
 
         with io.StringIO() as buffer, redirect_stdout(buffer):
+            self.badges.set_less(False)
             self.onecmd(command)
+            self.badges.set_less(True)
             return buffer.getvalue()
 
     def pwny_console(self) -> None:

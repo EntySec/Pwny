@@ -50,6 +50,10 @@ struct tunnel
     void *link_data;
     struct ev_loop *loop;
 
+    float delay;
+    int keep_alive;
+    int active;
+
     queue_t *ingress;
     queue_t *egress;
 
@@ -84,6 +88,7 @@ void tunnel_set_uri(tunnel_t *tunnel, char *uri);
 void tunnel_setup(tunnel_t *tunnel, struct ev_loop *loop);
 int tunnel_init(tunnel_t *tunnel);
 int tunnel_start(tunnel_t *tunnel);
+void tunnel_exit(tunnel_t *tunnel);
 void tunnel_write(tunnel_t *tunnel, queue_t *egress);
 
 void tunnel_free(tunnel_t *tunnel);

@@ -33,7 +33,6 @@
 #include <tlv.h>
 #include <log.h>
 #include <core.h>
-#include <calls.h>
 
 #include <tlv_types.h>
 #include <uthash/uthash.h>
@@ -87,7 +86,7 @@ api_signal_t api_process_c2(c2_t *c2, api_calls_t *api_calls, tabs_t *tabs)
 
     c2->response = result;
 
-    if (tlv_pkt_get_u32(c2->response, TLV_TYPE_STATUS, &status) == 0)
+    if (tlv_pkt_get_u32(c2->response, TLV_TYPE_STATUS, &status) >= 0)
     {
         switch (status)
         {
@@ -109,11 +108,6 @@ tlv_pkt_t *api_craft_tlv_pkt(int status)
     tlv_pkt_add_u32(c2_pkt, TLV_TYPE_STATUS, status);
 
     return c2_pkt;
-}
-
-void api_pipes_register(pipes_t **pipes)
-{
-    register_api_pipes(pipes);
 }
 
 void api_pipe_register(pipes_t **pipes, int type,
@@ -142,11 +136,6 @@ void api_pipe_register(pipes_t **pipes, int type,
 
     HASH_ADD_INT(*pipes, type, pipe_new);
     log_debug("* Registered API pipe (type: %d)\n", type);
-}
-
-void api_calls_register(api_calls_t **api_calls)
-{
-    register_api_calls(api_calls);
 }
 
 void api_call_register(api_calls_t **api_calls, int tag, api_t handler)

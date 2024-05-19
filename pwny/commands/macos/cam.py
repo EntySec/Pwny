@@ -15,7 +15,7 @@ from pex.proto.stream import StreamClient
 
 from hatsploit.lib.command import Command
 
-CAM_BASE = 4
+CAM_BASE = 5
 
 CAM_FRAME = tlv_custom_tag(API_CALL_STATIC, CAM_BASE, API_CALL)
 CAM_LIST = tlv_custom_tag(API_CALL_STATIC, CAM_BASE, API_CALL + 1)

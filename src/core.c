@@ -27,7 +27,6 @@
 #include <eio.h>
 #include <ev.h>
 
-#include <api.h>
 #include <c2.h>
 #include <core.h>
 #include <tabs.h>
@@ -35,6 +34,7 @@
 #include <tunnel.h>
 #include <log.h>
 #include <net_client.h>
+#include <calls.h>
 #include <misc.h>
 
 #include <tlv.h>
@@ -126,15 +126,27 @@ void core_read(void *data)
                 log_debug("* Received API_BREAK signal (%d)\n", API_BREAK);
 
                 c2_enqueue_tlv(c2, c2->response);
-                ev_break(c2->loop, EVBREAK_ALL);
 
                 tlv_pkt_destroy(c2->response);
                 tlv_pkt_destroy(c2->request);
 
+                crypt_set_secure(c2->crypt, STAT_NOT_SECURE);
+                crypt_set_algo(c2->crypt, ALGO_NONE);
+
+                if (!c2->tunnel->keep_alive)
+                {
+                    c2_stop(c2);
+                }
+
+                if (c2_active_tunnels(core->c2) == 0)
+                {
+                    ev_break(core->loop, EVBREAK_ALL);
+                }
+
 #ifdef GC_INUSE
                 GC_gcollect();
 #endif
-                break;
+                return;
 
             case API_CALLBACK:
                 log_debug("* Received API_CALLBACK signal (%d)\n", API_CALLBACK);
@@ -147,6 +159,7 @@ void core_read(void *data)
 #ifdef GC_INUSE
                 GC_gcollect();
 #endif
+
                 break;
 
             case API_SILENT:
@@ -202,13 +215,24 @@ void core_set_path(core_t *core, char *path)
 
 int core_add_uri(core_t *core, char *uri)
 {
-    if (c2_add_uri(&core->c2, core->c_count, uri, core->tunnels) >= 0)
+    c2_t *c2;
+    struct pipes_table *pipes;
+
+    c2 = c2_add_uri(&core->c2, core->c_count, uri, core->tunnels);
+    if (c2 == NULL)
     {
-        core->c_count++;
-        return 0;
+        return -1;
     }
 
-    return -1;
+    pipes = NULL;
+    register_api_pipes(&pipes);
+
+    c2_set_links(c2, core_read, core_write, NULL, NULL);
+    c2_setup(c2, core->loop, pipes, core);
+    c2_start(c2);
+
+    core->c_count++;
+    return 0;
 }
 
 void core_setup(core_t *core)
@@ -224,9 +248,8 @@ void core_setup(core_t *core)
     sigar_open(&core->sigar);
 
     register_pipe_api_calls(&core->api_calls);
-    register_tunnels(&core->tunnels);
-
-    api_calls_register(&core->api_calls);
+    register_core_tunnels(&core->tunnels);
+    register_api_calls(&core->api_calls);
 }
 
 int core_start(core_t *core)
@@ -239,10 +262,6 @@ int core_start(core_t *core)
     ev_signal_start(core->loop, &sigterm_w);
 
     ev_async_start(core->loop, &eio_async_watcher);
-
-    c2_set_links(core->c2, core_read, core_write, NULL, NULL);
-    c2_setup(core->c2, core->loop, core);
-    c2_start(core->c2);
 
     return ev_run(core->loop, 0);
 }

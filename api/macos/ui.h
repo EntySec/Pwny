@@ -33,7 +33,7 @@
 
 #import <AVFoundation/AVFoundation.h>
 
-#define UI_BASE 5
+#define UI_BASE 6
 
 #define UI_SCREENSHOT \
         TLV_TAG_CUSTOM(API_CALL_STATIC, \

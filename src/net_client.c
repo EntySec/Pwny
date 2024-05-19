@@ -40,6 +40,11 @@
 #include <net_client.h>
 #include <io.h>
 
+#ifdef GC_INUSE
+#include <gc.h>
+#include <gc/leak_detector.h>
+#endif
+
 net_t *net_create(void)
 {
     net_t *net;
@@ -53,6 +58,7 @@ net_t *net_create(void)
 
     net->io = io_create();
     net->status = NET_STATUS_CLOSED;
+    net->delay = 1.0;
 
     if (net->io == NULL)
     {
@@ -253,7 +259,6 @@ static int net_on_resolve(struct eio_req *request)
     }
 
     close(sock);
-
     return -1;
 }
 
@@ -270,11 +275,18 @@ void net_timer(struct ev_loop *loop, struct ev_timer *w, int revents)
     eio_custom(net_resolve, 0, net_on_resolve, net);
 }
 
+void net_set_delay(net_t *net, float delay)
+{
+    net->delay = delay;
+}
+
 void net_start(net_t *net)
 {
+    log_debug("* Starting %f\n", net->delay);
     if (net->proto == NET_PROTO_UDP || net->proto == NET_PROTO_TCP)
     {
-        ev_timer_init(&net->timer, net_timer, 0, 1.0);
+        ev_timer_stop(net->loop, &net->timer);
+        ev_timer_init(&net->timer, net_timer, net->delay, net->delay);
         net->timer.data = net;
         ev_timer_start(net->loop, &net->timer);
     }
@@ -371,7 +383,7 @@ int net_add_uri(net_t *net, char *uri)
     char *ipv6_end;
 
     temp_uri = strdup(uri);
-    host = strstr(uri, "://");
+    host = strstr(temp_uri, "://");
     net->uri = strdup(uri);
 
     if (temp_uri == NULL || net->uri == NULL)

@@ -34,7 +34,7 @@
 #import <AVFoundation/AVFoundation.h>
 #import <AppKit/NSImage.h>
 
-#define CAM_BASE 4
+#define CAM_BASE 5
 
 #define CAM_FRAME \
         TLV_TAG_CUSTOM(API_CALL_STATIC, \

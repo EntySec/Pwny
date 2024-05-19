@@ -106,6 +106,7 @@ class TLV(object):
 
         if self.secure:
             group = self.decrypt(group)
+            group.clean()
         else:
             group = TLVPacket(group)
 

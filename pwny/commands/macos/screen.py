@@ -13,7 +13,7 @@ from pex.proto.stream import StreamClient
 
 from hatsploit.lib.command import Command
 
-UI_BASE = 5
+UI_BASE = 6
 
 UI_SCREENSHOT = tlv_custom_tag(API_CALL_STATIC, UI_BASE, API_CALL)
 

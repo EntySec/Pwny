@@ -32,6 +32,7 @@ from badges import Tables, Badges
 
 from hatsploit.lib.plugins import Plugins as HatSploitPlugins
 from hatsploit.lib.session import Session
+from hatsploit.lib.show import Show
 
 
 class Plugins(Tables, Badges):
@@ -45,6 +46,7 @@ class Plugins(Tables, Badges):
         super().__init__()
 
         self.plugins = HatSploitPlugins()
+        self.show = Show()
 
         self.imported_plugins = {}
         self.loaded_plugins = {}
@@ -71,17 +73,7 @@ class Plugins(Tables, Badges):
         :return None: None
         """
 
-        all_plugins = self.imported_plugins
-        headers = ("Number", "Name", "Description")
-
-        number = 0
-        plugins_data = []
-
-        for plugin in all_plugins:
-            plugins_data.append((number, plugin, all_plugins[plugin].details['Description']))
-            number += 1
-
-        self.print_table("Plugins", headers, *plugins_data)
+        self.show.show_loaded_plugins(self.imported_plugins)
 
     def load_plugin(self, plugin: str) -> Union[int, None]:
         """ Load specified plugin.

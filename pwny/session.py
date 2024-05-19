@@ -31,7 +31,6 @@ from cryptography.hazmat.primitives import serialization, hashes
 from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.hazmat.backends import default_backend
 
-from badges import Badges
 from typing import Optional
 
 from pwny.types import *
@@ -82,16 +81,11 @@ class PwnySession(Session, Console):
         self.ssl = OpenSSL()
         self.string = String()
 
-        self.badges = Badges()
         self.fs = FS()
 
-        self.details.update(
-            {
-                'Type': "pwny"
-            }
-        )
+        self.details.update({'Type': "pwny"})
 
-    def open(self, client: socket.socket,) -> None:
+    def open(self, client: socket.socket) -> None:
         """ Open the Pwny session.
 
         :param socket.socket client: client to open session with
@@ -108,17 +102,8 @@ class PwnySession(Session, Console):
             raise RuntimeError("No UUID received or UUID broken!")
 
         if not self.channel.secure:
-            self.badges.print_warning(
-                "TLS not enabled, connection is not secure.")
-
-            proceed = self.badges.input_question(
-                "Do you wish to continue anyway [y/N]: ")
-
-            if proceed.lower() not in ['y', 'yes']:
-                self.send_command(tag=BUILTIN_QUIT)
-                self.close()
-
-                raise RuntimeWarning("Closing due to the lack of security.")
+            self.print_warning("TLS not enabled, connection is not secure.")
+            self.print_information("Enable it with %greensecure%end command.")
 
         self.loot.create_loot()
         self.start_pwny(self)
@@ -132,13 +117,13 @@ class PwnySession(Session, Console):
         if self.channel.secure:
             self.print_process("Initializing re-exchange of keys...")
 
-        self.badges.print_process("Generating RSA keys...")
+        self.print_process("Generating RSA keys...")
         key = self.ssl.generate_key()
 
         priv_key = self.ssl.dump_key(key)
         pub_key = self.ssl.dump_public_key(key)
 
-        self.badges.print_process("Exchanging RSA keys for TLS...")
+        self.print_process("Exchanging RSA keys for TLS...")
 
         result = self.send_command(
             tag=BUILTIN_SECURE,
@@ -148,14 +133,14 @@ class PwnySession(Session, Console):
         )
 
         if result.get_int(TLV_TYPE_STATUS) != TLV_STATUS_SUCCESS:
-            self.badges.print_error("Failed to exchange keys!")
+            self.print_error("Failed to exchange keys!")
             return False
 
-        self.badges.print_success("RSA keys exchange success!")
+        self.print_success("RSA keys exchange success!")
         sym_key = result.get_raw(BUILTIN_TYPE_KEY)
 
         if not sym_key:
-            self.badges.print_error("Symmetric key was not received!")
+            self.print_error("Symmetric key was not received!")
             return False
 
         context = serialization.load_pem_private_key(
@@ -167,7 +152,7 @@ class PwnySession(Session, Console):
             padding.PKCS1v15()
         )
 
-        self.badges.print_success("Communication secured with TLS!")
+        self.print_success("Communication secured with TLS!")
         self.channel.secure = True
         self.channel.key = sym_key_plain
 
@@ -243,7 +228,7 @@ class PwnySession(Session, Console):
                 )
 
             except RuntimeError:
-                self.badges.print_error(f"Remote file: {remote_file}: does not exist!")
+                self.print_error(f"Remote file: {remote_file}: does not exist!")
                 return False
 
             self.pipes.seek_pipe(FS_PIPE_FILE, pipe_id, 0, 2)

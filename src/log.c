@@ -27,21 +27,19 @@
 
 #include <log.h>
 
+#ifdef DEBUG
 void log_debug(const char *fmt __attribute__((unused)), ...)
 {
-#ifdef DEBUG
     va_list args;
     va_start(args, fmt);
 
     vfprintf(stderr, fmt, args);
 
     va_end(args);
-#endif
 }
 
 void log_hexdump(const void *data, size_t size)
 {
-#ifdef DEBUG
     char ascii[17];
     size_t iter;
     size_t pointer;
@@ -87,5 +85,5 @@ void log_hexdump(const void *data, size_t size)
             }
         }
     }
-#endif
 }
+#endif

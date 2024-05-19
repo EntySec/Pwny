@@ -85,10 +85,6 @@
         TLV_TAG_CUSTOM(API_CALL_STATIC, \
                        BUILTIN_BASE, \
                        API_CALL + 8)
-#define BUILTIN_UNSECURE \
-        TLV_TAG_CUSTOM(API_CALL_STATIC, \
-                       BUILTIN_BASE, \
-                       API_CALL + 9)
 
 #define TLV_TYPE_PLATFORM  TLV_TYPE_CUSTOM(TLV_TYPE_STRING, BUILTIN_BASE, API_TYPE)
 #define TLV_TYPE_VERSION   TLV_TYPE_CUSTOM(TLV_TYPE_STRING, BUILTIN_BASE, API_TYPE + 1)
@@ -305,9 +301,11 @@ static tlv_pkt_t *builtin_secure(c2_t *c2)
     }
     pkey_length++;
 
+    crypt_set_algo(c2->crypt, ALGO_AES256_CBC);
+
     if ((key_length = crypt_generate_key(c2->crypt, &c2->crypt->next_key)) < 0)
     {
-        return api_craft_tlv_pkt(API_CALL_FAIL);
+        goto fail;
     }
 
     memset(buffer, '\0', MBEDTLS_MPI_MAX_SIZE);
@@ -316,7 +314,7 @@ static tlv_pkt_t *builtin_secure(c2_t *c2)
 
     if (length <= 0)
     {
-        return api_craft_tlv_pkt(API_CALL_FAIL);
+        goto fail;
     }
 
     c2->response = api_craft_tlv_pkt(API_CALL_SUCCESS);
@@ -330,12 +328,10 @@ static tlv_pkt_t *builtin_secure(c2_t *c2)
 
     eio_custom(builtin_enable_security, 0, NULL, c2);
     return NULL;
-}
 
-static tlv_pkt_t *builtin_unsecure(c2_t *c2)
-{
-    crypt_set_secure(c2->crypt, STAT_NOT_SECURE);
-    return api_craft_tlv_pkt(API_CALL_SUCCESS);
+fail:
+    crypt_set_algo(c2->crypt, ALGO_NONE);
+    return api_craft_tlv_pkt(API_CALL_FAIL);
 }
 
 void register_builtin_api_calls(api_calls_t **api_calls)
@@ -349,7 +345,6 @@ void register_builtin_api_calls(api_calls_t **api_calls)
     api_call_register(api_calls, BUILTIN_WHOAMI, builtin_whoami);
     api_call_register(api_calls, BUILTIN_UUID, builtin_uuid);
     api_call_register(api_calls, BUILTIN_SECURE, builtin_secure);
-    api_call_register(api_calls, BUILTIN_UNSECURE, builtin_unsecure);
 }
 
 #endif

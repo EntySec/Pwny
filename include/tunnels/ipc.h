@@ -115,6 +115,7 @@ int ipc_tunnel_init(tunnel_t *tunnel)
 
     tunnel->ingress = net->io->ingress;
     tunnel->egress = net->io->egress;
+    tunnel->active = 1;
 
     return 0;
 }
@@ -123,10 +124,17 @@ void ipc_tunnel_exit(tunnel_t *tunnel)
 {
     net_t *net;
 
+    if (!tunnel->active)
+    {
+        return;
+    }
+
     net = tunnel->data;
 
     net_stop(net);
     net_free(net);
+
+    tunnel->active = 0;
 }
 
 void register_ipc_tunnels(tunnels_t **tunnels)

@@ -30,9 +30,13 @@
 #include <tunnels/tcp.h>
 #include <tunnels/ipc.h>
 
-void register_tunnels(tunnels_t **tunnels)
+void register_core_tunnels(tunnels_t **tunnels)
 {
     register_tcp_tunnels(tunnels);
+}
+
+void register_tab_tunnels(tunnels_t **tunnels)
+{
     register_ipc_tunnels(tunnels);
 }
 
