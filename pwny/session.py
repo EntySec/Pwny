@@ -24,13 +24,14 @@ SOFTWARE.
 
 import os
 import socket
+import pathlib
 
 from alive_progress import alive_bar
+from cryptography.hazmat.primitives import serialization, hashes
+from cryptography.hazmat.primitives.asymmetric import padding
+from cryptography.hazmat.backends import default_backend
 
-from badges import Badges
 from typing import Optional
-
-from pwny import Pwny
 
 from pwny.types import *
 from pwny.api import *
@@ -42,12 +43,14 @@ from pwny.console import Console
 
 from pex.fs import FS
 from pex.ssl import OpenSSL
+from pex.string import String
 from pex.proto.tlv import TLVClient, TLVPacket
 
 from hatsploit.lib.session import Session
+from hatsploit.lib.loot import Loot
 
 
-class PwnySession(Pwny, Session, Console):
+class PwnySession(Session, Console):
     """ Subclass of pwny module.
 
     This subclass of pwny module represents an implementation
@@ -57,54 +60,103 @@ class PwnySession(Pwny, Session, Console):
     def __init__(self) -> None:
         super().__init__()
 
+        self.pwny = f'{os.path.dirname(os.path.dirname(__file__))}/pwny/'
+
+        self.pwny_data = self.pwny + 'data/'
+        self.pwny_tabs = self.pwny + 'tabs/'
+        self.pwny_loot = f'{pathlib.Path.home()}/.pwny/'
+
+        self.pwny_plugins = self.pwny + 'plugins/'
+        self.pwny_commands = self.pwny + 'commands/'
+
+        self.templates = self.pwny + 'templates/'
+
         self.channel = None
         self.uuid = None
         self.terminated = False
+        self.reason = TERM_UNKNOWN
 
         self.pipes = Pipes(self)
-
-        self.badges = Badges()
-        self.fs = FS()
+        self.loot = Loot(self.pwny_loot)
         self.ssl = OpenSSL()
+        self.string = String()
 
-        self.details.update(
-            {
-                'Type': "pwny"
-            }
-        )
+        self.fs = FS()
 
-    def open(self, client: socket.socket, loader: bool = True,
-             keyfile: str = 'pwny.key', certfile: str = 'pwny.crt') -> None:
+        self.details.update({'Type': "pwny"})
+
+    def open(self, client: socket.socket) -> None:
         """ Open the Pwny session.
 
         :param socket.socket client: client to open session with
-        :param bool loader: True if executed from loader else False
-        :param str keyfile: key file for SSL
-        :param str certfile: certificate file for SSL
         :return None: None
         :raises RuntimeError: with trailing error message
         """
 
-        if loader:
-            client.send(self.get_implant(
-                platform=self.details['Platform'],
-                arch=self.details['Arch']
-            ))
-
-        client = self.ssl.wrap_client(client,
-                                      keyfile=keyfile,
-                                      certfile=certfile)
-
         self.channel = TLV(TLVClient(client))
 
-        tlv = self.channel.read()
+        tlv = self.send_command(BUILTIN_UUID)
         self.uuid = tlv.get_string(TLV_TYPE_UUID)
 
-        if self.uuid:
-            self.start_pwny(self)
-            return
+        if not self.uuid:
+            raise RuntimeError("No UUID received or UUID broken!")
 
-        raise RuntimeError("No UUID received or UUID broken!")
+        if not self.channel.secure:
+            self.print_warning("TLS not enabled, connection is not secure.")
+            self.print_information("Enable it with %greensecure%end command.")
+
+        self.loot.create_loot()
+        self.start_pwny(self)
+
+    def secure(self) -> bool:
+        """ Establish secure TLS communication.
+
+        :return bool: True if success else False
+        """
+
+        if self.channel.secure:
+            self.print_process("Initializing re-exchange of keys...")
+
+        self.print_process("Generating RSA keys...")
+        key = self.ssl.generate_key()
+
+        priv_key = self.ssl.dump_key(key)
+        pub_key = self.ssl.dump_public_key(key)
+
+        self.print_process("Exchanging RSA keys for TLS...")
+
+        result = self.send_command(
+            tag=BUILTIN_SECURE,
+            args={
+                BUILTIN_TYPE_PUBLIC_KEY: pub_key,
+            }
+        )
+
+        if result.get_int(TLV_TYPE_STATUS) != TLV_STATUS_SUCCESS:
+            self.print_error("Failed to exchange keys!")
+            return False
+
+        self.print_success("RSA keys exchange success!")
+        sym_key = result.get_raw(BUILTIN_TYPE_KEY)
+
+        if not sym_key:
+            self.print_error("Symmetric key was not received!")
+            return False
+
+        context = serialization.load_pem_private_key(
+            priv_key,
+            password=None,
+        )
+        sym_key_plain = context.decrypt(
+            sym_key,
+            padding.PKCS1v15()
+        )
+
+        self.print_success("Communication secured with TLS!")
+        self.channel.secure = True
+        self.channel.key = sym_key_plain
+
+        return True
 
     def close(self) -> None:
         """ Close the Pwny session.
@@ -113,6 +165,7 @@ class PwnySession(Pwny, Session, Console):
         """
 
         self.channel.client.close()
+        self.reason = TERM_CLOSED
         self.terminated = True
 
     def heartbeat(self) -> bool:
@@ -140,8 +193,15 @@ class PwnySession(Pwny, Session, Console):
         tlv.add_int(TLV_TYPE_TAG, tag)
         tlv.add_from_dict(args)
 
-        self.channel.send(tlv)
-        return self.channel.read(error=True)
+        try:
+            self.channel.send(tlv, verbose=self.get_env('VERBOSE'))
+        except Exception as e:
+            self.terminated = True
+            self.reason = str(e)
+
+            raise RuntimeWarning(f"Connection terminated ({self.reason}).")
+
+        return self.channel.read(error=True, verbose=self.get_env('VERBOSE'))
 
     def download(self, remote_file: str, local_path: str) -> bool:
         """ Download file from the Pwny session.
@@ -168,7 +228,7 @@ class PwnySession(Pwny, Session, Console):
                 )
 
             except RuntimeError:
-                self.badges.print_error(f"Remote file: {remote_file}: does not exist!")
+                self.print_error(f"Remote file: {remote_file}: does not exist!")
                 return False
 
             self.pipes.seek_pipe(FS_PIPE_FILE, pipe_id, 0, 2)
@@ -188,7 +248,6 @@ class PwnySession(Pwny, Session, Console):
                         size -= chunk
 
             self.pipes.destroy_pipe(FS_PIPE_FILE, pipe_id)
-
             return True
 
         self.fs.check_file(local_path)
@@ -229,15 +288,26 @@ class PwnySession(Pwny, Session, Console):
 
             return True
 
-    def spawn(self, path: str, args: list = []) -> bool:
+    def spawn(self, path: str, args: list = [], search: list = []) -> bool:
         """ Execute path.
 
         :param str path: path to execute
         :param list args: command-line arguments
+        :param list search: list of paths to search for binary in
         :return bool: True if success else False
         """
 
-        return Spawn(self).spawn(path, args)
+        spawn = Spawn(self)
+
+        if not os.path.isabs(path):
+            for search_path in search:
+                search_path = spawn.search_path(search_path, path)
+
+                if search_path:
+                    path = search_path
+                    break
+
+        return spawn.spawn(path, args)
 
     def interact(self) -> None:
         """ Interact with the Pwny session.

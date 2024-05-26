@@ -7,7 +7,7 @@
 #define LIBCRYPTOCOMPAT_UNISTD_H
 
 #ifndef _MSC_VER
-#include_next <unistd.h>
+//#include_next <unistd.h>
 #else
 
 #include <stdlib.h>

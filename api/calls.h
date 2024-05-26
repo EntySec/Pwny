@@ -29,6 +29,7 @@
 #include <builtins.h>
 #include <process.h>
 #include <fs.h>
+#include <net.h>
 
 #ifdef IS_IPHONE
 #include <ios/cam.h>
@@ -38,11 +39,17 @@
 #include <ios/gather.h>
 #endif
 
+#ifdef IS_MACOS
+#include <macos/cam.h>
+#include <macos/ui.h>
+#endif
+
 void register_api_calls(api_calls_t **api_calls)
 {
     register_builtin_api_calls(api_calls);
     register_process_api_calls(api_calls);
     register_fs_api_calls(api_calls);
+    register_net_api_calls(api_calls);
 
 #ifdef IS_IPHONE
     register_cam_api_calls(api_calls);
@@ -51,12 +58,18 @@ void register_api_calls(api_calls_t **api_calls)
     register_locate_api_calls(api_calls);
     register_gather_api_calls(api_calls);
 #endif
+
+#ifdef IS_MACOS
+    register_cam_api_calls(api_calls);
+    register_ui_api_calls(api_calls);
+#endif
 }
 
 void register_api_pipes(pipes_t **pipes)
 {
     register_fs_api_pipes(pipes);
     register_process_api_pipes(pipes);
+    register_net_api_pipes(pipes);
 
 #ifdef IS_IPHONE
     register_player_api_pipes(pipes);

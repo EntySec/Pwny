@@ -6,6 +6,9 @@ Current source: https://github.com/EntySec/HatSploit
 from pwny.api import *
 from pwny.types import *
 
+from badges import Map
+
+from colorscript import ColorScript
 from hatsploit.lib.command import Command
 
 LOCATE_BASE = 8
@@ -27,22 +30,21 @@ class HatSploitCommand(Command):
                 'Ivan Nikolskiy (enty8080) - command developer'
             ],
             'Description': "Manage location services.",
-            'Usage': "locate <option>",
-            'MinArgs': 1,
-            'Options': {
-                'info': ['', 'Get location.'],
-            }
+            'Usage': "locate",
+            'MinArgs': 0,
         }
 
     def run(self, argc, argv):
-        if argv[1] == 'info':
-            result = self.session.send_command(tag=LOCATE_GET)
+        result = self.session.send_command(tag=LOCATE_GET)
 
-            latitude = result.get_string(LOCATE_LATITUDE)
-            longitude = result.get_string(LOCATE_LONGITUDE)
+        latitude = result.get_string(LOCATE_LATITUDE)
+        longitude = result.get_string(LOCATE_LONGITUDE)
 
-            if latitude and longitude:
-                self.print_information(f"Latitude:  {latitude}")
-                self.print_information(f"Longitude: {longitude}")
-                self.print_information(f"Map:       %linehttp://maps.google.com/maps?q={latitude},{longitude}%end")
-                return
+        plot = Map()
+        plot.deploy(float(latitude), float(longitude))
+
+        self.print_empty(plot.get_map())
+        self.print_empty(f'%line%boldLatitude%end: {latitude}', start=' ' * 5)
+        self.print_empty(f'%line%boldLongitude%end: {longitude}', start=' ' * 5)
+        self.print_empty(f'%line%boldMap%end: http://maps.google.com/maps?q={latitude},{longitude}%end', start=' ' * 5)
+        self.print_empty()

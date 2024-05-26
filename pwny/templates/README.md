@@ -1,3 +1,3 @@
 ## `pwny/templates`
 
-This endpoint is needed for storing Pwny executable templates.
+This path is used to store executable templates for Pwny.

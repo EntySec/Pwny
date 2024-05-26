@@ -1,10 +1,48 @@
-libev:
-	@echo "[Building libev]"
-	@cd ../deps/build; \
-	git clone https://github.com/libev-cn/libev; \
-	cd libev; \
-	sh autogen.sh; ./configure; \
-	make $(shell $(MAKE_TOOLCHAIN_FILE)); \
-	cp .libs/libev.a ../; \
-	cp ev.h ../
-	@echo "[Done building libev]"
+#
+# MIT License
+#
+# Copyright (c) 2020-2024 EntySec
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+#
+
+LIBEV_VERSION = 4.33
+
+$(BUILD)/libev/configure:
+	$(QUIET) $(LOG) "[Unpacking libev]"
+	$(CHDIR) $(BUILD); \
+	    $(TAR) zxf $(DEPS)/libev-$(LIBEV_VERSION).tar.gz; \
+	    $(MOVE) libev-$(LIBEV_VERSION) libev
+	$(QUIET) $(LOG) "[Done unpacking libev]"
+
+$(BUILD)/libev/Makefile: $(BUILD)/libev/configure
+	$(QUIET) $(LOG) "[Configuring libev]"
+	$(CHDIR) $(BUILD)/libev; \
+	    $(CONFIG); \
+	    $(ENV) ./$(CONFIGURE)
+	$(QUIET) $(LOG) "[Done configuring libev]"
+
+$(BUILD_LIB)/libev.a: $(BUILD)/libev/Makefile
+	$(QUIET) $(LOG) "[Building libev]"
+	$(CHDIR) $(BUILD)/libev; \
+	    $(ENV) $(MAKE); \
+	    $(MAKE_INSTALL)
+	$(QUIET) $(LOG) "[Done building libev]"
+
+libev: $(BUILD_LIB)/libev.a

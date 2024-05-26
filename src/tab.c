@@ -39,6 +39,14 @@
 #include <log.h>
 #include <link.h>
 #include <queue.h>
+#include <tunnel.h>
+
+#include <tunnels/tunnels.h>
+
+#ifdef GC_INUSE
+#include <gc.h>
+#include <gc/leak_detector.h>
+#endif
 
 static void tab_signal_handler(struct ev_loop *loop, ev_signal *w, int revents)
 {
@@ -62,13 +70,14 @@ static void tab_signal_handler(struct ev_loop *loop, ev_signal *w, int revents)
 void tab_read(void *data)
 {
     c2_t *c2;
-    int status;
+    tab_t *tab;
 
     c2 = data;
+    tab = c2->data;
 
     while (c2_dequeue_tlv(c2, &c2->request) > 0)
     {
-        switch (api_process_c2(c2))
+        switch (api_process_c2(c2, tab->api_calls, NULL))
         {
             case API_BREAK:
                 log_debug("* Received API_BREAK signal (%d)\n", API_BREAK);
@@ -106,17 +115,17 @@ void tab_write(void *data)
     c2_t *c2;
 
     c2 = data;
-    net_write(c2->net);
+    tunnel_write(c2->tunnel, c2->tunnel->egress);
 }
 
 void tab_register_call(tab_t *tab, int tag, api_t handler)
 {
-    api_call_register(&tab->c2->dynamic.api_calls, tag, handler);
+    api_call_register(&tab->api_calls, tag, handler);
 }
 
 void tab_register_pipe(tab_t *tab, int type, pipe_callbacks_t callbacks)
 {
-    api_pipe_register(&tab->c2->dynamic.pipes, type, callbacks);
+    api_pipe_register(&tab->c2->pipes, type, callbacks);
 }
 
 tab_t *tab_create(void)
@@ -133,6 +142,9 @@ tab_t *tab_create(void)
 
     tab->loop = ev_default_loop(TAB_EV_FLAGS);
 
+    tab->api_calls = NULL;
+    tab->tunnels = NULL;
+
     flags = fcntl(STDIN_FILENO, F_GETFL, 0);
     fcntl(STDIN_FILENO, F_SETFL, flags | O_NONBLOCK);
     flags = fcntl(STDOUT_FILENO, F_GETFL, 0);
@@ -140,18 +152,31 @@ tab_t *tab_create(void)
     flags = fcntl(STDERR_FILENO, F_GETFL, 0);
     fcntl(STDERR_FILENO, F_SETFL, flags | O_NONBLOCK);
 
+    return tab;
+}
+
+void tab_setup(tab_t *tab)
+{
+    c2_t *c2;
+
     tab->c2 = NULL;
 
-    c2_add_file(&tab->c2, 0, STDIN_FILENO);
-    c2_set_links(tab->c2, tab_read, tab_write, NULL);
-    c2_setup(tab->c2, tab->loop);
+    register_pipe_api_calls(&tab->api_calls);
+    register_tab_tunnels(&tab->tunnels);
 
-    return tab;
+    c2 = c2_add_uri(&tab->c2, 0, "ipc://", tab->tunnels);
+    if (c2 == NULL)
+    {
+        return;
+    }
+
+    c2_set_links(c2, tab_read, tab_write, NULL, NULL);
+    c2_setup(c2, tab->loop, NULL, tab);
+    c2_start(c2);
 }
 
 int tab_start(tab_t *tab)
 {
-    int status;
     ev_signal sigint_w, sigterm_w;
 
     ev_signal_init(&sigint_w, tab_signal_handler, SIGINT);
@@ -159,17 +184,27 @@ int tab_start(tab_t *tab)
     ev_signal_init(&sigterm_w, tab_signal_handler, SIGTERM);
     ev_signal_start(tab->loop, &sigterm_w);
 
-    net_start(tab->c2->net);
-
-    status = ev_run(tab->loop, 0);
-    c2_free(tab->c2);
-
-    return status;
+    return ev_run(tab->loop, 0);
 }
 
 void tab_destroy(tab_t *tab)
 {
     ev_break(tab->loop, EVBREAK_ALL);
+
     c2_free(tab->c2);
+
+    api_calls_free(tab->api_calls);
+    tunnels_free(tab->tunnels);
+
     free(tab);
+}
+
+static tlv_pkt_t *tab_term(c2_t *c2)
+{
+    return api_craft_tlv_pkt(API_CALL_QUIT);
+}
+
+void register_tab_api_calls(api_calls_t **api_calls)
+{
+    api_call_register(api_calls, TAB_TERM, tab_term);
 }

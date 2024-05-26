@@ -1,0 +1,143 @@
+#
+# MIT License
+#
+# Copyright (c) 2020-2024 EntySec
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+#
+
+QUIET = @
+
+TAR = tar
+LOG = echo
+MKDIR = mkdir -p
+RM = rm -rf
+CHDIR = cd
+MOVE = mv
+COPY = cp -r
+SED = sed
+
+ROOT = $(shell pwd)
+
+TARGET := native
+
+DEPS = $(ROOT)/deps
+BUILD = $(DEPS)/build/$(TARGET)
+BUILD_LIB = $(BUILD)/lib
+BUILD_INCLUDE = $(BUILD)/include
+TOOLCHAIN = $(ROOT)/toolchain
+CMAKE_TOOLCHAIN = $(TOOLCHAIN)/cmake
+
+ifneq "$(TARGET)" "native"
+	TARGET=$(TARGET)
+else
+	TARGET=$(shell uname -s|tr '[:upper:]' '[:lower:]').$(shell uname -m)
+endif
+
+CFLAGS := $(CFLAGS) -Os -Wno-attributes
+ifeq (,$(findstring mingw,$(TARGET)))
+	CFLAGS := $(CFLAGS) -fPIE
+	ifneq (,$(findstring sparc,$(TARGET)))
+		CFLAGS := $(CFLAGS) -fPIC
+	else
+		CFLAGS := $(CFLAGS) -fpic
+    endif
+endif
+
+CONFIG = cp $(DEPS)/config.guess $(DEPS)/config.sub .
+CONFIGURE = configure --prefix=$(BUILD) --disable-shared
+
+MAKE := make
+MAKE_INSTALL := $(MAKE) install
+
+CMAKE = cmake -B build -DCMAKE_INSTALL_PREFIX=$(BUILD)
+CMAKE_MAKE = cmake --build build
+CMAKE_INSTALL = cmake --install build
+
+ifneq "$(TARGET)" "native"
+	HOST = $(TARGET)
+    CMAKE := $(CMAKE) -DCMAKE_TOOLCHAIN_FILE=$(CMAKE_TOOLCHAIN)/$(TARGET).cmake
+endif
+
+ifneq "$(HOST)" ""
+	CONFIGURE := $(CONFIGURE) --host=$(HOST)
+endif
+
+ifeq "$(DEBUG)" "1"
+	CMAKE := $(CMAKE) -DDEBUG=ON
+	CFLAGS := $(CFLAGS) -g
+endif
+
+ifneq (,$(findstring darwin,$(TARGET)))
+	LDFLAGS := $(LDFLAGS) -framework Foundation -framework AVFoundation -framework CoreMedia -framework CoreImage -framework CoreVideo
+	ifneq (,$(findstring iphone,$(TARGET)))
+		LDFLAGS := $(LDFLAGS) -framework UIKit -framework CoreGraphics
+	else
+		LDFLAGS := $(LDFLAGS) -framework AppKit
+    endif
+	ENV := SDKROOT=$(SDK)
+endif
+
+CROSS = /etc/corss
+CROSS_BIN = $(CROSS)/bin
+
+ifneq "$(TARGET)" "native"
+	ifneq (,$(findstring musl,$(TARGET)))
+		CC = $(CROSS_BIN)/$(TARGET)-gcc
+		CXX = $(CROSS_BIN)/$(TARGET)-g++
+		CPP = $(CROSS_BIN)/$(TARGET)-cpp
+		AR = $(CROSS_BIN)/$(TARGET)-ar
+		LD = $(CROSS_BIN)/$(TARGET)-ld
+		RANLIB = $(CROSS_BIN)/$(TARGET)-ranlib
+	endif
+	ifneq (,$(findstring mingw,$(TARGET)))
+		CC = $(TARGET)-gcc
+		CXX = $(TARGET)-g++
+		CPP = $(TARGET)-cpp
+		AR = $(TARGET)-ar
+		LD = $(TARGET)-ld
+		RANLIB = $(TARGET)-ranlib
+	endif
+	ifneq (,$(findstring i386-apple,$(TARGET)))
+		ADDFLAGS := -arch i386
+		CFLAGS := $(CFLAGS) $(ADDFLAGS)
+		CPPFLAGS := $(CPPFLAGS) $(ADDFLAGS)
+		OBJCFLAGS := $(OBJCFLAGS) $(ADDFLAGS)
+		LDFLAGS := $(LDFLAGS) $(ADDFLAGS)
+	endif
+	ifneq (,$(findstring aarch64-apple,$(TARGET)))
+		ADDFLAGS := -arch arm64
+		CFLAGS := $(CFLAGS) $(ADDFLAGS)
+		CPPFLAGS := $(CPPFLAGS) $(ADDFLAGS)
+		OBJCFLAGS := $(OBJCFLAGS) $(ADDFLAGS)
+		LDFLAGS := $(LDFLAGS) $(ADDFLAGS)
+	endif
+	ifneq (,$(findstring iphone,$(TARGET)))
+		ifneq (,$(findstring arm,$(TARGET)))
+			ADDFLAGS := -isysroot $(SDK) -mios-version-min=7.1 -arch armv7
+		else
+			ADDFLAGS := -isysroot $(SDK) -mios-version-min=7.1 -arch arm64
+		endif
+		CFLAGS := $(CFLAGS) $(ADDFLAGS)
+		CPPFLAGS := $(CPPFLAGS) $(ADDFLAGS)
+		LDFLAGS := $(LDFLAGS) $(ADDFLAGS)
+	endif
+endif
+
+ENV := $(ENV) ARFLAGS="cr" AR_FLAGS="cr" LDFLAGS="-L$(BUILD)/lib $(LDFLAGS)" CC="$(CC)" CPP="$(CPP)" AR="$(AR)" RANLIB="$(RANLIB)" CFLAGS="$(CFLAGS) -DFIND_LEAKS" CPPFLAGS="$(CPPFLAGS)" OBJCFLAGS="$(OBJCFLAGS)"

@@ -32,6 +32,7 @@ from badges import Tables, Badges
 
 from hatsploit.lib.plugins import Plugins as HatSploitPlugins
 from hatsploit.lib.session import Session
+from hatsploit.lib.show import Show
 
 
 class Plugins(Tables, Badges):
@@ -45,6 +46,7 @@ class Plugins(Tables, Badges):
         super().__init__()
 
         self.plugins = HatSploitPlugins()
+        self.show = Show()
 
         self.imported_plugins = {}
         self.loaded_plugins = {}
@@ -71,17 +73,7 @@ class Plugins(Tables, Badges):
         :return None: None
         """
 
-        all_plugins = self.imported_plugins
-        headers = ("Number", "Name", "Description")
-
-        number = 0
-        plugins_data = []
-
-        for plugin in all_plugins:
-            plugins_data.append((number, plugin, all_plugins[plugin].details['Description']))
-            number += 1
-
-        self.print_table("Plugins", headers, *plugins_data)
+        self.show.show_loaded_plugins(self.imported_plugins)
 
     def load_plugin(self, plugin: str) -> Union[int, None]:
         """ Load specified plugin.
@@ -100,9 +92,9 @@ class Plugins(Tables, Badges):
                 session = plugin_object.session
                 details = plugin_object.details
 
-                tab_path = (session.pwny_libs +
-                            session.details['Platform'] +
-                            '/' + session.details['Arch'] +
+                tab_path = (session.pwny_tabs +
+                            str(session.details['Platform']) +
+                            '/' + str(session.details['Arch']) +
                             '/' + details['Plugin'])
 
                 if os.path.exists(tab_path):
@@ -120,15 +112,15 @@ class Plugins(Tables, Badges):
                         raise RuntimeError(f"Failed to load plugin: {plugin}!")
 
                     tab_id = tlv.get_int(TLV_TYPE_TAB_ID)
-
                     plugin_object.plugin = tab_id
-
-                    self.loaded_plugins[plugin] = plugin_object
                     self.plugin_ids[plugin] = tab_id
 
-                    plugin_object.load()
                 else:
-                    raise RuntimeError(f"Plugin executable link does not exist at {tab_path}!")
+                    self.print_warning("No TAB was sent to a client.")
+                    self.plugin_ids[plugin] = -len(self.loaded_plugins)
+
+                self.loaded_plugins[plugin] = plugin_object
+                plugin_object.load()
             else:
                 raise RuntimeError(f"Invalid plugin: {plugin}!")
         else:
@@ -150,15 +142,26 @@ class Plugins(Tables, Badges):
             plugin_object = self.loaded_plugins[plugin]
             session = plugin_object.session
 
-            tlv = session.send_command(
-                tag=BUILTIN_DEL_TAB,
-                args={
-                    TLV_TYPE_TAB_ID: self.plugin_ids[plugin]
-                }
-            )
+            if self.plugin_ids[plugin] >= 0:
+                tlv = session.send_command(
+                    tag=TAB_TERM,
+                    args={
+                        TLV_TYPE_TAB_ID: self.plugin_ids[plugin]
+                    }
+                )
 
-            if tlv.get_int(TLV_TYPE_STATUS) != TLV_STATUS_SUCCESS:
-                raise RuntimeError(f"Failed to unload plugin: {plugin}!")
+                if tlv.get_int(TLV_TYPE_STATUS) != TLV_STATUS_QUIT:
+                    raise RuntimeError(f"Failed to quit plugin: {plugin}!")
+
+                tlv = session.send_command(
+                    tag=BUILTIN_DEL_TAB,
+                    args={
+                        TLV_TYPE_INT: self.plugin_ids[plugin]
+                    }
+                )
+
+                if tlv.get_int(TLV_TYPE_STATUS) != TLV_STATUS_SUCCESS:
+                    raise RuntimeError(f"Failed to unload plugin: {plugin}!")
 
             self.loaded_plugins.pop(plugin)
             self.plugin_ids.pop(plugin)

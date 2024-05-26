@@ -1,5 +1,6 @@
 set(CMAKE_SYSTEM_NAME iOS)
 set(CMAKE_SYSTEM_PROCESSOR arm64)
+set(CMAKE_SYSTEM_TARGET aarch64-iphone-darwin)
 
 set(CMAKE_C_COMPILER clang)
 set(CMAKE_CXX_COMPILER clang)

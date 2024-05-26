@@ -22,24 +22,50 @@
  * SOFTWARE.
  */
 
+/*! \file core.h
+ *  \brief control core entry point to a main event loop
+ */
+
 #ifndef _CORE_H_
 #define _CORE_H_
 
 #include <c2.h>
 #include <tlv.h>
 #include <ev.h>
+#include <sigar.h>
+#include <tabs.h>
+#include <pipe.h>
+#include <tunnel.h>
 
 #define CORE_EV_FLAGS EVFLAG_NOENV | EVBACKEND_SELECT | EVFLAG_FORKCHECK
 
 typedef struct
 {
     c2_t *c2;
+    sigar_t *sigar;
+    char *path;
+    char *uuid;
+
+    int t_count;
+    int c_count;
+
+    tabs_t *tabs;
+    api_calls_t *api_calls;
+    tunnels_t *tunnels;
 
     struct ev_loop *loop;
 } core_t;
 
-core_t *core_create(c2_t *c2);
+core_t *core_create(void);
+
+void core_set_path(core_t *core, char *path);
+void core_set_uuid(core_t *core, char *uuid);
+
+int core_add_uri(core_t *core, char *uri);
+
+void core_setup(core_t *core);
 int core_start(core_t *core);
+
 void core_destroy(core_t *core);
 
 #endif

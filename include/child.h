@@ -41,12 +41,14 @@
 #define CHILD_ALIVE 1
 #define CHILD_DEAD 0
 
+#define CHILD_FORK        0 << 0
 #define CHILD_NO_FORK     1 << 0
 #define CHILD_FAKE_PTY    1 << 1
 
 typedef struct
 {
     int flags;
+    size_t length;
     char *args;
     char **argv;
     char **env;

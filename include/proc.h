@@ -22,6 +22,10 @@
  * SOFTWARE.
  */
 
+/*! \file proc.h
+ *  \brief brings procedures to manage system processes
+ */
+
 #ifndef _PROC_H_
 #define _PROC_H_
 
@@ -29,7 +33,24 @@
 
 #include <sigar.h>
 
+/*! \fn int proc_kill(sigar_t *sigar, sigar_pid_t pid)
+ *  \brief kill process by ID
+ *
+ *  \param sigar sigar instance
+ *  \param pid process ID
+ *  \return error code
+ */
+
 int proc_kill(sigar_t *sigar, sigar_pid_t pid);
+
+/*! \fn sigar_pid_t proc_find(sigar_t *sigar, const char *name)
+ *  \brief get process ID by process name
+ *
+ *  \param sigar sigar instance
+ *  \param name process name
+ *  \return process ID
+ */
+
 sigar_pid_t proc_find(sigar_t *sigar, const char *name);
 
 #endif

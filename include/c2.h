@@ -22,6 +22,10 @@
  * SOFTWARE.
  */
 
+/*! \file c2.h
+ *  \brief Manage C2 (Command & Control) servers
+ */
+
 #ifndef _C2_H_
 #define _C2_H_
 
@@ -32,73 +36,64 @@
 #include <ev.h>
 
 #include <link.h>
+#include <tunnel.h>
+#include <group.h>
+#include <crypt.h>
 #include <tlv.h>
-#include <net.h>
 
 #include <uthash/uthash.h>
 
-#ifndef WINDOWS
+#ifndef IS_WINDOWS
 #include <netinet/in.h>
 #else
 #include <winsock2.h>
 #endif
 
-#define PACK_IPV4(o1,o2,o3,o4) (htonl((o1 << 24) | (o2 << 16) | (o3 << 8) | (o4 << 0)))
-
-typedef void (*c2_read_t)(void *data);
-
-typedef struct c2_table
+struct c2_table
 {
     int id;
-    char *uuid;
-    const char *path;
 
-    struct
-    {
-        int t_count;
-        int n_count;
-
-        struct tabs_table *tabs;
-        struct api_calls_table *api_calls;
-        struct pipes_table *pipes;
-    } dynamic;
-
-    sigar_t *sigar;
     struct ev_loop *loop;
-    net_t *net;
+    tunnel_t *tunnel;
+
+    struct pipes_table *pipes;
+    crypt_t *crypt;
 
     tlv_pkt_t *request;
     tlv_pkt_t *response;
 
+    void *data;
     void *link_data;
     link_t read_link;
     link_t write_link;
+    link_event_t event_link;
 
     UT_hash_handle hh;
-} c2_t;
+};
+
+typedef struct c2_table c2_t;
 
 c2_t *c2_create(int id);
+c2_t *c2_add_uri(c2_t **c2_table, int id, char *uri, tunnels_t *tunnels);
 
-int c2_add_sock(c2_t **c2_table, int id, int sock, int proto);
-int c2_add_file(c2_t **c2_table, int id, int fd);
-int c2_add(c2_t **c2_table, c2_t *c2_new);
+void c2_setup(c2_t *c2, struct ev_loop *loop, struct pipes_table *pipes, void *data);
+void c2_start(c2_t *c2);
+void c2_stop(c2_t *c2);
 
-void c2_setup(c2_t *c2_table, struct ev_loop *loop);
-
-void c2_set_links(c2_t *c2_table,
+void c2_set_links(c2_t *c2,
                   link_t read_link,
                   link_t write_link,
+                  link_event_t event_link,
                   void *data);
 
 ssize_t c2_dequeue_tlv(c2_t *c2, tlv_pkt_t **tlv_pkt);
 int c2_enqueue_tlv(c2_t *c2, tlv_pkt_t *tlv_pkt);
 
-void c2_enqueue_uuid(c2_t *c2_table);
+int c2_active_tunnels(c2_t *c2_table);
 
 void c2_read(void *data);
 void c2_write(void *data);
 
 void c2_free(c2_t *c2_table);
-void c2_destroy(c2_t *c2);
 
 #endif

@@ -26,5 +26,6 @@
 #define _LOOP_H_
 
 typedef void (*link_t)(void *data);
+typedef void (*link_event_t)(int event, void *data);
 
 #endif

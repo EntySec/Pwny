@@ -90,7 +90,7 @@ struct pipe_callbacks
     int (*seek_cb)(pipe_t *pipe, int offset, int whence);
     int (*tell_cb)(pipe_t *pipe);
     int (*destroy_cb)(pipe_t *pipe, c2_t *c2);
-    int (*heartbeat_cb)(pipe_t *pipe);
+    int (*heartbeat_cb)(pipe_t *pipe, c2_t *c2);
 };
 
 struct pipes

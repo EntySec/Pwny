@@ -23,32 +23,45 @@
  */
 
 #include <signal.h>
+#include <sigar.h>
 #include <eio.h>
 #include <ev.h>
 
-#include <api.h>
 #include <c2.h>
 #include <core.h>
 #include <tabs.h>
+#include <pipe.h>
+#include <tunnel.h>
 #include <log.h>
-#include <net.h>
+#include <net_client.h>
+#include <calls.h>
+#include <misc.h>
 
 #include <tlv.h>
 #include <tlv_types.h>
+
+#include <tunnels/tunnels.h>
+
+#ifdef GC_INUSE
+#include <gc.h>
+#include <gc/leak_detector.h>
+#endif
 
 static struct ev_idle eio_idle_watcher;
 static struct ev_async eio_async_watcher;
 
 static void eio_idle_cb(struct ev_loop *loop, struct ev_idle *w, int revents)
 {
-    if (eio_poll() != -1) {
+    if (eio_poll() != -1)
+    {
         ev_idle_stop(loop, w);
     }
 }
 
 static void eio_async_cb(struct ev_loop *loop, struct ev_async *w, int revents)
 {
-    if (eio_poll() == -1) {
+    if (eio_poll() == -1)
+    {
         ev_idle_start(loop, &eio_idle_watcher);
     }
 
@@ -89,30 +102,51 @@ void core_write(void *data)
     c2_t *c2;
 
     c2 = data;
-    net_write(c2->net);
+    tunnel_write(c2->tunnel, c2->tunnel->egress);
 }
 
 void core_read(void *data)
 {
     c2_t *c2;
-    int status;
+    core_t *core;
 
     c2 = data;
+    core = c2->data;
+
+#ifdef GC_INUSE
+    log_debug("* We will collect garbage!\n");
+    GC_set_find_leak(1);
+#endif
 
     while (c2_dequeue_tlv(c2, &c2->request) > 0)
     {
-        switch (api_process_c2(c2))
+        switch (api_process_c2(c2, core->api_calls, core->tabs))
         {
             case API_BREAK:
                 log_debug("* Received API_BREAK signal (%d)\n", API_BREAK);
 
                 c2_enqueue_tlv(c2, c2->response);
-                ev_break(c2->loop, EVBREAK_ALL);
 
                 tlv_pkt_destroy(c2->response);
                 tlv_pkt_destroy(c2->request);
 
-                break;
+                crypt_set_secure(c2->crypt, STAT_NOT_SECURE);
+                crypt_set_algo(c2->crypt, ALGO_NONE);
+
+                if (!c2->tunnel->keep_alive)
+                {
+                    c2_stop(c2);
+                }
+
+                if (c2_active_tunnels(core->c2) == 0)
+                {
+                    ev_break(core->loop, EVBREAK_ALL);
+                }
+
+#ifdef GC_INUSE
+                GC_gcollect();
+#endif
+                return;
 
             case API_CALLBACK:
                 log_debug("* Received API_CALLBACK signal (%d)\n", API_CALLBACK);
@@ -122,10 +156,18 @@ void core_read(void *data)
                 tlv_pkt_destroy(c2->response);
                 tlv_pkt_destroy(c2->request);
 
+#ifdef GC_INUSE
+                GC_gcollect();
+#endif
+
                 break;
 
             case API_SILENT:
                 log_debug("* Received API_SILENT signal (%d)\n", API_SILENT);
+
+#ifdef GC_INUSE
+                GC_gcollect();
+#endif
                 break;
 
             default:
@@ -134,7 +176,7 @@ void core_read(void *data)
     }
 }
 
-core_t *core_create(c2_t *c2)
+core_t *core_create(void)
 {
     core_t *core;
 
@@ -146,17 +188,68 @@ core_t *core_create(c2_t *c2)
     }
 
     core->loop = ev_default_loop(CORE_EV_FLAGS);
+    core->t_count = 0;
+    core->c_count = 0;
+
+    core->c2 = NULL;
+    core->api_calls = NULL;
+    core->tunnels = NULL;
+    core->tabs = NULL;
 
     ev_idle_init(&eio_idle_watcher, eio_idle_cb);
     ev_async_init(&eio_async_watcher, eio_async_cb);
     eio_init(eio_want_poll, eio_done_poll);
 
-    core->c2 = c2;
-
-    c2_set_links(core->c2, core_read, core_write, NULL);
-    c2_setup(core->c2, core->loop);
-
     return core;
+}
+
+void core_set_uuid(core_t *core, char *uuid)
+{
+    core->uuid = strdup(uuid);
+}
+
+void core_set_path(core_t *core, char *path)
+{
+    core->path = strdup(path);
+}
+
+int core_add_uri(core_t *core, char *uri)
+{
+    c2_t *c2;
+    struct pipes_table *pipes;
+
+    c2 = c2_add_uri(&core->c2, core->c_count, uri, core->tunnels);
+    if (c2 == NULL)
+    {
+        return -1;
+    }
+
+    pipes = NULL;
+    register_api_pipes(&pipes);
+
+    c2_set_links(c2, core_read, core_write, NULL, NULL);
+    c2_setup(c2, core->loop, pipes, core);
+    c2_start(c2);
+
+    core->c_count++;
+    return 0;
+}
+
+void core_setup(core_t *core)
+{
+    char uuid[UUID_SIZE];
+
+    if (!core->uuid)
+    {
+        misc_uuid(uuid);
+        core_set_uuid(core, uuid);
+    }
+
+    sigar_open(&core->sigar);
+
+    register_pipe_api_calls(&core->api_calls);
+    register_core_tunnels(&core->tunnels);
+    register_api_calls(&core->api_calls);
 }
 
 int core_start(core_t *core)
@@ -169,14 +262,30 @@ int core_start(core_t *core)
     ev_signal_start(core->loop, &sigterm_w);
 
     ev_async_start(core->loop, &eio_async_watcher);
-    net_start(core->c2->net);
 
-    c2_enqueue_uuid(core->c2);
     return ev_run(core->loop, 0);
 }
 
 void core_destroy(core_t *core)
 {
     ev_break(core->loop, EVBREAK_ALL);
+
+    c2_free(core->c2);
+    sigar_close(core->sigar);
+
+    api_calls_free(core->api_calls);
+    tabs_free(core->tabs);
+    tunnels_free(core->tunnels);
+
+    if (core->uuid)
+    {
+        free(core->uuid);
+    }
+
+    if (core->path)
+    {
+        free(core->path);
+    }
+
     free(core);
 }

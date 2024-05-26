@@ -27,13 +27,19 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <queue.h>
+#include <errno.h>
 #include <log.h>
 
 #include <uthash/utlist.h>
 
+#ifdef GC_INUSE
+#include <gc.h>
+#include <gc/leak_detector.h>
+#endif
+
 static void queue_data_free(queue_data_t *data)
 {
-    if (data->buffer)
+    if (data->buffer != NULL)
     {
         free(data->buffer);
         free(data);
@@ -44,7 +50,6 @@ queue_t *queue_create(void)
 {
     return calloc(1, sizeof(queue_t));
 }
-
 
 void queue_drain_all(queue_t *queue)
 {
@@ -232,6 +237,7 @@ ssize_t queue_remove_all(queue_t *queue, void **data)
     size_t bytes;
 
     buffer = malloc(queue->bytes);
+
     if (buffer == NULL)
     {
         return -1;
@@ -266,6 +272,7 @@ ssize_t queue_move_all(queue_t *queue, queue_t *new_queue)
 
 size_t queue_from_fd(queue_t *queue, int fd)
 {
+    int error;
     char buffer[QUEUE_FD_MAX];
     ssize_t count;
     size_t length;
@@ -277,6 +284,10 @@ size_t queue_from_fd(queue_t *queue, int fd)
         queue_add_raw(queue, buffer, count);
         length += count;
     }
+
+    error = errno;
+    log_debug("* Error reading from queue (fd: %d, errno: %d)\n",
+              fd, error);
 
     return length;
 }

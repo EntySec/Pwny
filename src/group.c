@@ -28,114 +28,122 @@
 #include <log.h>
 #include <group.h>
 #include <queue.h>
+#include <crypt.h>
 #include <tlv_types.h>
 
-group_t *group_create(tlv_pkt_t *tlv_pkt)
+#include <mbedtls/aes.h>
+#include <mbedtls/ctr_drbg.h>
+#include <mbedtls/entropy.h>
+#include <mbedtls/pk.h>
+
+#include <arpa/inet.h>
+
+#ifdef GC_INUSE
+#include <gc.h>
+#include <gc/leak_detector.h>
+#endif
+
+group_t *group_create(tlv_pkt_t *tlv_pkt, crypt_t *crypt)
 {
     group_t *group;
+    unsigned char *buffer;
+    ssize_t bytes;
+
+    bytes = crypt_process(crypt, tlv_pkt->buffer, tlv_pkt->bytes,
+                          &buffer, CRYPT_ENCRYPT);
+
+    if (bytes < 0)
+    {
+        log_debug("* Failed to enqueue TLV packet\n");
+        return NULL;
+    }
 
     group = tlv_pkt_create();
-    tlv_pkt_add_tlv(group, TLV_TYPE_GROUP, tlv_pkt);
+    tlv_pkt_add_bytes(group, TLV_TYPE_GROUP, buffer, bytes);
+    free(buffer);
 
     return group;
 }
 
-tlv_pkt_t *group_tlv(group_t *group)
+int group_tlv_enqueue(queue_t *queue, tlv_pkt_t *tlv_pkt, crypt_t *crypt)
 {
-    log_debug("* Getting global TLV_GROUP\n");
-    return tlv_pkt_get_tlv(group, TLV_TYPE_GROUP);
-}
+    group_t *group;
 
-int group_enqueue(queue_t *queue, group_t *group)
-{
-    if (tlv_pkt_serialize(group) != 0)
+    group = group_create(tlv_pkt, crypt);
+
+    if (group == NULL)
     {
+        log_debug("* Failed to encapsulate TLV packet\n");
         return -1;
     }
 
     if (queue_add_raw(queue, group->buffer, group->bytes) != 0)
     {
+        log_debug("* Failed to add TLV packet to queue\n");
+        group_destroy(group);
         return -1;
     }
 
+    group_destroy(group);
     return 0;
 }
 
-int group_tlv_enqueue(queue_t *queue, tlv_pkt_t *tlv_pkt)
+ssize_t group_tlv_dequeue(queue_t *queue, tlv_pkt_t **tlv_pkt, crypt_t *crypt)
 {
-    group_t *group;
+    ssize_t total;
+    size_t length;
 
-    group = group_create(tlv_pkt);
-
-    if (group != NULL)
-    {
-        if (group_enqueue(queue, group) != 0)
-        {
-            group_destroy(group);
-            return -1;
-        }
-
-        group_destroy(group);
-        return 0;
-    }
-
-    return -1;
-}
-
-ssize_t group_tlv_dequeue(queue_t *queue, tlv_pkt_t **tlv_pkt)
-{
-    int total;
-    group_t *group;
-
-    if ((total = group_dequeue(queue, &group)) > 0)
-    {
-        *tlv_pkt = group_tlv(group);
-        group_destroy(group);
-    }
-
-    return total;
-}
-
-ssize_t group_dequeue(queue_t *queue, group_t **group)
-{
-    int total;
-    int length;
-
+    tlv_pkt_t *tlv;
     struct tlv_header header;
     unsigned char *buffer;
 
-    if (queue->bytes < sizeof(header))
+    if (queue->bytes < TLV_HEADER)
     {
         return -1;
     }
 
-    queue_copy(queue, &header, sizeof(header));
-    length = header.length;
+    queue_copy(queue, &header, TLV_HEADER);
+    length = ntohl(header.length);
 
-    if (queue->bytes < sizeof(header) + length)
+    if (queue->bytes < TLV_HEADER + length)
     {
+        log_debug("* Failed to read TLV packet (corruption?)\n");
+        return -1;
+    }
+
+    if (ntohl(header.type) != TLV_TYPE_GROUP)
+    {
+        log_debug("* No TLV_GROUP received, dropping packet\n");
         return -1;
     }
 
     if ((buffer = malloc(length)) == NULL)
     {
+        log_debug("* Failed to allocate memory for packet\n");
         return -1;
     }
 
-    total = queue_drain(queue, sizeof(header));
+    total = queue_drain(queue, TLV_HEADER);
     queue_copy(queue, buffer, length);
 
-    *group = tlv_pkt_create();
+    tlv = tlv_pkt_create();
+    tlv->bytes = crypt_process(crypt, buffer, length,
+                               &tlv->buffer, CRYPT_DECRYPT);
 
-    if (tlv_pkt_add_raw(*group, header.type, buffer, length) < 0)
+    if (tlv->bytes < 0)
     {
+        log_debug("* Failed to dequeue TLV packet\n");
         goto fail;
     }
 
+    *tlv_pkt = tlv;
     total += queue_drain(queue, length);
+    free(buffer);
+
     return total;
 
 fail:
+    tlv_pkt_destroy(tlv);
     free(buffer);
     return -1;
 }

@@ -37,11 +37,20 @@
 #include <child.h>
 #include <queue.h>
 
+#define TAB_BASE 1
+#define TAB_TERM \
+        TLV_TAG_CUSTOM(API_CALL_INTERNAL, \
+                       2, \
+                       API_CALL)
+
 #define TAB_EV_FLAGS EVFLAG_NOENV | EVBACKEND_SELECT
 
 typedef struct
 {
     c2_t *c2;
+
+    api_calls_t *api_calls;
+    tunnels_t *tunnels;
 
     struct ev_loop *loop;
 } tab_t;
@@ -54,7 +63,10 @@ void tab_write(void *data);
 void tab_register_call(tab_t *tab, int tag, api_t handler);
 void tab_register_pipe(tab_t *tab, int type, pipe_callbacks_t callbacks);
 
+void tab_setup(tab_t *tab);
 int tab_start(tab_t *tab);
 void tab_destroy(tab_t *tab);
+
+void register_tab_api_calls(api_calls_t **api_calls);
 
 #endif

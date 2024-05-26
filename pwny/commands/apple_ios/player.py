@@ -80,7 +80,6 @@ class HatSploitCommand(Command):
 
                 except KeyboardInterrupt:
                     self.print_process("Stopping...")
-                    pass
 
                 self.session.pipes.destroy_pipe(
                     pipe_type=PLAYER_PIPE_WAVE,

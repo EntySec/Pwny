@@ -32,14 +32,15 @@ class HatSploitCommand(Command):
             return
 
         process = result.get_tlv(TLV_TYPE_GROUP)
-        headers = ('PID', 'CPU', 'Name')
+        headers = ('PID', 'CPU', 'Name', 'Path')
         data = []
 
         while process:
             data.append((
                 process.get_int(TLV_TYPE_PID),
                 process.get_string(PROCESS_TYPE_PID_CPU),
-                process.get_string(PROCESS_TYPE_PID_STATE)
+                process.get_string(PROCESS_TYPE_PID_NAME),
+                process.get_string(PROCESS_TYPE_PID_PATH)
             ))
 
             process = result.get_tlv(TLV_TYPE_GROUP)

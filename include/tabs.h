@@ -35,8 +35,6 @@
 
 #include <uthash/uthash.h>
 
-#define TAB_TERM TLV_TYPE_TAG | 1001
-
 typedef struct c2_table c2_t;
 
 typedef struct tabs_table
@@ -53,6 +51,7 @@ void tabs_out(void *data);
 int tabs_add(tabs_t **tabs, int id,
              char *filename,
              unsigned char *image,
+             size_t length,
              c2_t *c2);
 
 int tabs_delete(tabs_t **tabs, int id);

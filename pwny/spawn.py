@@ -35,11 +35,13 @@ from pwny.api import *
 
 from pex.string import String
 
-from typing import Any
+from typing import Any, Union
 from badges import Badges
 
+FLAG_FORK = 0 << 0
+FLAG_NO_FORK = 1 << 0
+FLAG_FAKE_PTY = 1 << 1
 
-# TODO: chunked read
 
 class Spawn(object):
     """ Subclass of pwny module.
@@ -96,11 +98,10 @@ class Spawn(object):
                 continue
 
             self.interrupted = False
-
-            if not self.pipes.heartbeat_pipe(PROCESS_PIPE, pipe_id):
-                break
-
             self.read_pipe(pipe_id)
+
+            if not self.pipes.heartbeat_pipe(PROCESS_PIPE, pipe_id) or self.closed:
+                break
 
         self.read_pipe(pipe_id)
         self.closed = True
@@ -117,24 +118,25 @@ class Spawn(object):
 
         while not self.closed:
             for key, events in selector.select():
-                if key.fileobj is sys.stdin:
+                if key.fileobj is not sys.stdin:
+                    continue
 
-                    try:
-                        line = sys.stdin.readline()
+                try:
+                    line = sys.stdin.readline()
 
-                        if not line:
-                            pass
-
-                        self.interrupt = True
-
-                        while not self.interrupted:
-                            pass
-
-                        self.pipes.write_pipe(PROCESS_PIPE, pipe_id, (line + '\n').encode())
-                        self.interrupt = False
-
-                    except EOFError:
+                    if not line:
                         pass
+
+                    self.interrupt = True
+
+                    while not self.interrupted:
+                        pass
+
+                    self.pipes.write_pipe(PROCESS_PIPE, pipe_id, (line + '\n').encode())
+                    self.interrupt = False
+
+                except EOFError:
+                    pass
 
     def change_dir(self, path: str) -> None:
         """ Change directory.
@@ -178,6 +180,32 @@ class Spawn(object):
 
         return False
 
+    def search_path(self, path: str, name: str) -> Union[str, None]:
+        """ Search binary if path by name.
+
+        :param str path: path to search for binary in
+        :param str name: binary name to search for
+        :return Union[str, None]: full path if found else None
+        """
+
+        result = self.session.send_command(
+            tag=FS_LIST,
+            args={
+                TLV_TYPE_PATH: path
+            }
+        )
+
+        if result.get_int(TLV_TYPE_STATUS) != TLV_STATUS_SUCCESS:
+            return
+
+        stat = result.get_tlv(TLV_TYPE_GROUP)
+
+        while stat:
+            if stat.get_string(TLV_TYPE_FILENAME) == name:
+                return stat.get_string(TLV_TYPE_PATH)
+
+            stat = result.get_tlv(TLV_TYPE_GROUP)
+
     def spawn(self, path: str, args: list = []) -> bool:
         """ Execute path.
 
@@ -191,9 +219,12 @@ class Spawn(object):
             return True
 
         try:
+            flags = FLAG_NO_FORK
+
             pipe_id = self.pipes.create_pipe(
                 pipe_type=PROCESS_PIPE,
                 args={
+                    TLV_TYPE_INT: flags,
                     TLV_TYPE_FILENAME: path,
                     PROCESS_TYPE_PROCESS_ARGV: ' '.join(args)
                 }
@@ -203,8 +234,6 @@ class Spawn(object):
             self.badges.print_error(f"Failed to spawn process for {path}!")
             return False
 
-        self.badges.print_process(f"Executing: {path}")
-
         read_thread = threading.Thread(target=self.read_thread, args=(pipe_id,))
         read_thread.setDaemon(True)
         read_thread.start()
@@ -213,8 +242,12 @@ class Spawn(object):
         write_thread.setDaemon(True)
         write_thread.start()
 
-        while not self.closed:
-            pass
+        try:
+            while not self.closed:
+                pass
+        except KeyboardInterrupt:
+            self.badges.print_process("Cleaning up...")
+            self.closed = True
 
         if write_thread.is_alive():
             exc = ctypes.py_object(SystemExit)
@@ -224,7 +257,6 @@ class Spawn(object):
                 ctypes.pythonapi.PyThreadState_SetAsyncExc(write_thread.ident, None)
 
         read_thread.join()
-
         self.pipes.destroy_pipe(PROCESS_PIPE, pipe_id)
 
         return True

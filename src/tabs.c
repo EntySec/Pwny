@@ -40,25 +40,35 @@
 #include <tlv.h>
 #include <link.h>
 #include <queue.h>
+#include <group.h>
 
 #include <uthash/uthash.h>
+
+#ifdef GC_INUSE
+#include <gc.h>
+#include <gc/leak_detector.h>
+#endif
+
+extern char **environ;
 
 void tabs_err(void *data)
 {
     tabs_t *tab;
     queue_t *queue;
     char *message;
+    size_t length;
 
     tab = data;
     queue = tab->child->err_queue.queue;
-    message = malloc(queue->bytes + 1);
+    length = queue->bytes;
+    message = malloc(length + 1);
 
     if (message != NULL)
     {
-        queue_remove(queue, (void *)message, queue->bytes);
-        message[queue->bytes] = '\0';
+        queue_remove(queue, (void *)message, length);
+        message[length] = '\0';
 
-        log_debug("%s\n", message);
+        log_debug("[id: %d, pid: %d] %s\n", tab->id, tab->child->pid, message);
         free(message);
     }
 }
@@ -78,7 +88,7 @@ void tabs_out(void *data)
     tab = data;
     queue = tab->child->out_queue.queue;
 
-    queue_move_all(queue, tab->c2->net->egress);
+    queue_move_all(queue, tab->c2->tunnel->egress);
 
     if (tab->c2->write_link)
     {
@@ -89,10 +99,12 @@ void tabs_out(void *data)
 int tabs_add(tabs_t **tabs, int id,
              char *filename,
              unsigned char *image,
+             size_t length,
              c2_t *c2)
 {
     tabs_t *tab;
     tabs_t *tab_new;
+    child_options_t options;
 
     HASH_FIND_INT(*tabs, &id, tab);
 
@@ -102,9 +114,14 @@ int tabs_add(tabs_t **tabs, int id,
 
         if (tab_new != NULL)
         {
+            options.args = NULL;
+            options.env = environ;
+            options.flags = CHILD_FORK;
+            options.length = length;
+
             tab_new->id = id;
             tab_new->c2 = c2;
-            tab_new->child = child_create(filename, image, NULL);
+            tab_new->child = child_create(filename, image, &options);
 
             if (tab_new->child == NULL)
             {
@@ -113,10 +130,9 @@ int tabs_add(tabs_t **tabs, int id,
 
             child_set_links(tab_new->child,
                             tabs_out, tabs_err, tabs_exit,
-                            tab_new->child);
-
+                            tab_new);
             HASH_ADD_INT(*tabs, id, tab_new);
-            log_debug("* Added TAB entry (%d) (pid: %d)\n", id, tab->child->pid);
+            log_debug("* Added TAB entry (%d) (pid: %d)\n", id, tab_new->child->pid);
             return 0;
         }
     }
@@ -127,6 +143,7 @@ int tabs_add(tabs_t **tabs, int id,
 int tabs_lookup(tabs_t **tabs, int id, tlv_pkt_t *tlv_pkt)
 {
     tabs_t *tab;
+    group_t *group;
 
     log_debug("* Searching for TAB entry (%d)\n", id);
     HASH_FIND_INT(*tabs, &id, tab);
@@ -134,8 +151,13 @@ int tabs_lookup(tabs_t **tabs, int id, tlv_pkt_t *tlv_pkt)
     if (tab != NULL)
     {
         log_debug("* Found TAB entry (%d)\n", id);
-        child_write(tab->child, tlv_pkt->buffer, tlv_pkt->bytes);
 
+        group = group_create(tlv_pkt, NULL);
+
+        log_debug("* Writing (%d) bytes to TAB\n", group->bytes);
+        child_write(tab->child, group->buffer, group->bytes);
+
+        group_destroy(group);
         return 0;
     }
 
@@ -164,8 +186,9 @@ int tabs_delete(tabs_t **tabs, int id)
 void tabs_free(tabs_t *tabs)
 {
     tabs_t *tab;
+    tabs_t *tab_tmp;
 
-    for (tab = tabs; tab != NULL; tab = tab->hh.next)
+    HASH_ITER(hh, tabs, tab, tab_tmp)
     {
         log_debug("* Freed TAB entry (%d)\n", tab->id);
         HASH_DEL(tabs, tab);

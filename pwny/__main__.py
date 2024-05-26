@@ -24,64 +24,76 @@ SOFTWARE.
 
 import os
 
-from typing import Union, Optional
-
-from pex.arch.types import Arch
-from pex.platform.types import Platform
-
-from hatsploit.lib.payload import Payload
+from typing import Union
 
 
 class Pwny(object):
     """ Main class of pwny module.
 
-    This main class of pwny module is intended for providing
-    an implementation of Pwny manipulation methods.
+    This main class of pwny module is intended to provide an
+    interface to craft Pwny implant.
     """
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, target: str, options: dict = {}) -> None:
+        """ Initialize Pwny and select target.
 
-        self.pwny = f'{os.path.dirname(os.path.dirname(__file__))}/pwny/'
-
-        self.pwny_data = self.pwny + 'data/'
-        self.pwny_libs = self.pwny + 'libs/'
-
-        self.pwny_plugins = self.pwny + 'plugins/'
-        self.pwny_commands = self.pwny + 'commands/'
-
-        self.templates = self.pwny + 'templates/'
-
-    def get_template(self, platform: Union[Platform, str],
-                     arch: Union[Arch, str], extension: str = '') -> bytes:
-        """ Get Pwny template.
-
-        :param Union[Platform, str] platform: platform to get Pwny template for
-        :param Union[Arch, str] arch: architecture to get Pwny template for
-        :param str extension: extension of the file
-        :return bytes: Pwny template
+        :param str target: target to build for (e.g. aarch64-apple-darwin)
+        :param dict options: options (e.g. key -u, value tcp://127.0.0.1:8888)
+        :return None: None
         """
 
-        payload = self.templates + '/'.join((str(platform), str(arch) + '.' + extension))
+        self.root = f'{os.path.dirname(os.path.dirname(__file__))}/pwny/'
+        self.templates = self.root + 'templates/'
 
-        if os.path.exists(payload):
-            return open(payload, 'rb').read()
-        return b''
+        self.target = self.templates + target
+        self.options = options
 
-    def get_implant(self, platform: Optional[Union[Platform, str]] = None,
-                    arch: Optional[Union[Arch, str]] = None,
-                    payload: Optional[Payload] = None) -> bytes:
-        """ Get Pwny implant.
+    @staticmethod
+    def shorten_option(option: str) -> Union[str, None]:
+        """ Produce shortened representation of an option.
 
-        :param Optional[Union[Platform, str]] platform: platform to get Pwny implant for
-        :param Optional[Union[Arch, str]] arch: architecture to get Pwny implant for
-        :param Optional[Payload] payload: if payload object is not None, ignore
-            platform and arch
-        :return bytes: Pwny implant
+        :param str option: option to format
+        :return Union[str, None]: shortened option
         """
 
-        if payload is not None:
-            platform = payload.details['Platform']
-            arch = payload.details['Arch']
+        if option.lower() == 'uri':
+            return '-u'
 
-        return self.get_template(platform, arch, 'bin')
+    def add_options(self, binary: bytes) -> bytes:
+        """ Add options to binary.
+
+        :param bytes binary: binary data
+        :return bytes: updated binary data
+        """
+
+        if not self.options:
+            return binary
+
+        sign = b"INJECT_OPTIONS"
+        length = 2000
+        options = "pwny"
+
+        for key, value in self.options.items():
+            options += f" {self.shorten_option(key)} {str(value)}"
+
+        if len(options) > length:
+            raise RuntimeError(
+                f"Options list too big ({str(len(options))} > {str(length)})!")
+
+        options = options.encode()
+        options += b'\x00' * (length - len(options))
+
+        return binary.replace(sign + b' ' * (length - len(sign)), options)
+
+    def to_binary(self, format: str = 'exe') -> Union[bytes, None]:
+        """ Convert implant to binary image.
+
+        :param str format: format (e.g. exe, bin, so, dylib)
+        :return Union[bytes, None]: binary image if exists else None
+        """
+
+        binary = self.target + '.' + format
+
+        if os.path.exists(binary):
+            with open(binary, 'rb') as f:
+                return self.add_options(f.read())
