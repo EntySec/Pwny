@@ -108,6 +108,25 @@ class PwnySession(Session, Console):
         self.loot.create_loot()
         self.start_pwny(self)
 
+    def identify(self) -> None:
+        """ Enforce platform and architecture identification
+        by calling partially completed sysinfo.
+
+        :return None: None
+        """
+
+        result = self.send_command(
+            tag=BUILTIN_SYSINFO
+        )
+
+        if result.get_int(TLV_TYPE_STATUS) != TLV_STATUS_SUCCESS:
+            raise RuntimeError("Failed to identify target system!")
+
+        self.details.update({
+            'Platform': result.get_string(BUILTIN_TYPE_PLATFORM),
+            'Arch': result.get_string(BUILTIN_TYPE_ARCH)
+        })
+
     def secure(self) -> bool:
         """ Establish secure TLS communication.
 
