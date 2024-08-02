@@ -13,23 +13,23 @@ class ExternalCommand(Command):
     def __init__(self):
         super().__init__({
             'Category': "filesystem",
-            'Name': "mkdir",
+            'Name': "rmdir",
             'Authors': [
                 'Ivan Nikolskiy (enty8080) - command developer'
             ],
-            'Description': "Create a directory.",
-            'Usage': "mkdir <path>",
+            'Description': "Delete directory.",
+            'Usage': "rm <path>",
             'MinArgs': 1
         })
 
     def run(self, args):
         result = self.session.send_command(
-            tag=FS_MKDIR,
+            tag=FS_DIR_DELETE,
             args={
                 TLV_TYPE_PATH: args[1]
             }
         )
 
         if result.get_int(TLV_TYPE_STATUS) != TLV_STATUS_SUCCESS:
-            self.print_error(f"Remote directory: {args[1]}: failed to create!")
+            self.print_error(f"Remote directory: {args[1]}: does not exist!")
             return

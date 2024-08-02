@@ -3,6 +3,8 @@ from pwny.types import *
 TERM_CLOSED = 'closed by console'
 TERM_UNKNOWN = 'unknown'
 
+PIPE_INTERACTIVE = 1 << 0
+
 TAB_BASE = 1
 PIPE_TYPE = 1
 
@@ -32,6 +34,8 @@ PIPE_TYPE_LENGTH = tlv_custom_type(TLV_TYPE_INT, PIPE_BASE, API_TYPE + 2)
 PIPE_TYPE_BUFFER = tlv_custom_type(TLV_TYPE_BYTES, PIPE_BASE, API_TYPE)
 PIPE_TYPE_OFFSET = tlv_custom_type(TLV_TYPE_INT, PIPE_BASE, API_TYPE + 3)
 PIPE_TYPE_WHENCE = tlv_custom_type(TLV_TYPE_INT, PIPE_BASE, API_TYPE + 4)
+PIPE_TYPE_HEARTBEAT = tlv_custom_type(TLV_TYPE_INT, PIPE_BASE, API_TYPE + 5)
+PIPE_TYPE_FLAGS = tlv_custom_type(TLV_TYPE_INT, PIPE_BASE, API_TYPE + 6)
 
 PIPE_READ = tlv_custom_tag(API_CALL_INTERNAL, PIPE_BASE, API_CALL)
 PIPE_WRITE = tlv_custom_tag(API_CALL_INTERNAL, PIPE_BASE, API_CALL + 1)

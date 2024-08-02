@@ -6,7 +6,7 @@ Current source: https://github.com/EntySec/HatSploit
 from pwny.api import *
 from pwny.types import *
 
-from hatsploit.lib.command import Command
+from badges.cmd import Command
 
 UI_BASE = 6
 
@@ -16,11 +16,9 @@ UI_LOCKED = tlv_custom_type(TLV_TYPE_INT, UI_BASE, API_TYPE)
 UI_PASSCODE = tlv_custom_type(TLV_TYPE_INT, UI_BASE, API_TYPE + 1)
 
 
-class HatSploitCommand(Command):
+class ExternalCommand(Command):
     def __init__(self):
-        super().__init__()
-
-        self.details = {
+        super().__init__({
             'Category': "gather",
             'Name': "sbinfo",
             'Authors': [
@@ -29,9 +27,9 @@ class HatSploitCommand(Command):
             'Description': "Get SpringBoard basic information.",
             'Usage': "sbinfo",
             'MinArgs': 0
-        }
+        })
 
-    def run(self, argc, argv):
+    def run(self, _):
         result = self.session.send_command(
             tag=UI_SBINFO,
         )

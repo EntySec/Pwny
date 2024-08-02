@@ -9,7 +9,7 @@ from pwny.types import *
 from badges import Map
 
 from colorscript import ColorScript
-from hatsploit.lib.command import Command
+from badges.cmd import Command
 
 LOCATE_BASE = 8
 
@@ -19,11 +19,9 @@ LOCATE_LONGITUDE = tlv_custom_type(TLV_TYPE_STRING, LOCATE_BASE, API_TYPE)
 LOCATE_LATITUDE = tlv_custom_type(TLV_TYPE_STRING, LOCATE_BASE, API_TYPE + 1)
 
 
-class HatSploitCommand(Command):
+class ExternalCommand(Command):
     def __init__(self):
-        super().__init__()
-
-        self.details = {
+        super().__init__({
             'Category': "manage",
             'Name': "locate",
             'Authors': [
@@ -32,9 +30,9 @@ class HatSploitCommand(Command):
             'Description': "Manage location services.",
             'Usage': "locate",
             'MinArgs': 0,
-        }
+        })
 
-    def run(self, argc, argv):
+    def run(self, _):
         result = self.session.send_command(tag=LOCATE_GET)
 
         latitude = result.get_string(LOCATE_LATITUDE)

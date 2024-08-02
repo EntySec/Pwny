@@ -6,14 +6,12 @@ Current source: https://github.com/EntySec/HatSploit
 from pwny.api import *
 from pwny.types import *
 
-from hatsploit.lib.command import Command
+from badges.cmd import Command
 
 
-class HatSploitCommand(Command):
+class ExternalCommand(Command):
     def __init__(self):
-        super().__init__()
-
-        self.details = {
+        super().__init__({
             'Category': "filesystem",
             'Name': "cp",
             'Authors': [
@@ -22,14 +20,14 @@ class HatSploitCommand(Command):
             'Description': "Copy specific file.",
             'Usage': "cp <src> <dst>",
             'MinArgs': 2
-        }
+        })
 
-    def run(self, argc, argv):
+    def run(self, args):
         result = self.session.send_command(
             tag=FS_FILE_COPY,
             args={
-                TLV_TYPE_FILENAME: argv[1],
-                TLV_TYPE_PATH: argv[2]
+                TLV_TYPE_FILENAME: args[1],
+                TLV_TYPE_PATH: args[2]
             }
         )
 

@@ -6,14 +6,12 @@ Current source: https://github.com/EntySec/HatSploit
 from pwny.api import *
 from pwny.types import *
 
-from hatsploit.lib.command import Command
+from badges.cmd import Command
 
 
-class HatSploitCommand(Command):
+class ExternalCommand(Command):
     def __init__(self):
-        super().__init__()
-
-        self.details = {
+        super().__init__({
             'Category': "gather",
             'Name': "loot",
             'Authors': [
@@ -27,17 +25,17 @@ class HatSploitCommand(Command):
                 '-r': ['<name>', 'Remove collected loot.'],
                 '-w': ['', 'Wipe all collected loot.']
             }
-        }
+        })
 
-    def run(self, argc, argv):
-        if argv[1] == '-r':
-            self.session.loot.remove_loot(argv[2])
+    def run(self, args):
+        if args[1] == '-r':
+            self.session.loot.remove_loot(args[2])
 
-        elif argv[1] == '-w':
+        elif args[1] == '-w':
             for loot in self.session.loot.list_loot():
                 self.session.loot.remove_loot(loot[0])
 
-        elif argv[1] == '-l':
+        elif args[1] == '-l':
             loot_data = self.session.loot.list_loot()
 
             if not loot_data:

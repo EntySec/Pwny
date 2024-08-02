@@ -6,7 +6,7 @@ Current source: https://github.com/EntySec/HatSploit
 from pwny.api import *
 from pwny.types import *
 
-from hatsploit.lib.command import Command
+from badges.cmd import Command
 
 GATHER_BASE = 9
 
@@ -19,22 +19,20 @@ GATHER_SERIAL = tlv_custom_type(TLV_TYPE_STRING, GATHER_BASE, API_TYPE + 3)
 GATHER_UDID = tlv_custom_type(TLV_TYPE_STRING, GATHER_BASE, API_TYPE + 4)
 
 
-class HatSploitCommand(Command):
+class ExternalCommand(Command):
     def __init__(self):
-        super().__init__()
-
-        self.details = {
+        super().__init__({
             'Category': "gather",
             'Name': "device",
             'Authors': [
                 'Ivan Nikolskiy (enty8080) - command developer'
             ],
             'Description': "Get device basic information.",
-            'Usage': "device ",
+            'Usage': "device",
             'MinArgs': 0,
-        }
+        })
 
-    def run(self, argc, argv):
+    def run(self, _):
         result = self.session.send_command(tag=GATHER_GET_INFO)
 
         self.print_information(f"Name:    {result.get_string(GATHER_NAME)}")

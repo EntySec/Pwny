@@ -2,8 +2,8 @@ import sys
 import socket
 import time
 
-from pex.arch.types import *
-from pex.platform.types import *
+from pex.arch import *
+from pex.platform import *
 
 from pwny.session import PwnySession
 
@@ -19,11 +19,9 @@ def main():
     print(f'Connection from {a[0]}:{str(a[1])}\n')
 
     p = PwnySession()
-    p.details['Platform'] = sys.argv[3]
-    p.details['Arch'] = sys.argv[4]
+    p.info['Platform'] = sys.argv[3]
+    p.info['Arch'] = sys.argv[4]
     p.open(c)
-    p.set_env('verbose', 'yes')
-    p.set_prompt('pwny %red%bold% %end')
     p.interact()
 
 

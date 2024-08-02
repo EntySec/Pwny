@@ -24,15 +24,15 @@ SOFTWARE.
 
 from .__main__ import Pwny
 
-from pwny.types import *
 from pwny.api import *
+from pwny.types import *
 
 from badges import Badges
 
-from hatsploit.lib.session import Session
+from hatsploit.lib.core.session import Session
 
 
-class Migrate(Pwny, Badges):
+class Migrate(Badges):
     """ Subclass of pwny module.
 
     This subclass of pwny module is intended for providing a
@@ -46,8 +46,6 @@ class Migrate(Pwny, Badges):
         :return None: None
         """
 
-        super().__init__()
-
         self.session = session
 
     def migrate(self, pid: int) -> None:
@@ -60,8 +58,8 @@ class Migrate(Pwny, Badges):
 
         self.print_process(f"Migrating into {str(pid)}...")
 
-        platform = self.session.details['Platform']
-        arch = self.session.details['Arch']
+        platform = self.session.info['Platform']
+        arch = self.session.info['Arch']
 
         loader = self.get_template(
             platform=platform,

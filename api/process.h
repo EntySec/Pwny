@@ -95,10 +95,10 @@ static tlv_pkt_t *process_list(c2_t *c2)
     {
         log_debug("* Failed to sigar process list (%s)\n",
                   sigar_strerror(core->sigar, status));
-        return api_craft_tlv_pkt(API_CALL_FAIL);
+        return api_craft_tlv_pkt(API_CALL_FAIL, c2->request);
     }
 
-    result = api_craft_tlv_pkt(API_CALL_SUCCESS);
+    result = api_craft_tlv_pkt(API_CALL_SUCCESS, c2->request);
 
     for (iter = 0; iter < proc_list.number; iter++)
     {
@@ -137,10 +137,10 @@ static tlv_pkt_t *process_kill(c2_t *c2)
 
     if (proc_kill(core->sigar, pid) == -1)
     {
-        return api_craft_tlv_pkt(API_CALL_FAIL);
+        return api_craft_tlv_pkt(API_CALL_FAIL, c2->request);
     }
 
-    return api_craft_tlv_pkt(API_CALL_SUCCESS);
+    return api_craft_tlv_pkt(API_CALL_SUCCESS, c2->request);
 }
 
 static tlv_pkt_t *process_killall(c2_t *c2)
@@ -155,10 +155,10 @@ static tlv_pkt_t *process_killall(c2_t *c2)
     if ((pid = proc_find(core->sigar, name)) != -1)
     {
         proc_kill(core->sigar, pid);
-        return api_craft_tlv_pkt(API_CALL_SUCCESS);
+        return api_craft_tlv_pkt(API_CALL_SUCCESS, c2->request);
     }
 
-    return api_craft_tlv_pkt(API_CALL_FAIL);
+    return api_craft_tlv_pkt(API_CALL_FAIL, c2->request);
 }
 
 static tlv_pkt_t *process_get_pid(c2_t *c2)
@@ -166,7 +166,9 @@ static tlv_pkt_t *process_get_pid(c2_t *c2)
     tlv_pkt_t *result;
     core_t *core;
 
-    result = api_craft_tlv_pkt(API_CALL_SUCCESS);
+    core = c2->data;
+
+    result = api_craft_tlv_pkt(API_CALL_SUCCESS, c2->request);
     tlv_pkt_add_u32(result, TLV_TYPE_PID, sigar_pid_get(core->sigar));
 
     return result;
@@ -185,11 +187,96 @@ static tlv_pkt_t *process_migrate(c2_t *c2)
         if (migrate_init(migrate_pid, migrate_size, migrate) == 0)
         {
             free(migrate);
-            return api_craft_tlv_pkt(API_CALL_QUIT);
+            return api_craft_tlv_pkt(API_CALL_QUIT, c2->request);
         }
     }
 
-    return api_craft_tlv_pkt(API_CALL_FAIL);
+    return api_craft_tlv_pkt(API_CALL_FAIL, c2->request);
+}
+
+static void process_child_exit_link(void *data)
+{
+    pipe_t *pipe;
+    child_t *child;
+    tlv_pkt_t *result;
+
+    pipe = data;
+    child = pipe->data;
+
+    result = api_craft_tlv_pkt(API_CALL_SUCCESS, NULL);
+
+    tlv_pkt_add_u32(result, TLV_TYPE_PIPE_TYPE, PROCESS_PIPE);
+    tlv_pkt_add_u32(result, TLV_TYPE_PIPE_ID, pipe->id);
+    tlv_pkt_add_u32(result, TLV_TYPE_PIPE_HEARTBEAT, API_CALL_FAIL);
+
+    c2_enqueue_tlv(pipe->c2, result);
+    tlv_pkt_destroy(result);
+}
+
+static void process_child_out_link(void *data)
+{
+    pipe_t *pipe;
+    child_t *child;
+    queue_t *queue;
+    size_t length;
+    tlv_pkt_t *result;
+    unsigned char *buffer;
+
+    pipe = data;
+    child = pipe->data;
+    queue = child->out_queue.queue;
+    length = queue->bytes;
+
+    buffer = malloc(length);
+    if (buffer == NULL)
+    {
+        return;
+    }
+
+    child_read(child, buffer, length);
+    result = api_craft_tlv_pkt(API_CALL_SUCCESS, NULL);
+
+    tlv_pkt_add_u32(result, TLV_TYPE_PIPE_TYPE, PROCESS_PIPE);
+    tlv_pkt_add_u32(result, TLV_TYPE_PIPE_ID, pipe->id);
+    tlv_pkt_add_bytes(result, TLV_TYPE_PIPE_BUFFER, buffer, length);
+
+    c2_enqueue_tlv(pipe->c2, result);
+
+    tlv_pkt_destroy(result);
+    free(buffer);
+}
+
+static void process_child_err_link(void *data)
+{
+    pipe_t *pipe;
+    child_t *child;
+    queue_t *queue;
+    size_t length;
+    tlv_pkt_t *result;
+    unsigned char *buffer;
+
+    pipe = data;
+    child = pipe->data;
+    queue = child->err_queue.queue;
+    length = queue->bytes;
+
+    buffer = malloc(length);
+    if (buffer == NULL)
+    {
+        return;
+    }
+
+    child_read(child, buffer, length);
+    result = api_craft_tlv_pkt(API_CALL_SUCCESS, NULL);
+
+    tlv_pkt_add_u32(result, TLV_TYPE_PIPE_TYPE, PROCESS_PIPE);
+    tlv_pkt_add_u32(result, TLV_TYPE_PIPE_ID, pipe->id);
+    tlv_pkt_add_bytes(result, TLV_TYPE_PIPE_BUFFER, buffer, length);
+
+    c2_enqueue_tlv(pipe->c2, result);
+
+    tlv_pkt_destroy(result);
+    free(buffer);
 }
 
 static int process_create(pipe_t *pipe, c2_t *c2)
@@ -218,10 +305,24 @@ static int process_create(pipe_t *pipe, c2_t *c2)
         return -1;
     }
 
-    child_set_links(child, NULL, NULL, NULL, child);
+    if (pipe->flags & PIPE_INTERACTIVE)
+    {
+        child_set_links(child,
+                        process_child_out_link,
+                        process_child_err_link,
+                        process_child_exit_link,
+                        pipe);
+    }
+    else
+    {
+        child_set_links(child, NULL, NULL, NULL, pipe);
+    }
+
     log_debug("* Child created for process (%s)\n", path);
 
     pipe->data = child;
+    pipe->c2 = c2;
+
     return 0;
 }
 

@@ -8,7 +8,7 @@ import sys
 from pwny.api import *
 from pwny.types import *
 
-from hatsploit.lib.command import Command
+from badges.cmd import Command
 
 PLAYER_BASE = 7
 
@@ -25,11 +25,9 @@ PLAYER_ALBUM = tlv_custom_type(TLV_TYPE_STRING, PLAYER_BASE, API_TYPE + 1)
 PLAYER_ARTIST = tlv_custom_type(TLV_TYPE_STRING, PLAYER_BASE, API_TYPE + 2)
 
 
-class HatSploitCommand(Command):
+class ExternalCommand(Command):
     def __init__(self):
-        super().__init__()
-
-        self.details = {
+        super().__init__({
             'Category': "manage",
             'Name': "player",
             'Authors': [
@@ -46,18 +44,18 @@ class HatSploitCommand(Command):
                 'back': ['', 'Play previous song.'],
                 'wave': ['<file>', 'Play audio from file.'],
             }
-        }
+        })
 
-    def run(self, argc, argv):
-        if argv[1] == 'info':
+    def run(self, args):
+        if args[1] == 'info':
             result = self.session.send_command(tag=PLAYER_INFO)
 
             self.print_information(f"Title:  {result.get_string(PLAYER_TITLE)}")
             self.print_information(f"Album:  {result.get_string(PLAYER_ALBUM)}")
             self.print_information(f"Artist: {result.get_string(PLAYER_ARTIST)}")
 
-        elif argv[1] == 'wave':
-            with open(argv[2], 'rb') as f:
+        elif args[1] == 'wave':
+            with open(args[2], 'rb') as f:
                 self.print_process("Playing audio wave...")
 
                 try:
@@ -69,7 +67,7 @@ class HatSploitCommand(Command):
                     )
 
                 except RuntimeError:
-                    self.badges.print_error("Failed to send audio file!")
+                    self.print_error("Failed to send audio file!")
                     return
 
                 self.print_information("Press Ctrl-C to stop.")
@@ -86,14 +84,14 @@ class HatSploitCommand(Command):
                     pipe_id=pipe_id
                 )
 
-        elif argv[1] == 'play':
+        elif args[1] == 'play':
             self.session.send_command(tag=PLAYER_PLAY)
 
-        elif argv[1] == 'pause':
+        elif args[1] == 'pause':
             self.session.send_command(tag=PLAYER_PAUSE)
 
-        elif argv[1] == 'next':
+        elif args[1] == 'next':
             self.session.send_command(tag=PLAYER_NEXT)
 
-        elif argv[1] == 'back':
+        elif args[1] == 'back':
             self.session.send_command(tag=PLAYER_BACK)

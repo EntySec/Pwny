@@ -89,8 +89,6 @@ int queue_add_raw(queue_t *queue, const void *data, size_t length)
     LL_APPEND(queue->data, buffer);
     queue->bytes += length;
 
-    log_debug("* Added to queue (%d)\n", length);
-
     return 0;
 }
 
@@ -286,8 +284,12 @@ size_t queue_from_fd(queue_t *queue, int fd)
     }
 
     error = errno;
-    log_debug("* Error reading from queue (fd: %d, errno: %d)\n",
-              fd, error);
+
+    if (error != EAGAIN && error != EINPROGRESS && error != EWOULDBLOCK)
+    {
+        log_debug("* Error reading from queue (fd: %d, errno: %d)\n",
+                  fd, error);
+    }
 
     return length;
 }

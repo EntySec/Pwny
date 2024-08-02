@@ -6,7 +6,7 @@ Current source: https://github.com/EntySec/HatSploit
 from pwny.api import *
 from pwny.types import *
 
-from hatsploit.lib.command import Command
+from badges.cmd import Command
 
 UI_BASE = 6
 
@@ -14,11 +14,9 @@ UI_VOLUME_SET = tlv_custom_tag(API_CALL_STATIC, UI_BASE, API_CALL + 10)
 UI_VOLUME_GET = tlv_custom_tag(API_CALL_STATIC, UI_BASE, API_CALL + 11)
 
 
-class HatSploitCommand(Command):
+class ExternalCommand(Command):
     def __init__(self):
-        super().__init__()
-
-        self.details = {
+        super().__init__({
             'Category': "UI",
             'Name': "volume",
             'Authors': [
@@ -31,10 +29,10 @@ class HatSploitCommand(Command):
                 'get': ['', 'Get volume level.'],
                 'set': ['[0-10]', 'Set volume level.'],
             }
-        }
+        })
 
-    def run(self, argc, argv):
-        if argv[1] == 'get':
+    def run(self, args):
+        if args[1] == 'get':
             result = self.session.send_command(tag=UI_VOLUME_GET)
 
             if result.get_int(TLV_TYPE_STATUS) != TLV_STATUS_SUCCESS:
@@ -44,11 +42,11 @@ class HatSploitCommand(Command):
             self.print_information(f"Volume level: {str(result.get_int(TLV_TYPE_INT))}")
             return
 
-        if argv[1] == 'set':
+        if args[1] == 'set':
             result = self.session.send_command(
                 tag=UI_VOLUME_SET,
                 args={
-                    TLV_TYPE_INT: int(argv[2])
+                    TLV_TYPE_INT: int(args[2])
                 }
             )
 

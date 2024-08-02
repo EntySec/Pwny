@@ -72,7 +72,7 @@ typedef struct api_calls_table
 
 api_signal_t api_process_c2(c2_t *c2, api_calls_t *api_calls, tabs_t *tabs);
 
-tlv_pkt_t *api_craft_tlv_pkt(int status);
+tlv_pkt_t *api_craft_tlv_pkt(int status, tlv_pkt_t *request);
 int api_call_make(api_calls_t **api_calls, c2_t *c2, int tag, tlv_pkt_t **result);
 
 void api_call_register(api_calls_t **api_calls, int tag, api_t handler);

@@ -8,14 +8,12 @@ import os
 from pwny.api import *
 from pwny.types import *
 
-from hatsploit.lib.command import Command
+from badges.cmd import Command
 
 
-class HatSploitCommand(Command):
+class ExternalCommand(Command):
     def __init__(self):
-        super().__init__()
-
-        self.details = {
+        super().__init__({
             'Category': "filesystem",
             'Name': "upload",
             'Authors': [
@@ -24,27 +22,27 @@ class HatSploitCommand(Command):
             'Description': "Upload local file or directory.",
             'Usage': "upload <local_file> <remote_path>",
             'MinArgs': 2
-        }
+        })
 
-    def run(self, argc, argv):
-        if not os.path.isdir(argv[1]):
-            self.session.upload(argv[1], argv[2])
+    def run(self, args):
+        if not os.path.isdir(args[1]):
+            self.session.upload(args[1], args[2])
             return
 
         result = self.session.send_command(
             tag=FS_MKDIR,
             args={
-                TLV_TYPE_PATH: argv[2]
+                TLV_TYPE_PATH: args[2]
             }
         )
 
         if result.get_int(TLV_TYPE_STATUS) != TLV_STATUS_SUCCESS:
-            self.print_error(f"Remote path: {argv[2]}: already exists!")
+            self.print_error(f"Remote path: {args[2]}: already exists!")
             return
 
-        for root, dirs, files in os.walk(argv[1]):
+        for root, dirs, files in os.walk(args[1]):
             local_root = root
-            remote_root = root.replace(argv[1], argv[2])
+            remote_root = root.replace(args[1], args[2])
 
             for dir in dirs:
                 self.session.send_command(

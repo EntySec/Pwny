@@ -12,20 +12,20 @@ from hatsploit.lib.payload.basic import *
 
 class HatSploitPayload(Payload, Handler):
     def __init__(self):
-        super().__init__()
-
-        self.details.update({
+        super().__init__({
             'Name': "macOS aarch64 Pwny Reverse TCP",
             'Payload': "macos/aarch64/pwny_reverse_tcp",
             'Authors': [
-                'Ivan Nikolskiy (enty8080) - payload developer',
+                "Ivan Nikolskiy (enty8080) - payload developer",
             ],
-            'Description': "Pwny reverse TCP payload for macOS aarch64.",
+            'Description': (
+                "This payload creates an interactive Pwny shell for macOS "
+                "with AARCH64 architecture."
+            ),
             'Arch': ARCH_AARCH64,
             'Platform': OS_MACOS,
             'Session': PwnySession,
-            'Rank': "high",
-            'Type': "reverse_tcp",
+            'Type': REVERSE_TCP,
         })
 
     def run(self):

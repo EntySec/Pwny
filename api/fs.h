@@ -345,7 +345,7 @@ static int fs_eio(eio_req *request)
     c2 = request->data;
 
     status = request->result < 0 ? API_CALL_FAIL : API_CALL_SUCCESS;
-    c2->response = api_craft_tlv_pkt(status);
+    c2->response = api_craft_tlv_pkt(status, c2->request);
 
     c2_enqueue_tlv(c2, c2->response);
 
@@ -363,11 +363,11 @@ static int fs_eio_stat(eio_req *request)
 
     if (request->result < 0)
     {
-        c2->response = api_craft_tlv_pkt(API_CALL_FAIL);
+        c2->response = api_craft_tlv_pkt(API_CALL_FAIL, c2->request);
     }
     else
     {
-        c2->response = api_craft_tlv_pkt(API_CALL_SUCCESS);
+        c2->response = api_craft_tlv_pkt(API_CALL_SUCCESS, c2->request);
         fs_add_stat(&c2->response, (EIO_STRUCT_STAT *)request->ptr2);
     }
 
@@ -398,11 +398,11 @@ static void fs_eio_list_glob(eio_req *request)
 
     if (glob(path, GLOB_TILDE, NULL, &glob_result) != 0)
     {
-        c2->response = api_craft_tlv_pkt(API_CALL_FAIL);
+        c2->response = api_craft_tlv_pkt(API_CALL_FAIL, c2->request);
     }
     else
     {
-        c2->response = api_craft_tlv_pkt(API_CALL_SUCCESS);
+        c2->response = api_craft_tlv_pkt(API_CALL_SUCCESS, c2->request);
 
         for (iter = 0; iter < glob_result.gl_pathc; iter++)
         {
@@ -448,12 +448,12 @@ static int fs_eio_list(eio_req *request)
 
     if (request->result < 0)
     {
-        c2->response = api_craft_tlv_pkt(API_CALL_FAIL);
+        c2->response = api_craft_tlv_pkt(API_CALL_FAIL, c2->request);
     }
     else
     {
         tlv_pkt_get_string(c2->request, TLV_TYPE_PATH, path);
-        c2->response = api_craft_tlv_pkt(API_CALL_SUCCESS);
+        c2->response = api_craft_tlv_pkt(API_CALL_SUCCESS, c2->request);
 
         entries = (struct eio_dirent *)request->ptr1;
         names = (char *)request->ptr2;
@@ -572,7 +572,7 @@ static void fs_eio_file_copy(struct eio_req *request)
     fclose(dest);
 
 finalize:
-    c2->response = api_craft_tlv_pkt(status);
+    c2->response = api_craft_tlv_pkt(status, c2->request);
     c2_enqueue_tlv(c2, c2->response);
 
     tlv_pkt_destroy(c2->request);
@@ -593,7 +593,7 @@ static tlv_pkt_t *fs_list(c2_t *c2)
 
     if (eio_readdir(path, EIO_READDIR_DENTS, 0, fs_eio_list, c2) == NULL)
     {
-        return api_craft_tlv_pkt(API_CALL_FAIL);
+        return api_craft_tlv_pkt(API_CALL_FAIL, c2->request);
     }
 
     return NULL;
@@ -616,10 +616,10 @@ static tlv_pkt_t *fs_getwd(c2_t *c2)
 
     if (getcwd(path, sizeof(path)) == NULL)
     {
-        return api_craft_tlv_pkt(API_CALL_FAIL);
+        return api_craft_tlv_pkt(API_CALL_FAIL, c2->request);
     }
 
-    result = api_craft_tlv_pkt(API_CALL_SUCCESS);
+    result = api_craft_tlv_pkt(API_CALL_SUCCESS, c2->request);
     tlv_pkt_add_string(result, TLV_TYPE_PATH, path);
 
     return result;
@@ -665,10 +665,10 @@ static tlv_pkt_t *fs_chdir(c2_t *c2)
 
     if (chdir(path) == -1)
     {
-        return api_craft_tlv_pkt(API_CALL_FAIL);
+        return api_craft_tlv_pkt(API_CALL_FAIL, c2->request);
     }
 
-    return api_craft_tlv_pkt(API_CALL_SUCCESS);
+    return api_craft_tlv_pkt(API_CALL_SUCCESS, c2->request);
 }
 
 static tlv_pkt_t *fs_file_copy(c2_t *c2)

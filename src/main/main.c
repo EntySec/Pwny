@@ -44,8 +44,9 @@ static void parse_argv(int argc, char *argv[], core_t *core)
 
     struct option long_options[] = {
         {"uri", required_argument, NULL, 'u'},
+        {"uuid", required_argument, NULL, 'U'},
     };
-    short_options = "u:";
+    short_options = "u:U:";
 
     step = 0;
     index = 0;
@@ -57,6 +58,9 @@ static void parse_argv(int argc, char *argv[], core_t *core)
         {
             case 'u':
                 core_add_uri(core, optarg);
+                break;
+            case 'U':
+                core_set_uuid(core, optarg);
                 break;
             default:
                 break;

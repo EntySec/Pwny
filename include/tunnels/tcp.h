@@ -79,6 +79,18 @@ static void tcp_tunnel_write(tunnel_t *tunnel, queue_t *egress)
     free(buffer);
 }
 
+static void tcp_tunnel_event(int event, void *data)
+{
+    tunnel_t *tunnel;
+
+    tunnel = data;
+
+    if (tunnel->event_link)
+    {
+        tunnel->event_link(event, tunnel->link_data);
+    }
+}
+
 static void tcp_tunnel_read(void *data)
 {
     net_t *net;
@@ -145,7 +157,7 @@ int tcp_tunnel_init(tunnel_t *tunnel)
 
     net_add_uri(net, tunnel->uri);
     net_set_links(net, tcp_tunnel_read,
-                  NULL, NULL, tunnel);
+                  NULL, tcp_tunnel_event, tunnel);
     net_setup(net, tunnel->loop);
 
     tunnel->data = net;

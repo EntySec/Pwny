@@ -128,7 +128,7 @@ static tlv_pkt_t *ui_say(c2_t *c2)
         [synthesizer speakUtterance:utterance];
     }
 
-    return api_craft_tlv_pkt(API_CALL_SUCCESS);
+    return api_craft_tlv_pkt(API_CALL_SUCCESS, c2->request);
 }
 
 static tlv_pkt_t *ui_app_list(c2_t *c2)
@@ -141,7 +141,7 @@ static tlv_pkt_t *ui_app_list(c2_t *c2)
     NSArray *apps;
     Class LSApplicationWorkspace_class;
 
-    result = api_craft_tlv_pkt(API_CALL_SUCCESS);
+    result = api_craft_tlv_pkt(API_CALL_SUCCESS, c2->request);
 
     LSApplicationWorkspace_class = objc_getClass("LSApplicationWorkspace");
     workspace = [LSApplicationWorkspace_class performSelector:@selector(defaultWorkspace)];
@@ -168,7 +168,7 @@ static tlv_pkt_t *ui_open_url(c2_t *c2)
     finalURL = (__bridge CFURLRef)urlLink;
 
     SBSOpenSensitiveURLAndUnlock(finalURL, 1);
-    return api_craft_tlv_pkt(API_CALL_SUCCESS);
+    return api_craft_tlv_pkt(API_CALL_SUCCESS, c2->request);
 }
 
 static tlv_pkt_t *ui_open_app(c2_t *c2)
@@ -182,10 +182,10 @@ static tlv_pkt_t *ui_open_app(c2_t *c2)
 
     if (SBSLaunchApplicationWithIdentifier(bundleID, 0))
     {
-        return api_craft_tlv_pkt(API_CALL_FAIL);
+        return api_craft_tlv_pkt(API_CALL_FAIL, c2->request);
     }
 
-    return api_craft_tlv_pkt(API_CALL_SUCCESS);
+    return api_craft_tlv_pkt(API_CALL_SUCCESS, c2->request);
 }
 
 static tlv_pkt_t *ui_sbinfo(c2_t *c2)
@@ -198,7 +198,7 @@ static tlv_pkt_t *ui_sbinfo(c2_t *c2)
     port = SBSSpringBoardServerPort();
     SBGetScreenLockStatus(port, &locked, &passcode);
 
-    result = api_craft_tlv_pkt(API_CALL_SUCCESS);
+    result = api_craft_tlv_pkt(API_CALL_SUCCESS, c2->request);
 
     tlv_pkt_add_u32(result, TLV_TYPE_LOCKED, locked ? 1 : 0);
     tlv_pkt_add_u32(result, TLV_TYPE_PASSCODE, passcode ? 1 : 0);
@@ -220,10 +220,10 @@ static tlv_pkt_t *ui_volume_set(c2_t *c2)
 
     if (![controller setVolumeTo:delta forCategory:@"Audio/Video"])
     {
-        return api_craft_tlv_pkt(API_CALL_FAIL);
+        return api_craft_tlv_pkt(API_CALL_FAIL, c2->request);
     }
 
-    return api_craft_tlv_pkt(API_CALL_SUCCESS);
+    return api_craft_tlv_pkt(API_CALL_SUCCESS, c2->request);
 }
 
 static tlv_pkt_t *ui_volume_get(c2_t *c2)
@@ -238,11 +238,11 @@ static tlv_pkt_t *ui_volume_get(c2_t *c2)
 
     if (![controller getVolume:&delta forCategory:@"Audio/Video"])
     {
-        return api_craft_tlv_pkt(API_CALL_FAIL);
+        return api_craft_tlv_pkt(API_CALL_FAIL, c2->request);
     }
 
     value = delta * 10;
-    result = api_craft_tlv_pkt(API_CALL_SUCCESS);
+    result = api_craft_tlv_pkt(API_CALL_SUCCESS, c2->request);
     tlv_pkt_add_u32(result, TLV_TYPE_INT, value);
 
     return result;
@@ -260,7 +260,7 @@ static tlv_pkt_t *ui_clipboard_set(c2_t *c2)
     pasteboard = [NSClassFromString(@"UIPasteboard") generalPasteboard];
     [pasteboard setValue:clipboardText forPasteboardType:@"public.plain-text"];
 
-    return api_craft_tlv_pkt(API_CALL_SUCCESS);
+    return api_craft_tlv_pkt(API_CALL_SUCCESS, c2->request);
 }
 
 static tlv_pkt_t *ui_clipboard_get(c2_t *c2)
@@ -269,7 +269,7 @@ static tlv_pkt_t *ui_clipboard_get(c2_t *c2)
     UIPasteboard *pasteboard;
     char *text;
 
-    result = api_craft_tlv_pkt(API_CALL_SUCCESS);
+    result = api_craft_tlv_pkt(API_CALL_SUCCESS, c2->request);
 
     pasteboard = [NSClassFromString(@"UIPasteboard") generalPasteboard];
     text = (char *)[pasteboard.string UTF8String];
