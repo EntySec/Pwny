@@ -10,14 +10,12 @@ import subprocess
 from pwny.api import *
 from pwny.types import *
 
-from hatsploit.lib.command import Command
+from badges.cmd import Command
 
 
-class HatSploitCommand(Command):
+class ExternalCommand(Command):
     def __init__(self):
-        super().__init__()
-
-        self.details = {
+        super().__init__({
             'Category': "filesystem",
             'Name': "edit",
             'Authors': [
@@ -26,20 +24,20 @@ class HatSploitCommand(Command):
             'Description': "Edit remote file via preferred editor.",
             'Usage': "edit <file> [editor]",
             'MinArgs': 1
-        }
+        })
 
-    def run(self, argc, argv):
-        if argc >= 3:
-            editor = argv[2]
+    def run(self, args):
+        if len(args) >= 3:
+            editor = args[2]
         else:
             editor = self.session.get_env('EDITOR') \
                      or os.getenv('EDITOR') \
                      or 'vi'
 
         file = self.session.loot.random_loot()
-        self.session.download(argv[1], file)
+        self.session.download(args[1], file)
 
         subprocess.run([editor, file])
 
-        self.session.upload(file, argv[1])
+        self.session.upload(file, args[1])
         self.session.loot.remove_loot(file)

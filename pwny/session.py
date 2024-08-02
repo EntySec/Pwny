@@ -27,9 +27,9 @@ import socket
 import pathlib
 
 from alive_progress import alive_bar
-from cryptography.hazmat.primitives import serialization, hashes
+
+from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import padding
-from cryptography.hazmat.backends import default_backend
 
 from typing import Optional
 
@@ -43,14 +43,13 @@ from pwny.console import Console
 
 from pex.fs import FS
 from pex.ssl import OpenSSL
-from pex.string import String
 from pex.proto.tlv import TLVClient, TLVPacket
 
-from hatsploit.lib.session import Session
+from hatsploit.lib.core.session import Session
 from hatsploit.lib.loot import Loot
 
 
-class PwnySession(Session, Console):
+class PwnySession(Session, FS, OpenSSL):
     """ Subclass of pwny module.
 
     This subclass of pwny module represents an implementation
@@ -58,7 +57,9 @@ class PwnySession(Session, Console):
     """
 
     def __init__(self) -> None:
-        super().__init__()
+        super().__init__({
+            'Type': "pwny"
+        })
 
         self.pwny = f'{os.path.dirname(os.path.dirname(__file__))}/pwny/'
 
@@ -77,13 +78,9 @@ class PwnySession(Session, Console):
         self.reason = TERM_UNKNOWN
 
         self.pipes = Pipes(self)
+        self.console = None
+
         self.loot = Loot(self.pwny_loot)
-        self.ssl = OpenSSL()
-        self.string = String()
-
-        self.fs = FS()
-
-        self.details.update({'Type': "pwny"})
 
     def open(self, client: socket.socket) -> None:
         """ Open the Pwny session.
@@ -93,7 +90,13 @@ class PwnySession(Session, Console):
         :raises RuntimeError: with trailing error message
         """
 
-        self.channel = TLV(TLVClient(client))
+        self.channel = TLV(
+            TLVClient(client),
+            args=[
+                True,
+            ]
+        )
+        self.channel.queue_resume()
 
         tlv = self.send_command(BUILTIN_UUID)
         self.uuid = tlv.get_string(TLV_TYPE_UUID)
@@ -101,12 +104,13 @@ class PwnySession(Session, Console):
         if not self.uuid:
             raise RuntimeError("No UUID received or UUID broken!")
 
-        if not self.channel.secure:
-            self.print_warning("TLS not enabled, connection is not secure.")
-            self.print_information("Enable it with %greensecure%end command.")
-
         self.loot.create_loot()
-        self.start_pwny(self)
+
+        if not self.info['Platform'] and not self.info['Arch']:
+            self.identify()
+
+        self.console = Console(self)
+        self.console.start_pwny()
 
     def identify(self) -> None:
         """ Enforce platform and architecture identification
@@ -122,9 +126,15 @@ class PwnySession(Session, Console):
         if result.get_int(TLV_TYPE_STATUS) != TLV_STATUS_SUCCESS:
             raise RuntimeError("Failed to identify target system!")
 
-        self.details.update({
-            'Platform': result.get_string(BUILTIN_TYPE_PLATFORM),
-            'Arch': result.get_string(BUILTIN_TYPE_ARCH)
+        platform = result.get_string(BUILTIN_TYPE_PLATFORM)
+        arch = result.get_string(BUILTIN_TYPE_ARCH)
+
+        if platform.lower() == 'ios':
+            platform = 'apple_ios'
+
+        self.info.update({
+            'Platform': platform,
+            'Arch': arch
         })
 
     def secure(self) -> bool:
@@ -137,10 +147,10 @@ class PwnySession(Session, Console):
             self.print_process("Initializing re-exchange of keys...")
 
         self.print_process("Generating RSA keys...")
-        key = self.ssl.generate_key()
+        key = self.generate_key()
 
-        priv_key = self.ssl.dump_key(key)
-        pub_key = self.ssl.dump_public_key(key)
+        priv_key = self.dump_key(key)
+        pub_key = self.dump_public_key(key)
 
         self.print_process("Exchanging RSA keys for TLS...")
 
@@ -204,6 +214,11 @@ class PwnySession(Session, Console):
         :return TLVPacket: packets
         """
 
+        if self.console:
+            verbose = self.console.get_env('VERBOSE')
+        else:
+            verbose = False
+
         tlv = TLVPacket()
 
         if plugin is not None:
@@ -213,14 +228,48 @@ class PwnySession(Session, Console):
         tlv.add_from_dict(args)
 
         try:
-            self.channel.send(tlv, verbose=self.get_env('VERBOSE'))
+            self.channel.send(tlv, verbose=verbose)
         except Exception as e:
             self.terminated = True
             self.reason = str(e)
 
             raise RuntimeWarning(f"Connection terminated ({self.reason}).")
 
-        return self.channel.read(error=True, verbose=self.get_env('VERBOSE'))
+        query = {
+            TLV_TYPE_TAG: tag
+        }
+
+        if PIPE_TYPE_ID in args and PIPE_TYPE_TYPE in args:
+            query.update({
+                PIPE_TYPE_TYPE: args[PIPE_TYPE_TYPE],
+                PIPE_TYPE_ID: args[PIPE_TYPE_ID],
+            })
+
+        if plugin is not None:
+            query.update({
+                TLV_TYPE_TAB_ID: plugin
+            })
+
+        if not self.channel.running:
+            while True:
+                response = self.channel.read(
+                    error=True,
+                    verbose=verbose
+                )
+
+                if self.channel.tlv_query(response, query):
+                    break
+
+                self.channel.queue.append(response)
+
+            return response
+
+        response = self.channel.queue_find(query)
+
+        while not response:
+            response = self.channel.queue_find(query)
+
+        return response
 
     def download(self, remote_file: str, local_path: str) -> bool:
         """ Download file from the Pwny session.
@@ -230,47 +279,49 @@ class PwnySession(Session, Console):
         :return bool: True if download succeed
         """
 
-        exists, is_dir = self.fs.exists(local_path)
+        exists, is_dir = self.exists(local_path)
 
-        if exists:
-            if is_dir:
-                local_path = os.path.abspath(
-                    '/'.join((local_path, os.path.split(remote_file)[1])))
+        if not exists:
+            self.check_file(local_path)
+            return False
 
-            try:
-                pipe_id = self.pipes.create_pipe(
-                    pipe_type=FS_PIPE_FILE,
-                    args={
-                        TLV_TYPE_FILENAME: remote_file,
-                        FS_TYPE_MODE: 'rb',
-                    }
-                )
+        if is_dir:
+            local_path = os.path.abspath(
+                '/'.join((local_path, os.path.split(remote_file)[1])))
 
-            except RuntimeError:
-                self.print_error(f"Remote file: {remote_file}: does not exist!")
-                return False
+        try:
+            pipe_id = self.pipes.create_pipe(
+                pipe_type=FS_PIPE_FILE,
+                args={
+                    TLV_TYPE_FILENAME: remote_file,
+                    FS_TYPE_MODE: 'rb',
+                }
+            )
 
-            self.pipes.seek_pipe(FS_PIPE_FILE, pipe_id, 0, 2)
-            size = self.pipes.tell_pipe(FS_PIPE_FILE, pipe_id)
-            self.pipes.seek_pipe(FS_PIPE_FILE, pipe_id, 0, 0)
+        except RuntimeError:
+            self.print_error(f"Remote file: {remote_file}: does not exist!")
+            return False
 
-            with open(local_path, 'wb') as f:
-                with alive_bar(int(size / TLV_FILE_CHUNK) + 1, receipt=False,
-                               ctrl_c=False, monitor="{percent:.0%}", stats=False,
-                               title=os.path.split(remote_file)[1]) as bar:
-                    while size > 0:
-                        bar()
+        self.pipes.seek_pipe(FS_PIPE_FILE, pipe_id, 0, 2)
+        size = self.pipes.tell_pipe(FS_PIPE_FILE, pipe_id)
+        self.pipes.seek_pipe(FS_PIPE_FILE, pipe_id, 0, 0)
 
-                        chunk = min(TLV_FILE_CHUNK, size)
-                        buffer = self.pipes.read_pipe(FS_PIPE_FILE, pipe_id, chunk)
-                        f.write(buffer)
-                        size -= chunk
+        self.interrupt()
+        with open(local_path, 'wb') as f:
+            with alive_bar(int(size / TLV_FILE_CHUNK) + 1, receipt=False,
+                           ctrl_c=False, monitor="{percent:.0%}", stats=False,
+                           title=os.path.split(remote_file)[1]) as bar:
+                while size > 0:
+                    bar()
 
-            self.pipes.destroy_pipe(FS_PIPE_FILE, pipe_id)
-            return True
+                    chunk = min(TLV_FILE_CHUNK, size)
+                    buffer = self.pipes.read_pipe(FS_PIPE_FILE, pipe_id, chunk)
+                    f.write(buffer)
+                    size -= chunk
 
-        self.fs.check_file(local_path)
-        return False
+        self.pipes.destroy_pipe(FS_PIPE_FILE, pipe_id)
+        self.resume()
+        return True
 
     def upload(self, local_file: str, remote_path: str) -> bool:
         """ Upload file to the Pwny session.
@@ -280,7 +331,7 @@ class PwnySession(Session, Console):
         :return bool: True if upload succeed
         """
 
-        self.fs.check_file(local_file)
+        self.check_file(local_file)
 
         with open(local_file, 'rb') as f:
             buffer = f.read()
@@ -294,6 +345,7 @@ class PwnySession(Session, Console):
                 }
             )
 
+            self.interrupt()
             with alive_bar(int(size / TLV_FILE_CHUNK) + 1, receipt=False,
                            ctrl_c=False, monitor="{percent:.0%}", stats=False,
                            title=os.path.split(local_file)[1]) as bar:
@@ -304,7 +356,7 @@ class PwnySession(Session, Console):
                     self.pipes.write_pipe(FS_PIPE_FILE, pipe_id, chunk)
 
             self.pipes.destroy_pipe(FS_PIPE_FILE, pipe_id)
-
+            self.resume()
             return True
 
     def spawn(self, path: str, args: list = [], search: list = []) -> bool:
@@ -328,10 +380,32 @@ class PwnySession(Session, Console):
 
         return spawn.spawn(path, args)
 
-    def interact(self) -> None:
-        """ Interact with the Pwny session.
+    def interrupt(self) -> None:
+        """ Interrupt all session events.
 
         :return None: None
         """
 
-        self.pwny_console()
+        self.channel.queue_interrupt()
+        self.pipes.interrupt_events()
+
+    def resume(self) -> None:
+        """ Resume all session events.
+
+        :return None: None
+        """
+
+        self.channel.queue_resume()
+        self.pipes.resume_events()
+
+    def interact(self) -> None:
+        """ Interact with the Pwny session.
+
+        :return None: None
+        :raises RuntimeError: with trailing error message
+        """
+
+        if not self.console:
+            raise RuntimeError("Not yet ready for interaction!")
+
+        self.console.pwny_console()

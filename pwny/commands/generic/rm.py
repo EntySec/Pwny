@@ -6,40 +6,30 @@ Current source: https://github.com/EntySec/HatSploit
 from pwny.api import *
 from pwny.types import *
 
-from hatsploit.lib.command import Command
+from badges.cmd import Command
 
 
-class HatSploitCommand(Command):
+class ExternalCommand(Command):
     def __init__(self):
-        super().__init__()
-
-        self.details = {
+        super().__init__({
             'Category': "filesystem",
             'Name': "rm",
             'Authors': [
                 'Ivan Nikolskiy (enty8080) - command developer'
             ],
-            'Description': "Delete file or directory.",
-            'Usage': "rm [-r] <path>",
+            'Description': "Delete file.",
+            'Usage': "rm <path>",
             'MinArgs': 1
-        }
+        })
 
-    def run(self, argc, argv):
-        if argc < 3:
-            result = self.session.send_command(
-                tag=FS_FILE_DELETE,
-                args={
-                    TLV_TYPE_PATH: argv[1],
-                }
-            )
-        else:
-            result = self.session.send_command(
-                tag=FS_DIR_DELETE,
-                args={
-                    TLV_TYPE_PATH: argv[2]
-                }
-            )
+    def run(self, args):
+        result = self.session.send_command(
+            tag=FS_FILE_DELETE,
+            args={
+                TLV_TYPE_PATH: args[1],
+            }
+        )
 
         if result.get_int(TLV_TYPE_STATUS) != TLV_STATUS_SUCCESS:
-            self.print_error("Failed to delete path specified!")
+            self.print_error(f"Remote file: {args[1]}: does not exist!")
             return

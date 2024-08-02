@@ -3,14 +3,12 @@ This command requires HatSploit: https://hatsploit.com
 Current source: https://github.com/EntySec/HatSploit
 """
 
-from hatsploit.lib.command import Command
+from badges.cmd import Command
 
 
-class HatSploitCommand(Command):
+class ExternalCommand(Command):
     def __init__(self):
-        super().__init__()
-
-        self.details = {
+        super().__init__({
             'Category': "evasion",
             'Name': "secure",
             'Authors': [
@@ -19,7 +17,7 @@ class HatSploitCommand(Command):
             'Description': "Secure communication with TLS.",
             'Usage': "secure",
             'MinArgs': 0
-        }
+        })
 
-    def run(self, argc, argv):
+    def run(self, _):
         self.session.secure()

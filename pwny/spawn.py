@@ -23,19 +23,20 @@ SOFTWARE.
 """
 
 import sys
-import time
 import getch
 import ctypes
 import threading
 import selectors
 
-from pwny.types import *
-from pwny.pipes import *
 from pwny.api import *
+from pwny.types import *
 
 from pex.string import String
+from pex.proto.tlv import TLVPacket
 
-from typing import Any, Union
+from hatsploit.lib.core.session import Session
+
+from typing import Union
 from badges import Badges
 
 FLAG_FORK = 0 << 0
@@ -43,7 +44,7 @@ FLAG_NO_FORK = 1 << 0
 FLAG_FAKE_PTY = 1 << 1
 
 
-class Spawn(object):
+class Spawn(Badges, String):
     """ Subclass of pwny module.
 
     This subclass of pwny module is intended for providing
@@ -61,50 +62,29 @@ class Spawn(object):
         self.pipes = session.pipes
 
         self.closed = False
-        self.interrupt = False
-        self.interrupted = False
 
-        self.badges = Badges()
-        self.string = String()
-
-    def read_pipe(self, pipe_id: int) -> None:
+    @staticmethod
+    def read_event(packet: TLVPacket) -> None:
         """ Read output from pipe.
 
-        :param int pipe_id: pipe ID
+        :param TLVPacket packet: packet received from pipe
         :return None: None
         """
 
-        size = self.pipes.tell_pipe(PROCESS_PIPE, pipe_id)
+        buffer = packet.get_raw(PIPE_TYPE_BUFFER)
 
-        while size > 0:
-            chunk = min(TLV_FILE_CHUNK, size)
-            buffer = self.pipes.read_pipe(PROCESS_PIPE, pipe_id, chunk)
+        sys.stdout.write(buffer.decode(errors='ignore'))
+        sys.stdout.flush()
 
-            sys.stdout.write(buffer.decode(errors='ignore'))
-            sys.stdout.flush()
+    def heartbeat_event(self, packet: TLVPacket) -> None:
+        """ Check pipe heartbeat.
 
-            size -= chunk
-
-    def read_thread(self, pipe_id: int) -> None:
-        """ Thread for reading.
-
-        :param int pipe_id: pipe ID
+        :param TLVPacket packet: packet received from pipe
         :return None: None
         """
 
-        while True:
-            if self.interrupt:
-                self.interrupted = True
-                continue
-
-            self.interrupted = False
-            self.read_pipe(pipe_id)
-
-            if not self.pipes.heartbeat_pipe(PROCESS_PIPE, pipe_id) or self.closed:
-                break
-
-        self.read_pipe(pipe_id)
-        self.closed = True
+        if packet.get_int(PIPE_TYPE_HEARTBEAT) != TLV_STATUS_SUCCESS:
+            self.closed = True
 
     def write_thread(self, pipe_id: int) -> None:
         """ Thread for writing.
@@ -127,14 +107,7 @@ class Spawn(object):
                     if not line:
                         pass
 
-                    self.interrupt = True
-
-                    while not self.interrupted:
-                        pass
-
                     self.pipes.write_pipe(PROCESS_PIPE, pipe_id, (line + '\n').encode())
-                    self.interrupt = False
-
                 except EOFError:
                     pass
 
@@ -153,7 +126,7 @@ class Spawn(object):
         )
 
         if result.get_int(TLV_TYPE_STATUS) != TLV_STATUS_SUCCESS:
-            self.badges.print_error(f"Remote directory: {path}: does not exist!")
+            self.print_error(f"Remote directory: {path}: does not exist!")
 
     def is_dir(self, path: str) -> bool:
         """ Check if remote path is directory or not.
@@ -173,9 +146,9 @@ class Spawn(object):
             return False
 
         buffer = result.get_raw(TLV_TYPE_BYTES)
-        hash = self.string.bytes_to_stat(buffer)
+        hash = self.bytes_to_stat(buffer)
 
-        if self.string.mode_type(hash.get('st_mode', 0)) == 'directory':
+        if self.mode_type(hash.get('st_mode', 0)) == 'directory':
             return True
 
         return False
@@ -219,24 +192,33 @@ class Spawn(object):
             return True
 
         try:
-            flags = FLAG_NO_FORK
-
             pipe_id = self.pipes.create_pipe(
                 pipe_type=PROCESS_PIPE,
                 args={
-                    TLV_TYPE_INT: flags,
+                    TLV_TYPE_INT: FLAG_NO_FORK,
                     TLV_TYPE_FILENAME: path,
                     PROCESS_TYPE_PROCESS_ARGV: ' '.join(args)
-                }
+                },
+                flags=PIPE_INTERACTIVE
             )
 
         except RuntimeError:
-            self.badges.print_error(f"Failed to spawn process for {path}!")
+            self.print_error(f"Failed to spawn process for {path}!")
             return False
 
-        read_thread = threading.Thread(target=self.read_thread, args=(pipe_id,))
-        read_thread.setDaemon(True)
-        read_thread.start()
+        self.pipes.create_event(
+            pipe_type=PROCESS_PIPE,
+            pipe_id=pipe_id,
+            pipe_data=PIPE_TYPE_BUFFER,
+            target=self.read_event
+        )
+
+        self.pipes.create_event(
+            pipe_type=PROCESS_PIPE,
+            pipe_id=pipe_id,
+            pipe_data=PIPE_TYPE_HEARTBEAT,
+            target=self.heartbeat_event
+        )
 
         write_thread = threading.Thread(target=self.write_thread, args=(pipe_id,))
         write_thread.setDaemon(True)
@@ -246,7 +228,7 @@ class Spawn(object):
             while not self.closed:
                 pass
         except KeyboardInterrupt:
-            self.badges.print_process("Cleaning up...")
+            self.print_process("Cleaning up...")
             self.closed = True
 
         if write_thread.is_alive():
@@ -256,7 +238,5 @@ class Spawn(object):
             if res > 1:
                 ctypes.pythonapi.PyThreadState_SetAsyncExc(write_thread.ident, None)
 
-        read_thread.join()
         self.pipes.destroy_pipe(PROCESS_PIPE, pipe_id)
-
         return True

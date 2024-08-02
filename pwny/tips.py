@@ -29,10 +29,10 @@ import random
 from colorscript import ColorScript
 from badges import Badges
 
-from hatsploit.lib.session import Session
+from hatsploit.lib.core.session import Session
 
 
-class Tips(object):
+class Tips(Badges):
     """ Subclass of pwny module.
 
     This subclass of pwny module is intended for
@@ -46,10 +46,6 @@ class Tips(object):
         :return None: None
         """
 
-        super().__init__()
-
-        self.badges = Badges()
-        self.color_script = ColorScript()
         self.session = session
         self.tips_path = self.session.pwny_data + 'tips/'
 
@@ -59,24 +55,20 @@ class Tips(object):
         :return None: None
         """
 
-        if os.path.exists(self.tips_path):
-            tips = []
-            all_tips = os.listdir(self.tips_path)
+        if not os.path.exists(self.tips_path):
+            self.print_warning("No tips detected.")
+            return
 
-            for tip in all_tips:
-                tips.append(tip)
+        tips = list(os.listdir(self.tips_path))
 
-            if tips:
-                tip = ""
+        if not tips:
+            self.print_warning("No tips detected.")
+            return
 
-                while not tip:
-                    random_tip = random.randint(0, len(tips) - 1)
-                    tip = self.color_script.parse_file(
-                        self.tips_path + tips[random_tip]
-                    )
+        random_tip = random.randint(0, len(tips) - 1)
+        tip = ColorScript().parse_file(
+            self.tips_path + tips[random_tip]
+        )
 
-                self.badges.print_empty(f"%newline%endPwny Tip: {tip}%end%newline")
-                return
-
-        else:
-            self.badges.print_warning("No tips detected.")
+        self.print_empty(f"%newline%endPwny Tip: {tip}%end%newline")
+        return

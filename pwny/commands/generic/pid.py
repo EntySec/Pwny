@@ -10,14 +10,12 @@ from textwrap import dedent
 from pwny.api import *
 from pwny.types import *
 
-from hatsploit.lib.command import Command
+from badges.cmd import Command
 
 
-class HatSploitCommand(Command):
+class ExternalCommand(Command):
     def __init__(self):
-        super().__init__()
-
-        self.details = {
+        super().__init__({
             'Category': "gather",
             'Name': "pid",
             'Authors': [
@@ -26,8 +24,8 @@ class HatSploitCommand(Command):
             'Description': "Get current process ID.",
             'Usage': "pid",
             'MinArgs': 0
-        }
+        })
 
-    def run(self, argc, argv):
+    def run(self, _):
         result = self.session.send_command(tag=PROCESS_GET_PID)
-        self.print_empty(f"* PID: {str(result.get_int(TLV_TYPE_PID))}")
+        self.print_information(f"PID: {str(result.get_int(TLV_TYPE_PID))}")

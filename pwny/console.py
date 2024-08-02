@@ -24,10 +24,13 @@ SOFTWARE.
 
 import os
 import io
-import cmd
 
-from pwny.types import *
 from pwny.api import *
+from pwny.types import *
+
+from pex.arch import *
+from pex.platform import *
+
 from pwny.plugins import Plugins
 from pwny.migrate import Migrate
 from pwny.tips import Tips
@@ -35,36 +38,35 @@ from pwny.tips import Tips
 from contextlib import redirect_stdout
 
 from colorscript import ColorScript
-from badges import Badges, Tables
+from badges.cmd import Cmd
 
-from pex.platform.types import *
-from pex.arch.types import *
-
-from hatsploit.lib.runtime import Runtime
-from hatsploit.lib.session import Session
-from hatsploit.lib.commands import Commands
-from hatsploit.lib.handler import Handler
-from hatsploit.lib.show import Show
+from hatsploit.lib.core.session import Session
 
 from pex.fs import FS
 
 
-class Console(cmd.Cmd):
+class Console(Cmd, FS):
     """ Subclass of pwny module.
 
     This subclass of pwny module is intended for providing
     Pwny main console.
     """
 
-    def __init__(self, prompt: str = '%removepwny:%line$dir%end %blue$user%end$prompt ') -> None:
+    def __init__(self, session: Session,
+                 prompt: str = 'pwny:%line$dir%end %blue$user%end$prompt ') -> None:
         """ Initialize Pwny console.
 
+        :param Session session: session object
         :param str prompt: prompt line (supports ColorScript)
         :return None: None
         """
 
-        super().__init__()
-        cmd.Cmd.__init__(self)
+        self.session = session
+
+        super().__init__(
+            prompt=prompt,
+            session=session
+        )
 
         self.version = '1.0.0'
 
@@ -77,28 +79,6 @@ Running as %blue$user%end on %line$dir%end
 """
 
         self.plugins = Plugins()
-        self.commands = Commands()
-        self.show = Show()
-
-        self.runtime = Runtime()
-
-        self.badges = Badges()
-        self.tables = Tables()
-        self.fs = FS()
-
-        self.core_commands = sorted([
-            ('set', 'Set environment variable.'),
-            ('unset', 'Delete environment variable.'),
-            ('env', 'List environment variables.'),
-            ('exit', 'Terminate Pwny session.'),
-            ('help', 'Show available commands.'),
-            ('load', 'Load Pwny plugin.'),
-            ('plugins', 'List Pwny plugins.'),
-            ('quit', 'Stop interaction.'),
-            ('prompt', 'Set prompt message.'),
-            ('exec', 'Execute path.'),
-            ('unload', 'Unload Pwny plugin.')
-        ])
 
         self.search = {
             OS_LINUX: [
@@ -130,10 +110,6 @@ Running as %blue$user%end on %line$dir%end
             ]
         }
 
-        self.custom_commands = {}
-
-        self.handler = Handler()
-        self.session = None
         self.env = {}
 
     def get_env(self, name: str) -> str:
@@ -220,7 +196,7 @@ Running as %blue$user%end on %line$dir%end
         """
 
         message = message.strip("'\"")
-        message = ColorScript().parse_input(message)
+        message = ColorScript().parse(message)
 
         if '$dir' in message:
             path = self.pwd()
@@ -247,17 +223,6 @@ Running as %blue$user%end on %line$dir%end
 
         return message
 
-    def do_help(self, _) -> None:
-        """ Show available commands.
-
-        :return None: None
-        """
-
-        self.tables.print_table("Core Commands", ('Command', 'Description'),
-                                *self.core_commands)
-        self.commands.show_commands(self.custom_commands)
-        self.show.show_plugin_commands(self.plugins.loaded_plugins)
-
     def do_plugins(self, _) -> None:
         """ Show available plugins.
 
@@ -266,80 +231,91 @@ Running as %blue$user%end on %line$dir%end
 
         self.plugins.show_plugins()
 
-    def do_load(self, plugin: str) -> None:
+    def do_load(self, args: list) -> None:
         """ Load plugin by name.
 
-        :param str plugin: plugin name
+        :param list args: arguments list
         :return None: None
         """
 
-        if not plugin:
-            self.badges.print_usage("load <name>")
+        if len(args) < 2:
+            self.print_usage("load <name>")
             return
 
-        self.plugins.load_plugin(plugin)
+        self.plugins.load_plugin(args[1])
 
-    def do_unload(self, plugin: str) -> None:
+        plugin = self.plugins.loaded_plugins[args[1]]
+        commands = {}
+
+        for command in plugin.commands:
+            commands[command] = plugin.commands[command]
+            commands[command]['Method'] = getattr(plugin, command)
+            commands[command]['Category'] = plugin.info['Plugin']
+
+        self.add_external(commands)
+
+    def do_unload(self, args: list) -> None:
         """ Unload plugin by name.
 
-        :param str plugin: plugin name
+        :param list args: arguments list
         :return None: None
         """
 
-        if not plugin:
-            self.badges.print_usage("unload <name>")
+        if len(args) < 2:
+            self.print_usage("unload <name>")
             return
 
-        self.plugins.unload_plugin(plugin)
+        plugin = self.plugins.loaded_plugins[args[1]]
 
-    def do_exec(self, line: str) -> None:
+        for command in plugin.commands:
+            self.delete_external(command)
+
+        self.plugins.unload_plugin(args[1])
+
+    def do_exec(self, args: list) -> None:
         """ Execute path.
 
-        :param str line: path with arguments
+        :param list args: arguments list
         :return None: None
         """
 
-        line = line.split()
-
-        if len(line) < 1:
-            self.badges.print_usage("exec <path>")
+        if len(args) < 2:
+            self.print_usage("exec <path>")
             return
 
         self.check_session()
 
-        if len(line) >= 2:
-            self.session.spawn(line[0], line[1:])
+        if len(args) >= 2:
+            self.session.spawn(args[1], line[2:])
             return
 
-        self.session.spawn(line[0], [])
+        self.session.spawn(args[1], [])
 
-    def do_set(self, line: str) -> None:
+    def do_set(self, args: list) -> None:
         """ Set environment variable.
 
-        :param str line: variable name and value
+        :param list args: arguments list
         :return None: None
         """
 
-        line = line.split()
-
-        if len(line) < 2:
-            self.badges.print_usage("set <name> <value>")
+        if len(args) < 3:
+            self.print_usage("set <name> <value>")
             return
 
-        self.set_env(line[0], line[1])
+        self.set_env(args[1], args[2])
 
-    def do_unset(self, name: str) -> None:
+    def do_unset(self, args: list) -> None:
         """ Delete environment variable.
 
-        :param str name: variable name
+        :param list args: arguments list
         :return None: None
         """
 
-        if not name:
-            self.badges.print_usage("unset <name>")
+        if len(args) < 2:
+            self.print_usage("unset <name>")
             return
 
-        self.set_env(name, None)
+        self.set_env(args[1], None)
 
     def do_env(self, _) -> None:
         """ List environment variables.
@@ -353,24 +329,24 @@ Running as %blue$user%end on %line$dir%end
             env_data.append((name, self.env[name]))
 
         if not env_data:
-            self.badges.print_warning("No environment available.")
+            self.print_warning("No environment available.")
             return
 
-        self.tables.print_table("Environment Variables", ('Name', 'Value'),
-                                *env_data)
+        self.print_table("Environment Variables", ('Name', 'Value'),
+                         *env_data)
 
-    def do_prompt(self, prompt: str) -> None:
+    def do_prompt(self, args: list) -> None:
         """ Set current prompt line.
 
-        :param str prompt: prompt line (supports ColorScript)
+        :param list args: arguments list
         :return None: None
         """
 
-        if not prompt:
-            self.badges.print_usage("prompt <line>")
+        if len(args) < 2:
+            self.print_usage("prompt <line>")
             return
 
-        self.set_prompt(prompt)
+        self.set_prompt(args[1])
 
     def do_exit(self, _) -> None:
         """ Exit Pwny and terminate connection.
@@ -388,69 +364,25 @@ Running as %blue$user%end on %line$dir%end
 
         raise EOFError
 
-    def do_quit(self, _) -> None:
-        """ Exit Pwny.
-
-        :return None: None
-        :raises EOFError: EOF error
-        """
-
-        raise EOFError
-
-    def do_clear(self, _) -> None:
-        """ Clear terminal window.
-
-        :return None: None
-        """
-
-        self.badges.print_empty('%clear', end='')
-
-    def do_EOF(self, _):
-        """ Catch EOF.
-
-        :return None: None
-        :raises EOFError: EOF error
-        """
-
-        raise EOFError
-
-    def default(self, line: str) -> None:
+    def default(self, args: list) -> None:
         """ Default unrecognized command handler.
 
-        :param str line: line sent
+        :param list args: line sent
         :return None: None
         """
 
         self.check_session()
-        command = line.split()
-
-        if self.commands.execute_custom_command(
-                command, self.custom_commands, False):
-            return
-
-        if self.commands.execute_custom_plugin_command(
-                command, self.plugins.loaded_plugins, False):
-            return
-
         search = self.get_env('PATH').split(':')
 
-        if len(command) >= 2:
+        if len(args) >= 2:
             status = self.session.spawn(
-                command[0], command[1:], search=search)
+                args[0], args[1:], search=search)
         else:
             status = self.session.spawn(
-                command[0], [], search=search)
+                args[0], [], search=search)
 
         if not status:
-            self.badges.print_error(f"Unrecognized command: {command[0]}!")
-
-    def emptyline(self) -> None:
-        """ Do something on empty line.
-
-        :return None: None
-        """
-
-        pass
+            self.print_error(f"Unrecognized command: {args[0]}!")
 
     def precmd(self, line: str) -> str:
         """ Do something before processing commands.
@@ -464,15 +396,13 @@ Running as %blue$user%end on %line$dir%end
 
         return line
 
-    def postcmd(self, stop: str, _) -> str:
+    def postcmd(self, _) -> None:
         """ Do something after each command.
 
-        :param str stop: stop
         :return str: continue
         """
 
         self.set_prompt(self.scheme)
-        return stop
 
     def check_session(self) -> None:
         """ Check is session alive.
@@ -489,25 +419,6 @@ Running as %blue$user%end on %line$dir%end
             self.session.close()
             raise RuntimeWarning(f"Connection terminated ({self.session.reason}).")
 
-    def load_commands(self, path: str) -> None:
-        """ Load custom Pwny commands.
-
-        :param str path: commands path
-        :return None: None
-        """
-
-        self.check_session()
-
-        exists, is_dir = self.fs.exists(path)
-
-        if exists and is_dir:
-            self.custom_commands.update(
-                self.commands.load_commands(path)
-            )
-
-        for command in self.custom_commands:
-            self.custom_commands[command].session = self.session
-
     def load_plugins(self, path: str) -> None:
         """ Load custom Pwny plugins.
 
@@ -517,7 +428,7 @@ Running as %blue$user%end on %line$dir%end
 
         self.check_session()
 
-        exists, is_dir = self.fs.exists(path)
+        exists, is_dir = self.exists(path)
 
         if exists and is_dir:
             self.plugins.import_plugins(path, self.session)
@@ -531,25 +442,24 @@ Running as %blue$user%end on %line$dir%end
         self.check_session()
 
         self.set_env('PATH', ':'.join(
-            self.search.get(self.session.details['Platform'], [])
+            self.search.get(self.session.info['Platform'], [])
         ))
 
-    def start_pwny(self, session: Session) -> None:
+    def start_pwny(self) -> None:
         """ Start Pwny.
 
-        :param Session session: session to start Pwny for
         :return None: None
         """
 
-        self.session = session
+        self.load_external(self.session.pwny_commands + str(
+            self.session.info['Platform']).lower(), session=self.session)
+        self.load_external(
+            self.session.pwny_commands + 'generic', session=self.session)
 
-        self.load_commands(session.pwny_commands + str(
-            session.details['Platform']).lower())
-        self.load_commands(session.pwny_commands + 'generic')
-
-        self.load_plugins(session.pwny_plugins + str(
-            session.details['Platform']).lower())
-        self.load_plugins(session.pwny_plugins + 'generic')
+        self.load_plugins(self.session.pwny_plugins + str(
+            self.session.info['Platform']).lower())
+        self.load_plugins(
+            self.session.pwny_plugins + 'generic')
 
         self.setup_env()
 
@@ -563,9 +473,10 @@ Running as %blue$user%end on %line$dir%end
         self.check_session()
 
         with io.StringIO() as buffer, redirect_stdout(buffer):
-            self.badges.set_less(False)
+            self.set_less(False)
             self.onecmd(command)
-            self.badges.set_less(True)
+            self.set_less(True)
+
             return buffer.getvalue()
 
     def pwny_console(self) -> None:
@@ -578,27 +489,7 @@ Running as %blue$user%end on %line$dir%end
         self.set_motd(self.motd)
 
         if self.motd:
-            self.badges.print_empty(self.motd)
+            self.print_empty(self.motd)
 
         Tips(self.session).print_random_tip()
-
-        while True:
-            result = self.runtime.catch(self.pwny_shell)
-
-            if result is not Exception and result:
-                break
-
-    def pwny_shell(self) -> bool:
-        """ Start Pwny shell.
-
-        :return bool: True to exit
-        """
-
-        try:
-            self.cmdloop()
-
-        except (EOFError, KeyboardInterrupt):
-            self.badges.print_empty(end='')
-            return True
-
-        return False
+        self.loop()

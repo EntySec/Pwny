@@ -11,18 +11,16 @@ from pwny.types import *
 
 from pex.proto.stream import StreamClient
 
-from hatsploit.lib.command import Command
+from badges.cmd import Command
 
 UI_BASE = 6
 
 UI_SCREENSHOT = tlv_custom_tag(API_CALL_STATIC, UI_BASE, API_CALL)
 
 
-class HatSploitCommand(Command):
+class ExternalCommand(Command):
     def __init__(self):
-        super().__init__()
-
-        self.details = {
+        super().__init__({
             'Category': "gather",
             'Name': "screen",
             'Authors': [
@@ -32,10 +30,10 @@ class HatSploitCommand(Command):
             'Usage': "screen <option> [arguments]",
             'MinArgs': 1,
             'Options': {
-                '-s': ['<path>', 'Take a screenshot.'],
-                '-r': ['', 'Stream screen in real time.']
+                'snap': ['<path>', 'Take a screenshot.'],
+                'stream': ['', 'Stream screen in real time.']
             }
-        }
+        })
 
         self.stop = False
 
@@ -61,8 +59,8 @@ class HatSploitCommand(Command):
             except Exception:
                 self.print_error(f"Failed to write image to {path}!")
 
-    def run(self, argc, argv):
-        if argv[1] == '-r':
+    def run(self, args):
+        if args[1] == 'stream':
             file = self.session.loot.random_loot('png')
             path = self.session.loot.random_loot('html')
 
@@ -90,7 +88,7 @@ class HatSploitCommand(Command):
             self.session.loot.remove_loot(file)
             self.session.loot.remove_loot(path)
 
-        elif argv[1] == '-s':
+        elif args[1] == 'snap':
             result = self.session.send_command(
                 tag=UI_SCREENSHOT,
                 args={
@@ -105,7 +103,7 @@ class HatSploitCommand(Command):
             frame = result.get_raw(TLV_TYPE_BYTES)
 
             try:
-                with open(argv[2], 'wb') as f:
+                with open(args[2], 'wb') as f:
                     f.write(frame)
             except Exception:
-                self.print_error(f"Failed to write image to {argv[2]}!")
+                self.print_error(f"Failed to write image to {args[2]}!")

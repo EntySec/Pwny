@@ -201,7 +201,7 @@ void tab_destroy(tab_t *tab)
 
 static tlv_pkt_t *tab_term(c2_t *c2)
 {
-    return api_craft_tlv_pkt(API_CALL_QUIT);
+    return api_craft_tlv_pkt(API_CALL_QUIT, c2->request);
 }
 
 void register_tab_api_calls(api_calls_t **api_calls)

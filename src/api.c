@@ -54,14 +54,14 @@ api_signal_t api_process_c2(c2_t *c2, api_calls_t *api_calls, tabs_t *tabs)
     if (tlv_pkt_get_u32(c2->request, TLV_TYPE_TAG, &tag) < 0)
     {
         log_debug("* No tag was received by API\n");
-        c2->response = api_craft_tlv_pkt(API_CALL_NOT_IMPLEMENTED);
+        c2->response = api_craft_tlv_pkt(API_CALL_NOT_IMPLEMENTED, c2->request);
 
         return API_CALLBACK;
     }
 
     log_debug("* Read new tag (%d) by API\n", tag);
 
-    if (tabs != NULL && tlv_pkt_get_u32(c2->request, TLV_TYPE_TAB_ID, &tab_id) == 0)
+    if (tabs != NULL && tlv_pkt_get_u32(c2->request, TLV_TYPE_TAB_ID, &tab_id) >= 0)
     {
         if (tabs_lookup(&tabs, tab_id, c2->request) == 0)
         {
@@ -69,13 +69,13 @@ api_signal_t api_process_c2(c2_t *c2, api_calls_t *api_calls, tabs_t *tabs)
             return API_SILENT;
         }
 
-        c2->response = api_craft_tlv_pkt(API_CALL_NOT_IMPLEMENTED);
+        c2->response = api_craft_tlv_pkt(API_CALL_NOT_IMPLEMENTED, c2->request);
         return API_CALLBACK;
     }
 
     if (api_call_make(&api_calls, c2, tag, &result) != 0)
     {
-        c2->response = api_craft_tlv_pkt(API_CALL_NOT_IMPLEMENTED);
+        c2->response = api_craft_tlv_pkt(API_CALL_NOT_IMPLEMENTED, c2->request);
         return API_CALLBACK;
     }
 
@@ -100,12 +100,18 @@ api_signal_t api_process_c2(c2_t *c2, api_calls_t *api_calls, tabs_t *tabs)
     return API_CALLBACK;
 }
 
-tlv_pkt_t *api_craft_tlv_pkt(int status)
+tlv_pkt_t *api_craft_tlv_pkt(int status, tlv_pkt_t *request)
 {
+    int tag;
     tlv_pkt_t *c2_pkt;
 
     c2_pkt = tlv_pkt_create();
     tlv_pkt_add_u32(c2_pkt, TLV_TYPE_STATUS, status);
+
+    if (request != NULL && tlv_pkt_get_u32(request, TLV_TYPE_TAG, &tag) >= 0)
+    {
+        tlv_pkt_add_u32(c2_pkt, TLV_TYPE_TAG, tag);
+    }
 
     return c2_pkt;
 }

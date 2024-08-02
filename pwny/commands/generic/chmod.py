@@ -6,14 +6,12 @@ Current source: https://github.com/EntySec/HatSploit
 from pwny.api import *
 from pwny.types import *
 
-from hatsploit.lib.command import Command
+from badges.cmd import Command
 
 
-class HatSploitCommand(Command):
+class ExternalCommand(Command):
     def __init__(self):
-        super().__init__()
-
-        self.details = {
+        super().__init__({
             'Category': "filesystem",
             'Name': "chmod",
             'Authors': [
@@ -22,17 +20,17 @@ class HatSploitCommand(Command):
             'Description': "Change path permissions.",
             'Usage': "chmod <mode> <path>",
             'MinArgs': 2
-        }
+        })
 
-    def run(self, argc, argv):
+    def run(self, args):
         result = self.session.send_command(
             tag=FS_CHMOD,
             args={
-                FS_TYPE_MODE: argv[1],
-                TLV_TYPE_PATH: argv[2],
+                FS_TYPE_MODE: args[1],
+                TLV_TYPE_PATH: args[2],
             }
         )
 
         if result.get_int(TLV_TYPE_STATUS) != TLV_STATUS_SUCCESS:
-            self.print_error("Failed to set path permissions!")
+            self.print_error(f"Remote path: {args[2]}: operation not permitted!")
             return

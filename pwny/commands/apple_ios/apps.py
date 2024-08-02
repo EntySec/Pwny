@@ -6,18 +6,16 @@ Current source: https://github.com/EntySec/HatSploit
 from pwny.api import *
 from pwny.types import *
 
-from hatsploit.lib.command import Command
+from badges.cmd import Command
 
 UI_BASE = 6
 
 UI_APP_LIST = tlv_custom_tag(API_CALL_STATIC, UI_BASE, API_CALL + 9)
 
 
-class HatSploitCommand(Command):
+class ExternalCommand(Command):
     def __init__(self):
-        super().__init__()
-
-        self.details = {
+        super().__init__({
             'Category': "UI",
             'Name': "apps",
             'Authors': [
@@ -26,9 +24,9 @@ class HatSploitCommand(Command):
             'Description': "List all installed apps.",
             'Usage': "apps",
             'MinArgs': 0,
-        }
+        })
 
-    def run(self, argc, argv):
+    def run(self, _):
         result = self.session.send_command(
             tag=UI_APP_LIST,
         )

@@ -22,36 +22,38 @@
  * SOFTWARE.
  */
 
-#include <api.h>
-#include <c2.h>
-#include <tlv.h>
-#include <tlv_types.h>
-#include <tab.h>
+#import <Foundation/Foundation.h>
 
-#define TEST \
-        TLV_TAG_CUSTOM(API_CALL_DYNAMIC, \
-                       TAB_BASE, \
-                       API_CALL)
+#include <core.h>
 
-static tlv_pkt_t *test(c2_t *c2)
+int main(int argc, const char *argv[])
 {
-    tlv_pkt_t *result;
+    NSString *decodedString;
+    NSString *encodedString;
+    NSData *decodedData;
 
-    result = api_craft_tlv_pkt(API_CALL_SUCCESS, c2->request);
-    tlv_pkt_add_string(result, TLV_TYPE_STRING, "Test");
+    core_t *core;
 
-    return result;
-}
+    @autoreleasepool
+    {
+        if (argc < 2)
+        {
+            return 1;
+        }
 
-int main(void)
-{
-    tab_t *tab;
-    tab = tab_create();
+        encodedString = [NSString stringWithFormat:@"%s", argv[1]];
+        decodedData = [[NSData alloc] initWithBase64EncodedString:encodedString options:0];
+        decodedString = [[NSString alloc] initWithData:decodedData encoding:NSUTF8StringEncoding];
 
-    tab_register_call(tab, TEST, test);
+        core = core_create();
 
-    tab_start(tab);
-    tab_destroy(tab);
+        core_setup(core);
+        core_set_path(core, realpath(argv[0], NULL));
+        core_add_uri(core, (char *)[decodedString UTF8String]);
+
+        core_start(core);
+        core_destroy(core);
+    }
 
     return 0;
 }

@@ -6,7 +6,7 @@ Current source: https://github.com/EntySec/HatSploit
 from pwny.api import *
 from pwny.types import *
 
-from hatsploit.lib.command import Command
+from badges.cmd import Command
 
 UI_BASE = 6
 
@@ -14,11 +14,9 @@ UI_OPEN_URL = tlv_custom_tag(API_CALL_STATIC, UI_BASE, API_CALL + 6)
 UI_OPEN_APP = tlv_custom_tag(API_CALL_STATIC, UI_BASE, API_CALL + 7)
 
 
-class HatSploitCommand(Command):
+class ExternalCommand(Command):
     def __init__(self):
-        super().__init__()
-
-        self.details = {
+        super().__init__({
             'Category': "UI",
             'Name': "open",
             'Authors': [
@@ -31,14 +29,14 @@ class HatSploitCommand(Command):
                 'url': ['<url>', 'Open URL in default browser.'],
                 'app': ['<bundle_id>', 'Open app by bundle id.'],
             }
-        }
+        })
 
-    def run(self, argc, argv):
-        if argv[1] == 'url':
+    def run(self, args):
+        if args[1] == 'url':
             result = self.session.send_command(
                 tag=UI_OPEN_URL,
                 args={
-                    TLV_TYPE_STRING: argv[2]
+                    TLV_TYPE_STRING: args[2]
                 }
             )
 
@@ -46,11 +44,11 @@ class HatSploitCommand(Command):
                 self.print_error("Failed to open URL!")
                 return
 
-        elif argv[1] == 'app':
+        elif args[1] == 'app':
             result = self.session.send_command(
                 tag=UI_OPEN_APP,
                 args={
-                    TLV_TYPE_STRING: argv[2]
+                    TLV_TYPE_STRING: args[2]
                 }
             )
 

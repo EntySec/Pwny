@@ -53,7 +53,7 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL Darwin)
 
 elseif(CMAKE_SYSTEM_NAME STREQUAL iOS)
     add_compile_definitions(IS_IPHONE)
-    add_compile_definitions(IS_BUNDLE)
+    #add_compile_definitions(IS_BUNDLE)
 
 elseif(CMAKE_SYSTEM_NAME STREQUAL Linux)
     add_compile_definitions(IS_LINUX)

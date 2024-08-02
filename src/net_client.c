@@ -180,6 +180,43 @@ static void net_resolve(struct eio_req *request)
     }
 }
 
+static void net_on_connect(struct ev_loop *loop, struct ev_io *w, int events)
+{
+    int status;
+    socklen_t len;
+    net_t *net;
+
+    net = w->data;
+
+    ev_io_stop(net->loop, &net->event_io);
+
+    len = sizeof(status);
+    getsockopt(net->io->pipe[0], SOL_SOCKET, SO_ERROR, &status, &len);
+
+    if (status != 0)
+    {
+        log_debug("* Not connected (%s)\n", net->uri);
+        net->status = NET_STATUS_CLOSED;
+
+        if (net->event_link)
+        {
+            net->event_link(NET_STATUS_CLOSED, net->link_data);
+        }
+
+        return;
+    }
+
+    log_debug("* Connected to (%s)\n", net->uri);
+
+    net->status = NET_STATUS_OPEN;
+    io_start(net->io);
+
+    if (net->event_link)
+    {
+        net->event_link(NET_STATUS_OPEN, net->link_data);
+    }
+}
+
 static int net_on_resolve(struct eio_req *request)
 {
     net_t *net;
@@ -253,7 +290,10 @@ static int net_on_resolve(struct eio_req *request)
     if (status == 0 || errno == EINPROGRESS || errno == EWOULDBLOCK)
     {
         io_add_pipes(net->io, sock, sock);
-        io_start(net->io);
+
+        ev_io_init(&net->event_io, net_on_connect, sock, EV_WRITE);
+        net->event_io.data = net;
+        ev_io_start(net->loop, &net->event_io);
 
         return 0;
     }
@@ -282,22 +322,56 @@ void net_set_delay(net_t *net, float delay)
 
 void net_start(net_t *net)
 {
-    log_debug("* Starting %f\n", net->delay);
     if (net->proto == NET_PROTO_UDP || net->proto == NET_PROTO_TCP)
     {
         ev_timer_stop(net->loop, &net->timer);
-        ev_timer_init(&net->timer, net_timer, net->delay, net->delay);
+        ev_timer_init(&net->timer, net_timer, 0, net->delay);
         net->timer.data = net;
         ev_timer_start(net->loop, &net->timer);
+    }
+}
+
+static void net_read_link(void *data)
+{
+    net_t *net;
+
+    net = data;
+
+    if (net->read_link)
+    {
+        net->read_link(net->link_data);
+    }
+}
+
+static void net_event_link(int event, void *data)
+{
+    net_t *net;
+
+    net = data;
+
+    net->status = event;
+    if (net->event_link)
+    {
+        net->event_link(event, net->link_data);
+    }
+}
+
+static void net_write_link(void *data)
+{
+    net_t *net;
+
+    if (net->write_link)
+    {
+        net->write_link(net->link_data);
     }
 }
 
 void net_setup(net_t *net, struct ev_loop *loop)
 {
     net->loop = loop;
-    io_set_links(net->io, net->read_link,
-                 net->write_link, net->event_link,
-                 net->link_data);
+    io_set_links(net->io, net_read_link,
+                 net_write_link, net_event_link,
+                 net);
     io_setup(net->io, net->loop);
 }
 

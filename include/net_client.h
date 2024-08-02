@@ -51,6 +51,7 @@ typedef struct
 {
     struct ev_loop *loop;
     struct ev_timer timer;
+    struct ev_io event_io;
     float delay;
 
     io_t *io;

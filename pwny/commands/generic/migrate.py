@@ -5,14 +5,12 @@ Current source: https://github.com/EntySec/HatSploit
 
 from pwny.migrate import Migrate
 
-from hatsploit.lib.command import Command
+from badges.cmd import Command
 
 
-class HatSploitCommand(Command):
+class ExternalCommand(Command):
     def __init__(self):
-        super().__init__()
-
-        self.details = {
+        super().__init__({
             'Category': "evasion",
             'Name': "migrate",
             'Authors': [
@@ -21,7 +19,7 @@ class HatSploitCommand(Command):
             'Description': "Migrate into a process.",
             'Usage': "migrate <pid>",
             'MinArgs': 1
-        }
+        })
 
-    def run(self, argc, argv):
+    def run(self, _):
         self.print_error("Migration is not implemented yet!")

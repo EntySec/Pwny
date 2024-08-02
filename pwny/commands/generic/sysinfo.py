@@ -3,15 +3,20 @@ This command requires HatSploit: https://hatsploit.com
 Current source: https://github.com/EntySec/HatSploit
 """
 
-from pex.platform.types import *
+from itertools import zip_longest
+
+from pex.platform import (
+    OS_LINUX,
+    OS_MACOS,
+    OS_IPHONE
+)
+
 from pex.string import String
 
 from pwny.api import *
 from pwny.types import *
 
-from hatsploit.lib.command import Command
-from colorscript import ColorScript
-from itertools import zip_longest
+from badges.cmd import Command
 
 OS_LOGO = {
     OS_LINUX: r"""     cOKxc
@@ -55,11 +60,9 @@ OS_COLOR = {
 }
 
 
-class HatSploitCommand(Command):
+class ExternalCommand(Command, String):
     def __init__(self):
-        super().__init__()
-
-        self.details = {
+        super().__init__({
             'Category': "gather",
             'Name': "sysinfo",
             'Authors': [
@@ -68,12 +71,9 @@ class HatSploitCommand(Command):
             'Description': "Get session system properties.",
             'Usage': "sysinfo",
             'MinArgs': 0
-        }
+        })
 
-        self.string = String()
-        self.colorscript = ColorScript()
-
-    def run(self, argc, argv):
+    def run(self, _):
         system = self.session.send_command(tag=BUILTIN_SYSINFO)
 
         if system.get_int(TLV_TYPE_STATUS) != TLV_STATUS_SUCCESS:
@@ -89,13 +89,13 @@ class HatSploitCommand(Command):
             'Vendor': system.get_string(BUILTIN_TYPE_VENDOR),
             'Arch': system.get_string(BUILTIN_TYPE_ARCH),
             'Memory': (
-                f'{self.string.size_normalize(system.get_long(BUILTIN_TYPE_RAM_USED))}/'
-                f'{self.string.size_normalize(system.get_long(BUILTIN_TYPE_RAM_TOTAL))}'
+                f'{self.size_normalize(system.get_long(BUILTIN_TYPE_RAM_USED))}/'
+                f'{self.size_normalize(system.get_long(BUILTIN_TYPE_RAM_TOTAL))}'
             ),
             'UUID': self.session.uuid,
         }
 
-        platform = self.session.details['Platform']
+        platform = self.session.info['Platform']
         logo = OS_LOGO[platform].splitlines()
         color = OS_COLOR[platform]
 

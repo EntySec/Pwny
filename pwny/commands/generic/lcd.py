@@ -5,14 +5,12 @@ Current source: https://github.com/EntySec/HatSploit
 
 import os
 
-from hatsploit.lib.command import Command
+from badges.cmd import Command
 
 
-class HatSploitCommand(Command):
+class ExternalCommand(Command):
     def __init__(self):
-        super().__init__()
-
-        self.details = {
+        super().__init__({
             'Category': "local",
             'Name': "lcd",
             'Authors': [
@@ -21,7 +19,7 @@ class HatSploitCommand(Command):
             'Description': "Change local working directory.",
             'Usage': "lcd",
             'MinArgs': 1
-        }
+        })
 
-    def run(self, argc, argv):
-        os.chdir(argv[1])
+    def run(self, args):
+        os.chdir(args[1])

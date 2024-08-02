@@ -6,14 +6,12 @@ Current source: https://github.com/EntySec/HatSploit
 from pwny.api import *
 from pwny.types import *
 
-from hatsploit.lib.command import Command
+from badges.cmd import Command
 
 
-class HatSploitCommand(Command):
+class ExternalCommand(Command):
     def __init__(self):
-        super().__init__()
-
-        self.details = {
+        super().__init__({
             'Category': "manage",
             'Name': "tunnels",
             'Authors': [
@@ -29,58 +27,58 @@ class HatSploitCommand(Command):
                 '-a': ['<id>', 'Activate suspended tunnel.'],
                 '-t': ['<id> <delay> [on/off]', 'Toggle keep-alive on tunnel.']
             }
-        }
+        })
 
-    def run(self, argc, argv):
-        if argv[1] == '-c':
+    def run(self, args):
+        if args[1] == '-c':
             result = self.session.send_command(
                 tag=NET_ADD_TUNNEL,
                 args={
-                    NET_TYPE_URI: argv[2]
+                    NET_TYPE_URI: args[2]
                 }
             )
 
             if result.get_int(TLV_TYPE_STATUS) != TLV_STATUS_SUCCESS:
-                self.print_error(f"Failed to add tunnel: {argv[2]}!")
+                self.print_error(f"Failed to add tunnel: {args[2]}!")
                 return
 
-        elif argv[1] == '-a':
-            self.print_process(f"Activating tunnel {argv[2]}")
+        elif args[1] == '-a':
+            self.print_process(f"Activating tunnel {args[2]}")
 
             self.session.send_command(
                 tag=NET_ACTIVATE_TUNNEL,
                 args={
-                    NET_TYPE_ID: int(argv[2]),
+                    NET_TYPE_ID: int(args[2]),
                 }
             )
 
-        elif argv[1] == '-t':
-            self.print_process(f"Toggling keep-alive {argv[4].lower()} on {argv[3]}s...")
+        elif args[1] == '-t':
+            self.print_process(f"Toggling keep-alive {args[4].lower()} on {args[3]}s...")
 
             self.session.send_command(
                 tag=NET_RESTART_TUNNEL,
                 args={
-                    NET_TYPE_ID: int(argv[2]),
-                    NET_TYPE_KEEP_ALIVE: 1 if argv[4].lower() == 'on' else 0,
-                    NET_TYPE_DELAY: int(argv[3])
+                    NET_TYPE_ID: int(args[2]),
+                    NET_TYPE_KEEP_ALIVE: 1 if args[4].lower() == 'on' else 0,
+                    NET_TYPE_DELAY: int(args[3])
                 }
             )
 
-        elif argv[1] == '-s':
-            self.print_process(f"Suspending tunnel {argv[2]}...")
+        elif args[1] == '-s':
+            self.print_process(f"Suspending tunnel {args[2]}...")
 
             result = self.session.send_command(
                 tag=NET_SUSPEND_TUNNEL,
                 args={
-                    NET_TYPE_ID: int(argv[2])
+                    NET_TYPE_ID: int(args[2])
                 }
             )
 
             if result.get_int(TLV_TYPE_STATUS) != TLV_STATUS_SUCCESS:
-                self.print_error(f"Failed to suspend tunnel {argv[1]}!")
+                self.print_error(f"Failed to suspend tunnel {args[1]}!")
                 return
 
-        elif argv[1] == '-l':
+        elif args[1] == '-l':
             result = self.session.send_command(
                 tag=NET_TUNNELS)
 

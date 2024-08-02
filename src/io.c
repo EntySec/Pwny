@@ -26,6 +26,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <log.h>
+#include <net_client.h>
 #include <ev.h>
 
 #include <io.h>
