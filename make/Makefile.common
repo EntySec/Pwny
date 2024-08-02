@@ -94,7 +94,7 @@ ifneq (,$(findstring darwin,$(TARGET)))
 	ENV := SDKROOT=$(SDK)
 endif
 
-CROSS = /etc/corss
+CROSS = /etc/cross
 CROSS_BIN = $(CROSS)/bin
 
 ifneq "$(TARGET)" "native"
