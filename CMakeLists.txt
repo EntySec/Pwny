@@ -122,9 +122,12 @@ if(MAIN)
                                            "MobileGestalt")
 
     elseif(CMAKE_SYSTEM_NAME STREQUAL Linux)
-        target_link_libraries(main PRIVATE injector pawn)
-        target_compile_options(main PRIVATE -static -no-pie
-                                            -Wl,-Ttext-section=0x1000000)
+        if(CMAKE_SYSTEM_PROCESSOR STREQUAL x64)
+            target_compile_options(main PRIVATE -Wl,-z,max-page-size=4096)
+        endif()
+
+        target_link_libraries(main PRIVATE pawn)
+        target_link_options(main PRIVATE -static -no-pie)
     endif()
 endif()
 

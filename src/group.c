@@ -107,7 +107,7 @@ ssize_t group_tlv_dequeue(queue_t *queue, tlv_pkt_t **tlv_pkt, crypt_t *crypt)
 
     if (queue->bytes < TLV_HEADER + length)
     {
-        log_debug("* Failed to read TLV packet (corruption?)\n");
+        log_debug("* Not all packet received (%d / %d)\n", queue->bytes, TLV_HEADER + length);
         return -1;
     }
 
