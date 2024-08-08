@@ -7,7 +7,7 @@ Current source: https://github.com/EntySec/HatSploit
 from pwny import Pwny
 from pwny.session import PwnySession
 
-from hatsploit.lib.payload.basic import *
+from hatsploit.lib.core.payload.basic import *
 
 
 class HatSploitPayload(Payload, Handler):
