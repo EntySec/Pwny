@@ -27,12 +27,18 @@
 
 #include <stdlib.h>
 #include <stddef.h>
+#include <stdint.h>
 
 #include <queue.h>
 #include <crypt.h>
 
 #define TLV_FIELD  4
 #define TLV_HEADER 8
+
+#ifdef __linux__
+#define ntohll(x) (((uint64_t)(ntohl((int)((x << 32) >> 32))) << 32) | (unsigned int)ntohl(((int)(x >> 32))))
+#define htonll(x) ntohll(x)
+#endif
 
 struct tlv_header
 {
