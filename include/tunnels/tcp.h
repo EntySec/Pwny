@@ -189,14 +189,20 @@ void tcp_tunnel_exit(tunnel_t *tunnel)
 
 void register_tcp_tunnels(tunnels_t **tunnels)
 {
-    tunnel_callbacks_t callbacks;
+    tunnel_callbacks_t tcp_callbacks;
 
-    callbacks.init_cb = tcp_tunnel_init;
-    callbacks.start_cb = tcp_tunnel_start;
-    callbacks.write_cb = tcp_tunnel_write;
-    callbacks.exit_cb = tcp_tunnel_exit;
+    tcp_callbacks.init_cb = tcp_tunnel_init;
+    tcp_callbacks.start_cb = tcp_tunnel_start;
+    tcp_callbacks.write_cb = tcp_tunnel_write;
+    tcp_callbacks.exit_cb = tcp_tunnel_exit;
 
-    register_tunnel(tunnels, "tcp", callbacks);
+    sock_callbacks.init_cb = sock_tunnel_init;
+    sock_callbacks.start_cb = tcp_tunnel_start;
+    sock_callbacks.write_cb = tcp_tunnel_write;
+    sock_callbacks.exit_cb = sock_tunnel_exit;
+
+    register_tunnel(tunnels, "tcp", tcp_callbacks);
+    register_tunnel(tunnels, "sock", sock_callbacks);
 }
 
 #endif
