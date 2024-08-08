@@ -127,7 +127,7 @@ if(MAIN)
         endif()
 
         target_link_libraries(main PRIVATE pawn)
-        target_link_options(main PRIVATE -static -no-pie)
+        target_link_options(main PRIVATE -static-pie)
     endif()
 endif()
 
