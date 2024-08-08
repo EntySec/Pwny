@@ -45,4 +45,4 @@ include make/Makefile.libeio
 include make/Makefile.mbedtls
 include make/Makefile.sigar
 include make/Makefile.libpawn
-include make/Makefile.bdwgc
+#include make/Makefile.bdwgc
