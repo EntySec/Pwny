@@ -187,6 +187,54 @@ void tcp_tunnel_exit(tunnel_t *tunnel)
     tunnel->active = 0;
 }
 
+int sock_tunnel_init(tunnel_t *tunnel)
+{
+    net_t *net;
+    char *uri;
+    int fd;
+
+    net = net_create();
+
+    if (net == NULL)
+    {
+        return -1;
+    }
+
+    uri = strdup(tunnel->uri);
+    fd = strtol(strstr(uri, "://") + 3, NULL, 10);
+
+    net_add_sock(net, fd, NET_PROTO_TCP);
+    net_set_links(net, tcp_tunnel_read,
+                  NULL, tcp_tunnel_event, tunnel);
+    net_setup(net, tunnel->loop);
+
+    tunnel->data = net;
+    tunnel->active = 1;
+
+    tunnel->ingress = net->io->ingress;
+    tunnel->egress = net->io->egress;
+
+    free(uri);
+    return 0;
+}
+
+void sock_tunnel_exit(tunnel_t *tunnel)
+{
+    net_t *net;
+
+    if (!tunnel->active)
+    {
+        return;
+    }
+
+    net = tunnel->data;
+
+    net_stop(net);
+    net_free(net);
+
+    tunnel->active = 0;
+}
+
 void register_tcp_tunnels(tunnels_t **tunnels)
 {
     tunnel_callbacks_t tcp_callbacks;
