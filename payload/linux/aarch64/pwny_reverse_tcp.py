@@ -7,6 +7,8 @@ Current source: https://github.com/EntySec/HatSploit
 from pwny import Pwny
 from pwny.session import PwnySession
 
+from elftools.elf.elffile import ELFFile
+
 from hatsploit.lib.core.payload.basic import *
 
 
@@ -29,8 +31,9 @@ class HatSploitPayload(Payload, Handler):
         })
 
     def phase(self):
-        length = len(self.implant())
-        entry = self.elf_header(self.implant())['e_entry']
+        implant = self.implant()
+        length = len(implant)
+        entry = ELFFile(io.BytesIO(implant)).header['e_entry']
 
         return self.assemble(
             f"""
