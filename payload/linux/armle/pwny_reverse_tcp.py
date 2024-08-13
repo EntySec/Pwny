@@ -32,7 +32,7 @@ class HatSploitPayload(Payload, Handler):
             'Type': REVERSE_TCP,
         })
 
-    def phase(self):
+    def stage(self):
         implant = self.implant()
         length = len(implant)
         entry = ELFFile(io.BytesIO(implant)).header['e_entry']
