@@ -403,6 +403,7 @@ void net_add_pipes(net_t *net, int in_pipe, int out_pipe)
               in_pipe, out_pipe);
 
     io_add_pipes(net->io, in_pipe, out_pipe);
+    io_start(net->io);
 
     net->proto = NET_PROTO_FILE;
     net->status = NET_STATUS_OPEN;
@@ -443,8 +444,11 @@ int net_add_sock(net_t *net, int sock, int proto)
     net->port = strdup(port);
     net->proto = proto;
     net->status = NET_STATUS_OPEN;
+    net_nonblock_sock(sock);
 
     io_add_pipes(net->io, sock, sock);
+    io_start(net->io);
+
     return 0;
 }
 

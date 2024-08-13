@@ -30,7 +30,7 @@ from pwny.types import *
 from typing import Union
 from badges import Badges
 
-from hatsploit.lib.ui.plugins import Plugins as HatSploitPlugins
+from hatsploit.core.db.importer import Importer
 from hatsploit.lib.core.session import Session
 from hatsploit.lib.ui.show import Show
 
@@ -55,12 +55,15 @@ class Plugins(Badges):
         :return None: None
         """
 
-        self.imported_plugins.update(
-            HatSploitPlugins().import_plugins(path)
-        )
+        for file in os.listdir(path):
+            if not file.endswith('.py') or file == '__init__.py':
+                continue
 
-        for plugin in self.imported_plugins:
-            self.imported_plugins[plugin].session = session
+            plugin = Importer.import_plugin(path + '/' + file)
+            plugin.session = session
+            plugin_name = plugin.info['Plugin']
+
+            self.imported_plugins[plugin_name] = plugin
 
     def show_plugins(self) -> None:
         """ Show plugins.
@@ -96,7 +99,7 @@ class Plugins(Badges):
                     '/' + str(session.info['Arch']) +
                     '/' + info['Plugin'])
 
-        if not os.path.exists(tab_path):
+        if os.path.exists(tab_path):
             with open(tab_path, 'rb') as f:
                 data = f.read()
 

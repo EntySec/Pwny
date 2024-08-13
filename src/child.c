@@ -174,7 +174,7 @@ static void child_from_image(child_t *child, unsigned char *image,
     ev_loop_destroy(EV_DEFAULT_UC);
 
 #if IS_LINUX
-    pawn_exec_fd(image, argv, NULL);
+    pawn_exec(image, argv, NULL);
 #elif IS_WINDOWS
     pawn_exec(image, argv);
 #elif IS_MACOS

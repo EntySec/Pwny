@@ -50,6 +50,7 @@ int main(void)
 
     tab_register_call(tab, TEST, test);
 
+    tab_setup(tab);
     tab_start(tab);
     tab_destroy(tab);
 

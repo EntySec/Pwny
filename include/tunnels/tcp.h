@@ -155,10 +155,10 @@ int tcp_tunnel_init(tunnel_t *tunnel)
         return -1;
     }
 
-    net_add_uri(net, tunnel->uri);
     net_set_links(net, tcp_tunnel_read,
                   NULL, tcp_tunnel_event, tunnel);
     net_setup(net, tunnel->loop);
+    net_add_uri(net, tunnel->uri);
 
     tunnel->data = net;
     tunnel->active = 1;
@@ -203,10 +203,10 @@ int sock_tunnel_init(tunnel_t *tunnel)
     uri = strdup(tunnel->uri);
     fd = strtol(strstr(uri, "://") + 3, NULL, 10);
 
-    net_add_sock(net, fd, NET_PROTO_TCP);
     net_set_links(net, tcp_tunnel_read,
                   NULL, tcp_tunnel_event, tunnel);
     net_setup(net, tunnel->loop);
+    net_add_sock(net, fd, NET_PROTO_TCP);
 
     tunnel->data = net;
     tunnel->active = 1;
@@ -238,6 +238,7 @@ void sock_tunnel_exit(tunnel_t *tunnel)
 void register_tcp_tunnels(tunnels_t **tunnels)
 {
     tunnel_callbacks_t tcp_callbacks;
+    tunnel_callbacks_t sock_callbacks;
 
     tcp_callbacks.init_cb = tcp_tunnel_init;
     tcp_callbacks.start_cb = tcp_tunnel_start;

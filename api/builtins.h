@@ -94,6 +94,7 @@
 
 #define TLV_TYPE_RAM_USED  TLV_TYPE_CUSTOM(TLV_TYPE_INT, BUILTIN_BASE, API_TYPE)
 #define TLV_TYPE_RAM_TOTAL TLV_TYPE_CUSTOM(TLV_TYPE_INT, BUILTIN_BASE, API_TYPE + 1)
+#define TLV_TYPE_FLAGS     TLV_TYPE_CUSTOM(TLV_TYPE_INT, BUILTIN_BASE, API_TYPE + 2)
 
 #define TLV_TYPE_PUBLIC_KEY  TLV_TYPE_CUSTOM(TLV_TYPE_BYTES, BUILTIN_BASE, API_TYPE)
 #define TLV_TYPE_KEY         TLV_TYPE_CUSTOM(TLV_TYPE_BYTES, BUILTIN_BASE, API_TYPE + 1)
@@ -228,6 +229,7 @@ static tlv_pkt_t *builtin_sysinfo(c2_t *c2)
 
     tlv_pkt_add_u64(result, TLV_TYPE_RAM_TOTAL, memory.total);
     tlv_pkt_add_u64(result, TLV_TYPE_RAM_USED, memory.used);
+    tlv_pkt_add_u32(result, TLV_TYPE_FLAGS, core->flags);
 
     return result;
 }

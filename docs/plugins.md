@@ -49,6 +49,7 @@ int main(void)
 
 	/* Your TAB API calls registration */
 
+    tab_setup(tab);
 	tab_start(tab);
 	tab_destroy(tab);
 
@@ -71,15 +72,11 @@ Here is how Pwny loads TAB (plugin):
 **1.** Receive TAB (plugin) executable from C2.
 **2.** Copy TAB and create a child process.
 **3.** Execute TAB inside the child process.
-**4.** Establish IPC (Inter Process Communication) by file descriptors.
+**4.** Establish IPC (Inter Process Communication) using file descriptors.
 
 ![diagram](https://github.com/EntySec/Pwny/tree/main/docs/tabs.png)
 
 On the C2 side, either `BUILTIN_ADD_TAB_DISK` being called or `BUILTIN_ADD_TAB_BUFFER`.
 
 * `BUILTIN_ADD_TAB_DISK` - Add TAB from file on disk.
-* `BUILTIN_ADD_TAB_BUFFER` - Add TAB from buffer. (steath, in-memory loading)
-
-## Quiting TAB
-
-Pwny has a specific conatant `TAB_TERM` which is being sent to the TAB to make it shutdown. On the C2 side, all you need to do is to call `BUILTIN_DELETE_TAB` from Pwny Builtins.
+* `BUILTIN_ADD_TAB_BUFFER` - Add TAB from buffer. (stealth, in-memory loading)

@@ -146,6 +146,7 @@ int main(int argc, char *argv[])
 
     if (strcmp(argv[0], "p") == 0)
     {
+        core->flags |= CORE_INJECTED;
         sock = (int)((long *)argv)[1];
 
         if (asprintf(&uri, "sock://%d", sock) > 0)
