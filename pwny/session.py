@@ -228,17 +228,7 @@ class PwnySession(Session, FS, OpenSSL):
         tlv.add_from_dict(args)
 
         try:
-            """ This interrupt call is required due to that we are
-            likely to use queue that utilizes non-blocking socket
-            and when sending channel might receive incomplete data.
-
-            If this is causing problems, go to pex.proto.tlv
-            and add blocking to TLVClient.send_raw()
-            """
-
-            self.interrupt()
             self.channel.send(tlv, verbose=verbose)
-            self.resume()
 
         except Exception as e:
             self.terminated = True
@@ -398,7 +388,6 @@ class PwnySession(Session, FS, OpenSSL):
         """
 
         self.channel.queue_interrupt()
-        self.pipes.interrupt_events()
 
     def resume(self) -> None:
         """ Resume all session events.
@@ -407,7 +396,6 @@ class PwnySession(Session, FS, OpenSSL):
         """
 
         self.channel.queue_resume()
-        self.pipes.resume_events()
 
     def interact(self) -> None:
         """ Interact with the Pwny session.

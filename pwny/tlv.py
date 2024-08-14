@@ -31,6 +31,7 @@ from badges import Badges
 from pex.string import String
 from pex.proto.tlv import TLVPacket, TLVClient
 
+from pwny.api import *
 from pwny.types import *
 
 from cryptography.hazmat.primitives.ciphers import (
@@ -61,6 +62,7 @@ class TLV(Badges, String):
         self.secure = False
 
         self.queue = []
+        self.events = {}
         self.thread = None
 
         self.running = False
@@ -113,8 +115,25 @@ class TLV(Badges, String):
                     verbose=verbose
                 )
 
-                if packet:
-                    self.queue.append(packet)
+                if not packet:
+                    continue
+
+                self.queue.append(packet)
+
+                if packet.get_int(TLV_TYPE_TAG, delete=False):
+                    continue
+
+                for event_id, event in self.events.items():
+                    if not self.tlv_query(packet, event['Query']):
+                        continue
+
+                    if not packet.get_raw(event['Event'], delete=False):
+                        continue
+
+                    event['Target'](packet, *event['Args'])
+
+                    self.queue.remove(packet)
+                    break
 
             except Exception:
                 break
