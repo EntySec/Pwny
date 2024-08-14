@@ -37,7 +37,7 @@ class HatSploitPayload(Payload, Handler):
         length = len(implant)
         entry = ELFFile(io.BytesIO(implant)).header['e_entry']
 
-        return self.assemble(
+        return self.__asm__(
             f"""
             start:
                 push rdi

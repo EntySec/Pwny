@@ -30,7 +30,7 @@ class HatSploitPlugin(Plugin):
             }
         }
 
-    def test(self, argc, argv):
+    def test(self, _):
         result = self.session.send_command(
             tag=TEST_TAG,
             plugin=self.plugin

@@ -40,7 +40,7 @@
 #define TAB_BASE 1
 #define TAB_TERM \
         TLV_TAG_CUSTOM(API_CALL_INTERNAL, \
-                       TAB_BASE + 1, \
+                       2, \
                        API_CALL)
 
 #define TAB_EV_FLAGS EVFLAG_NOENV | EVBACKEND_SELECT

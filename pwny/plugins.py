@@ -103,6 +103,7 @@ class Plugins(Badges):
             with open(tab_path, 'rb') as f:
                 data = f.read()
 
+                self.print_process(f"Sending plugin TAB ({str(len(data))} bytes)...")
                 tlv = session.send_command(
                     tag=BUILTIN_ADD_TAB_BUFFER,
                     args={
