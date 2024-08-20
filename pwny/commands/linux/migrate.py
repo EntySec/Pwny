@@ -21,5 +21,5 @@ class ExternalCommand(Command):
             'MinArgs': 1
         })
 
-    def run(self, _):
-        self.print_error("Migration is not implemented yet!")
+    def run(self, args):
+        Migrate(self.session).posix_migrate(int(args[1]))

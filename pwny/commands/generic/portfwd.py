@@ -12,6 +12,10 @@ from pwny.types import *
 from pex.proto.tcp import TCPListener
 
 from badges.cmd import Command
+from hatsploit.lib.ui.jobs import Job
+
+NET_STATUS_CLOSED = 0
+NET_STATUS_OPEN = 3
 
 
 class ExternalCommand(Command):
@@ -23,13 +27,58 @@ class ExternalCommand(Command):
                 'Ivan Nikolskiy (enty8080) - command developer'
             ],
             'Description': "Manage port forwarding.",
-            'Usage': "portfwd <option> [arguments]",
             'MinArgs': 1,
-            'Options': {
-                'list': ['', 'List existing forwarding rules.'],
-                'add': ['<rule>', 'Add forwarding rule. (use local -> remote for syntax)'],
-                'delete': ['<id>', 'Delete existing forwarding rule.'],
-            }
+            'Options': [
+                (
+                    ('-l', '--list'),
+                    {
+                        'help': "List existing forwarding rules.",
+                        'action': 'store_true'
+                    }
+                ),
+                (
+                    ('-d', '--delete'),
+                    {
+                        'help': "Delete existing forwarding rule by ID.",
+                        'metavar': 'ID',
+                        'type': int
+                    }
+                ),
+                (
+                    ('-L',),
+                    {
+                        'help': "Local host to listen on (optional).",
+                        'metavar': 'HOST',
+                        'dest': 'lhost'
+                    }
+                ),
+                (
+                    ('-P',),
+                    {
+                        'help': "Local port to listen on (optional).",
+                        'metavar': 'PORT',
+                        'type': int,
+                        'dest': 'lport'
+                    }
+                ),
+                (
+                    ('-p',),
+                    {
+                        'help': "Remote port to connect to.",
+                        'metavar': 'PORT',
+                        'type': int,
+                        'dest': 'rport'
+                    }
+                ),
+                (
+                    ('-r',),
+                    {
+                        'help': "Remote host to connect to.",
+                        'metavar': 'HOST',
+                        'dest': 'rhost'
+                    }
+                )
+            ]
         })
 
         self.rules = {}
@@ -39,29 +88,33 @@ class ExternalCommand(Command):
         listener.send(packet.get_raw(PIPE_TYPE_BUFFER))
 
     @staticmethod
-    def heartbeat_event(packet, rule) -> None:
-        if packet.get_int(PIPE_TYPE_HEARTBEAT) == 3:
-            rule['Running'] = True
-            return
+    def heartbeat_event(packet, status) -> None:
+        status['Status'] = packet.get_int(PIPE_TYPE_HEARTBEAT)
 
-        rule['Running'] = False
+    def rule_thread(self, host, port, uri, job):
+        listener = TCPListener(
+            host=host,
+            port=port,
+            timeout=None
+        )
 
-    def rule_thread(self, rule_id):
-        rule = self.rules[rule_id]
+        def shutdown_submethod(server):
+            try:
+                server.stop()
+            except RuntimeError:
+                return
+
+        job.set_exit(target=shutdown_submethod, args=(listener,))
+        listener.listen()
 
         while True:
-            rule['Listener'] = TCPListener(
-                host=rule['Host'],
-                port=rule['Port'],
-                timeout=None
-            )
-            rule['Listener'].listen()
-            rule['Listener'].accept()
+            status = {'Status': NET_STATUS_CLOSED}
+            listener.accept()
 
             pipe_id = self.session.pipes.create_pipe(
                 pipe_type=NET_PIPE_CLIENT,
                 args={
-                    NET_TYPE_URI: rule['URI']
+                    NET_TYPE_URI: uri
                 },
                 flags=PIPE_INTERACTIVE
             )
@@ -71,10 +124,10 @@ class ExternalCommand(Command):
                 pipe_id=pipe_id,
                 pipe_data=PIPE_TYPE_HEARTBEAT,
                 target=self.heartbeat_event,
-                args=(rule,)
+                args=(status,)
             )
 
-            while not rule['Running']:
+            while status['Status'] != NET_STATUS_OPEN:
                 pass
 
             self.session.pipes.create_event(
@@ -82,12 +135,12 @@ class ExternalCommand(Command):
                 pipe_id=pipe_id,
                 pipe_data=PIPE_TYPE_BUFFER,
                 target=self.read_event,
-                args=(rule['Listener'],)
+                args=(listener,)
             )
 
-            while not rule['Flush']:
+            while True:
                 try:
-                    buffer = rule['Listener'].recv(TLV_FILE_CHUNK)
+                    buffer = listener.recv(TLV_FILE_CHUNK)
                 except Exception:
                     break
 
@@ -100,8 +153,7 @@ class ExternalCommand(Command):
                     buffer=buffer
                 )
 
-            rule['Listener'].disconnect()
-            rule['Listener'].stop()
+            listener.disconnect()
 
             self.session.pipes.destroy_pipe(
                 pipe_type=NET_PIPE_CLIENT,
@@ -109,7 +161,7 @@ class ExternalCommand(Command):
             )
 
     def run(self, args):
-        if args[1] == 'list':
+        if args.list:
             rules = []
 
             for rule_id, rule in self.rules.items():
@@ -121,51 +173,48 @@ class ExternalCommand(Command):
 
             self.print_table('Forwarding rules', ('ID', 'Rule'), *rules)
 
-        elif args[1] == 'delete':
-            rule_id = int(args[2])
-
-            if rule_id not in self.rules:
-                self.print_error(f"No such rule: {args[2]}!")
+        elif args.delete is not None:
+            if args.delete not in self.rules:
+                self.print_error(f"No such rule: {str(args.delete)}!")
                 return
 
-            self.print_process(f"Flushing rule {args[2]}...")
+            self.print_process(f"Flushing rule {str(args.delete)}...")
 
-            self.rules[rule_id]['Flush'] = True
-            thread = self.rules[rule_id]['Thread']
+            job = self.rules[args.delete]['Job']
+            job.shutdown()
+            job.join()
 
-            if thread.is_alive():
-                exc = ctypes.py_object(SystemExit)
-                res = ctypes.pythonapi.PyThreadState_SetAsyncExc(ctypes.c_long(thread.ident), exc)
+            self.rules.pop(args.delete)
+            self.print_success(f"Rule {str(args.delete)} deleted!")
 
-                if res > 1:
-                    ctypes.pythonapi.PyThreadState_SetAsyncExc(thread.ident, None)
+        elif args.rhost and args.rport:
+            uri = f'tcp://{args.rhost}:{str(args.rport)}'
+            self.print_process(f"Adding rule {uri}...")
 
-            self.rules.pop(rule_id)
-            self.print_success(f"Rule {args[2]} deleted!")
+            rule_id = 0
+            while rule_id in self.rules or \
+                    rule_id < len(self.rules):
+                rule_id += 1
 
-        elif args[1] == 'add':
-            self.print_process(f"Adding rule {args[2]}...")
-
-            rule = args[2].split('->')
-            host, port = rule[0].split(':')
-
-            rule_id = len(self.rules)
-
-            thread = threading.Thread(
+            job = Job(
                 target=self.rule_thread,
-                args=(rule_id,)
+                args=(args.lhost or '0.0.0.0',
+                      args.lport or args.rport,
+                      uri))
+            job.pass_job = True
+
+            rule = (
+                f"{args.lhost or '0.0.0.0'}:{str(args.lport) or str(args.rport)}"
+                f"->{args.rhost}:{str(args.rport)}"
             )
-            thread.setDaemon(True)
 
-            self.rules[rule_id] = {
-                'Rule': args[2],
-                'Host': host,
-                'Port': int(port),
-                'URI': f'tcp://{rule[1]}',
-                'Flush': False,
-                'Thread': thread,
-                'Running': False,
-            }
-            thread.start()
+            self.rules.update({
+                rule_id: {
+                    'Rule': rule,
+                    'Job': job,
+                    'URI': uri
+                }
+            })
+            job.start()
 
-            self.print_success(f"Rule {args[2]} activated!")
+            self.print_success(f"Rule activated as {str(rule_id)}!")

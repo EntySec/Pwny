@@ -74,20 +74,17 @@ class Pipes(object):
         if plugin is not None:
             pipes = self.plugin_pipes[plugin]
 
-        event_id = randint(100000, 999999)
+        event_id = self.session.channel.create_event(
+            target=target,
+            args=args,
+            query={
+                PIPE_TYPE_TYPE: pipe_type,
+                PIPE_TYPE_ID: pipe_id,
+            },
+            event=pipe_data,
+            noapi=True
+        )
         pipes[pipe_type][pipe_id].append(event_id)
-
-        self.session.channel.events.update({
-            event_id: {
-                'Target': target,
-                'Args': args,
-                'Query': {
-                    PIPE_TYPE_TYPE: pipe_type,
-                    PIPE_TYPE_ID: pipe_id,
-                },
-                'Event': pipe_data
-            }
-        })
 
     def check_pipe(self, pipe_type: int, pipe_id: int, plugin: Optional[int] = None) -> None:
         """ Check if pipe exists.

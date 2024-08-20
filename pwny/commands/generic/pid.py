@@ -22,8 +22,6 @@ class ExternalCommand(Command):
                 'Ivan Nikolskiy (enty8080) - command developer'
             ],
             'Description': "Get current process ID.",
-            'Usage': "pid",
-            'MinArgs': 0
         })
 
     def run(self, _):

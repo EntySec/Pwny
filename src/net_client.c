@@ -326,6 +326,7 @@ void net_start(net_t *net)
     {
         ev_timer_stop(net->loop, &net->timer);
         ev_timer_init(&net->timer, net_timer, 0, net->delay);
+        log_debug("Delay: %f\n", net->delay);
         net->timer.data = net;
         ev_timer_start(net->loop, &net->timer);
     }

@@ -25,8 +25,6 @@ class ExternalCommand(Command):
                 'Ivan Nikolskiy (enty8080) - command developer'
             ],
             'Description': "Get SpringBoard basic information.",
-            'Usage': "sbinfo",
-            'MinArgs': 0
         })
 
     def run(self, _):

@@ -139,6 +139,7 @@ int tcp_tunnel_start(tunnel_t *tunnel)
     net = tunnel->data;
 
     net_set_delay(net, tunnel->delay);
+    log_debug("* Delay: %f\n", tunnel->delay);
     net_start(net);
 
     return 0;

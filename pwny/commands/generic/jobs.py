@@ -7,6 +7,7 @@ import ctypes
 import threading
 
 from badges.cmd import Command
+from hatsploit.lib.ui.jobs import Job
 
 
 class ExternalCommand(Command):
@@ -18,13 +19,31 @@ class ExternalCommand(Command):
                 'Ivan Nikolskiy (enty8080) - command developer'
             ],
             'Description': "Manage local background jobs.",
-            'Usage': "jobs <option> [arguments]",
             'MinArgs': 1,
-            'Options': {
-                'list': ['', 'List running jobs.'],
-                'kill': ['<id>', 'Kill running job.'],
-                'add': ['<commands>', 'Create background job.']
-            }
+            'Options': [
+                (
+                    ('-l', '--list'),
+                    {
+                        'help': "List all running jobs.",
+                        'action': 'store_true'
+                    }
+                ),
+                (
+                    ('-k', '--kill'),
+                    {
+                        'help': "Kill running job by ID.",
+                        'metavar': 'ID',
+                        'type': int
+                    }
+                ),
+                (
+                    ('-a', '--add'),
+                    {
+                        'help': 'Add new background job.',
+                        'metavar': 'CMD',
+                    }
+                )
+            ]
         })
 
         self.jobs = {}
@@ -34,7 +53,7 @@ class ExternalCommand(Command):
         self.jobs.pop(job_id)
 
     def run(self, args):
-        if args[1] == 'list':
+        if args.list:
             jobs = []
 
             for job_id, job in self.jobs.items():
@@ -46,36 +65,32 @@ class ExternalCommand(Command):
 
             self.print_table('Active Jobs', ('ID', 'Command'), *jobs)
 
-        elif args[1] == 'delete':
-            if int(args[2]) not in self.jobs:
-                self.print_error(f"No such job: {args[2]}!")
+        elif args.kill is not None:
+            if args.kill not in self.jobs:
+                self.print_error(f"No such job: {str(args.kill)}!")
                 return
 
-            self.print_process(f"Killing job {args[2]}...")
+            self.print_process(f"Killing job {str(args.kill)}...")
 
-            job = self.jobs[int(args[2])]
-            thread = job['Thread']
+            job = self.jobs[args.kill]['Job']
+            job.shutdown()
+            job.join()
 
-            if thread.is_alive():
-                exc = ctypes.py_object(SystemExit)
-                res = ctypes.pythonapi.PyThreadState_SetAsyncExc(ctypes.c_long(thread.ident), exc)
+            self.jobs.pop(args.kill)
 
-                if res > 1:
-                    ctypes.pythonapi.PyThreadState_SetAsyncExc(thread.ident, None)
+        elif args.add:
+            job_id = 0
+            while job_id in self.jobs or \
+                    job_id < len(self.jobs):
+                job_id += 1
 
-            self.jobs.pop(int(args[2]))
+            job = Job(target=self.job, args=(job_id, args.add))
+            job.start()
 
-        elif args[1] == 'add':
-            command = ' '.join(args[2:])
-            job_id = len(self.jobs)
-
-            thread = threading.Thread(target=self.job, args=(job_id, command))
-            thread.setDaemon(True)
-
-            self.jobs[len(self.jobs)] = {
-                'Thread': thread,
-                'Command': command
-            }
-
-            thread.start()
-            self.print_information("Job created.")
+            self.jobs.update({
+                job_id: {
+                    'Job': job,
+                    'Command': args.add
+                }
+            })
+            self.print_information(f"Job {str(job_id)} created.")

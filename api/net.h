@@ -198,6 +198,7 @@ tlv_pkt_t *net_restart_tunnel(c2_t *c2)
         }
 
         curr_c2->tunnel->delay = (float)delay;
+        log_debug("* Delay: %f | %s\n", curr_c2->tunnel->delay, curr_c2->tunnel->uri);
         curr_c2->tunnel->keep_alive = keep_alive;
 
         tunnel_start(curr_c2->tunnel);

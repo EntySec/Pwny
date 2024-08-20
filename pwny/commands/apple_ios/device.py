@@ -28,8 +28,6 @@ class ExternalCommand(Command):
                 'Ivan Nikolskiy (enty8080) - command developer'
             ],
             'Description': "Get device basic information.",
-            'Usage': "device",
-            'MinArgs': 0,
         })
 
     def run(self, _):

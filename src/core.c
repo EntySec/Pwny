@@ -250,6 +250,7 @@ void core_setup(core_t *core)
     register_pipe_api_calls(&core->api_calls);
     register_core_tunnels(&core->tunnels);
     register_api_calls(&core->api_calls);
+    log_debug("* Loaded core\n");
 }
 
 int core_start(core_t *core)

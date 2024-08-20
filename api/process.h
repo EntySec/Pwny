@@ -176,19 +176,15 @@ static tlv_pkt_t *process_get_pid(c2_t *c2)
 
 static tlv_pkt_t *process_migrate(c2_t *c2)
 {
-    int migrate_size;
-    unsigned char *migrate;
-    pid_t migrate_pid;
+    int pid;
+    char path[PATH_MAX];
 
-    tlv_pkt_get_u32(c2->request, TLV_TYPE_PID, &migrate_pid);
+    tlv_pkt_get_u32(c2->request, TLV_TYPE_PID, &pid);
+    tlv_pkt_get_string(c2->request, TLV_TYPE_MIGRATE, path);
 
-    if ((migrate_size = tlv_pkt_get_bytes(c2->request, TLV_TYPE_MIGRATE, &migrate)) > 0)
+    if (migrate_init(pid, path, c2) == 0)
     {
-        if (migrate_init(migrate_pid, migrate_size, migrate) == 0)
-        {
-            free(migrate);
-            return api_craft_tlv_pkt(API_CALL_QUIT, c2->request);
-        }
+        return api_craft_tlv_pkt(API_CALL_QUIT, c2->request);
     }
 
     return api_craft_tlv_pkt(API_CALL_FAIL, c2->request);

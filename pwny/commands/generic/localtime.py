@@ -18,8 +18,6 @@ class ExternalCommand(Command):
                 'Ivan Nikolskiy (enty8080) - command developer'
             ],
             'Description': "Get current local time.",
-            'Usage': "localtime",
-            'MinArgs': 0
         })
 
     def run(self, _):

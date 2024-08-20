@@ -18,8 +18,6 @@ class ExternalCommand(Command):
                 'Ivan Nikolskiy (enty8080) - command developer'
             ],
             'Description': "Get list of processes.",
-            'Usage': "ps",
-            'MinArgs': 0
         })
 
     def run(self, _):

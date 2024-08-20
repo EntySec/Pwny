@@ -18,67 +18,77 @@ class ExternalCommand(Command):
                 'Ivan Nikolskiy (enty8080) - command developer'
             ],
             'Description': "Manage C2 tunnels.",
-            'Usage': "tunnels <option> [arguments]",
             'MinArgs': 1,
-            'Options': {
-                '-l': ['', 'List available tunnels.'],
-                '-c': ['<uri>', 'Create new tunnel.'],
-                '-s': ['<id>', 'Suspend existing tunnel.'],
-                '-a': ['<id>', 'Activate suspended tunnel.'],
-                '-t': ['<id> <delay> [on/off]', 'Toggle keep-alive on tunnel.']
-            }
+            'Options': [
+                (
+                    ('-l', '--list'),
+                    {
+                        'help': "List all available tunnels.",
+                        'action': 'store_true'
+                    }
+                ),
+                (
+                    ('-c', '--create'),
+                    {
+                        'help': "Create new tunnel.",
+                        'metavar': 'URI'
+                    }
+                ),
+                (
+                    ('-t', '--tunnel'),
+                    {
+                        'help': "Select tunnel to manage.",
+                        'metavar': 'ID',
+                        'type': int
+                    }
+                ),
+                (
+                    ('-s', '--suspend'),
+                    {
+                        'help': "Suspend specified tunnel.",
+                        'action': 'store_true'
+                    }
+                ),
+                (
+                    ('-a', '--activate'),
+                    {
+                        'help': 'Activate specified tunnel.',
+                        'action': 'store_true'
+                    }
+                ),
+                (
+                    ('-k', '--keep-alive'),
+                    {
+                        'help': "Keep tunnel alive or not when not connected.",
+                        'dest': 'alive',
+                        'choices': ('on', 'off')
+                    }
+                ),
+                (
+                    ('-d', '--delay'),
+                    {
+                        'help': "Delay for tunnel keep alive.",
+                        'type': int
+                    }
+                )
+            ]
         })
 
     def run(self, args):
-        if args[1] == '-c':
+        if args.create:
             result = self.session.send_command(
                 tag=NET_ADD_TUNNEL,
                 args={
-                    NET_TYPE_URI: args[2]
+                    NET_TYPE_URI: args.create
                 }
             )
 
             if result.get_int(TLV_TYPE_STATUS) != TLV_STATUS_SUCCESS:
-                self.print_error(f"Failed to add tunnel: {args[2]}!")
-                return
+                self.print_error(f"Failed to add tunnel: {args.create}!")
 
-        elif args[1] == '-a':
-            self.print_process(f"Activating tunnel {args[2]}")
+            return
 
-            self.session.send_command(
-                tag=NET_ACTIVATE_TUNNEL,
-                args={
-                    NET_TYPE_ID: int(args[2]),
-                }
-            )
-
-        elif args[1] == '-t':
-            self.print_process(f"Toggling keep-alive {args[4].lower()} on {args[3]}s...")
-
-            self.session.send_command(
-                tag=NET_RESTART_TUNNEL,
-                args={
-                    NET_TYPE_ID: int(args[2]),
-                    NET_TYPE_KEEP_ALIVE: 1 if args[4].lower() == 'on' else 0,
-                    NET_TYPE_DELAY: int(args[3])
-                }
-            )
-
-        elif args[1] == '-s':
-            self.print_process(f"Suspending tunnel {args[2]}...")
-
-            result = self.session.send_command(
-                tag=NET_SUSPEND_TUNNEL,
-                args={
-                    NET_TYPE_ID: int(args[2])
-                }
-            )
-
-            if result.get_int(TLV_TYPE_STATUS) != TLV_STATUS_SUCCESS:
-                self.print_error(f"Failed to suspend tunnel {args[1]}!")
-                return
-
-        elif args[1] == '-l':
+        if args.list:
             result = self.session.send_command(
                 tag=NET_TUNNELS)
 
@@ -104,3 +114,45 @@ class ExternalCommand(Command):
                 tunnel = result.get_tlv(TLV_TYPE_GROUP)
 
             self.print_table('Tunnels', headers, *data)
+            return
+
+        if args.tunnel is None:
+            self.print_warning("No tunnel specified.")
+            return
+
+        if args.activate:
+            self.print_process(f"Activating tunnel {str(args.tunnel)}...")
+
+            self.session.send_command(
+                tag=NET_ACTIVATE_TUNNEL,
+                args={
+                    NET_TYPE_ID: args.tunnel,
+                }
+            )
+
+        if args.alive:
+            delay = args.delay or 10
+            self.print_process(f"Toggling keep-alive {args.alive} (delay: {str(delay)}s)...")
+
+            self.session.send_command(
+                tag=NET_RESTART_TUNNEL,
+                args={
+                    NET_TYPE_ID: args.tunnel,
+                    NET_TYPE_KEEP_ALIVE: 1 if args.alive == 'on' else 0,
+                    NET_TYPE_DELAY: delay
+                }
+            )
+
+        if args.suspend:
+            self.print_process(f"Suspending tunnel {str(args.tunnel)}...")
+
+            result = self.session.send_command(
+                tag=NET_SUSPEND_TUNNEL,
+                args={
+                    NET_TYPE_ID: args.tunnel
+                }
+            )
+
+            if result.get_int(TLV_TYPE_STATUS) != TLV_STATUS_SUCCESS:
+                self.print_error(f"Failed to suspend tunnel {str(args.tunnel)}!")
+                return

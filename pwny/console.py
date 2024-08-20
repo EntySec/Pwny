@@ -361,6 +361,7 @@ Running as %blue$user%end on %line$dir%end
             tag=BUILTIN_QUIT
         )
         self.session.terminated = True
+        self.session.close()
 
         raise EOFError
 

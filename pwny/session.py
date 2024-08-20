@@ -65,6 +65,7 @@ class PwnySession(Session, FS, OpenSSL):
 
         self.pwny_data = self.pwny + 'data/'
         self.pwny_tabs = self.pwny + 'tabs/'
+        self.pwny_tibs = self.pwny + 'tibs/'
         self.pwny_loot = f'{pathlib.Path.home()}/.pwny/'
 
         self.pwny_plugins = self.pwny + 'plugins/'
@@ -187,12 +188,27 @@ class PwnySession(Session, FS, OpenSSL):
 
         return True
 
+    def unsecure(self) -> None:
+        """ Unsecure session.
+
+        :return None: None
+        """
+
+        self.print_process("Disabling session encryption...")
+        self.send_command(tag=BUILTIN_UNSECURE)
+
+        self.channel.secure = False
+        self.channel.key = None
+
+        self.print_success("Session encryption disabled!")
+
     def close(self) -> None:
         """ Close the Pwny session.
 
         :return None: None
         """
 
+        self.channel.queue_interrupt()
         self.channel.client.close()
         self.reason = TERM_CLOSED
         self.terminated = True
@@ -251,24 +267,31 @@ class PwnySession(Session, FS, OpenSSL):
                 TLV_TYPE_TAB_ID: plugin
             })
 
-        if not self.channel.running:
-            while True:
-                response = self.channel.read(
-                    error=True,
-                    verbose=verbose
-                )
+        if self.channel.running:
+            response = TLVPacket()
 
-                if self.channel.tlv_query(response, query):
-                    break
+            self.channel.create_event(
+                target=response,
+                query=query,
+                noapi=False,
+                ttl=1,
+            )
 
-                self.channel.queue.append(response)
+            while not response:
+                pass
 
             return response
 
-        response = self.channel.queue_find(query)
+        while True:
+            response = self.channel.read(
+                error=True,
+                verbose=verbose
+            )
 
-        while not response:
-            response = self.channel.queue_find(query)
+            if self.channel.tlv_query(response, query):
+                break
+
+            self.channel.queue.append(response)
 
         return response
 

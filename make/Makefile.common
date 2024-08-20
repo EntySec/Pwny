@@ -52,7 +52,6 @@ endif
 
 CFLAGS := $(CFLAGS) -Os -Wno-attributes
 ifeq (,$(findstring mingw,$(TARGET)))
-	CFLAGS := $(CFLAGS) -fPIE
 	ifneq (,$(findstring sparc,$(TARGET)))
 		CFLAGS := $(CFLAGS) -fPIC
 	else

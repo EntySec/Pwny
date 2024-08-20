@@ -34,29 +34,64 @@ class ExternalCommand(Command):
                 'Ivan Nikolskiy (enty8080) - command developer'
             ],
             'Description': "Manage media player.",
-            'Usage': "player <option> [arguments]",
             'MinArgs': 1,
-            'Options': {
-                'info': ['', 'Get current playing song.'],
-                'play': ['', 'Play the current song.'],
-                'pause': ['', 'Pause the current song.'],
-                'next': ['', 'Play next song.'],
-                'back': ['', 'Play previous song.'],
-                'wave': ['<file>', 'Play audio from file.'],
-            }
+            'Options': [
+                (
+                    ('-i', '--info'),
+                    {
+                        'help': "Get current playing item.",
+                        'action': 'store_true'
+                    }
+                ),
+                (
+                    ('-r', '--resume'),
+                    {
+                        'help': "Resume current playing item.",
+                        'action': 'store_true'
+                    }
+                ),
+                (
+                    ('-s', '--stop'),
+                    {
+                        'help': "Pause current playing item.",
+                        'action': 'store_true'
+                    }
+                ),
+                (
+                    ('-n', '--next'),
+                    {
+                        'help': "Play next playing item.",
+                        'action': 'store_true'
+                    }
+                ),
+                (
+                    ('-b', '--back'),
+                    {
+                        'help': "Play previous playing item.",
+                        'action': 'store_true'
+                    }
+                ),
+                (
+                    ('-p', '--play'),
+                    {
+                        'help': "Play local audio file.",
+                        'metavar': 'FILE',
+                    }
+                )
+            ]
         })
 
     def run(self, args):
-        if args[1] == 'info':
+        if args.info:
             result = self.session.send_command(tag=PLAYER_INFO)
 
             self.print_information(f"Title:  {result.get_string(PLAYER_TITLE)}")
             self.print_information(f"Album:  {result.get_string(PLAYER_ALBUM)}")
             self.print_information(f"Artist: {result.get_string(PLAYER_ARTIST)}")
 
-        elif args[1] == 'wave':
-            with open(args[2], 'rb') as f:
-                self.print_process("Playing audio wave...")
+        elif args.play:
+            with open(args.play, 'rb') as f:
+                self.print_process("Playing audio file on device...")
 
                 try:
                     pipe_id = self.session.pipes.create_pipe(
@@ -84,14 +119,14 @@ class ExternalCommand(Command):
                     pipe_id=pipe_id
                 )
 
-        elif args[1] == 'play':
+        elif args.resume:
             self.session.send_command(tag=PLAYER_PLAY)
 
-        elif args[1] == 'pause':
+        elif args.stop:
             self.session.send_command(tag=PLAYER_PAUSE)
 
-        elif args[1] == 'next':
+        elif args.next:
             self.session.send_command(tag=PLAYER_NEXT)
 
-        elif args[1] == 'back':
+        elif args.back:
             self.session.send_command(tag=PLAYER_BACK)

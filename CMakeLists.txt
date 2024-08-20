@@ -27,7 +27,8 @@ project(libpwny VERSION 1.0.0)
 
 option(DEBUG "Build in debug mode" OFF)
 option(MAIN "Build main executable" OFF)
-option(BUNDLE "Build as bundle (macOS)" OFF)
+option(BUNDLE "Build as bundle (macOS/iOS)" OFF)
+option(SHARED "Build shared object instead" OFF)
 option(GC "Build with GC" OFF)
 
 set(SOURCE src/main/main.c CACHE STRING "File to build as executable")
@@ -36,15 +37,16 @@ if (DEBUG)
     add_compile_definitions(DEBUG)
 endif()
 
-file(GLOB PWNY_SOURCES src/*.c)
-
 if(CMAKE_SYSTEM_NAME STREQUAL Windows)
-    include_directories(include/compat)
-    file(GLOB PWNY_SOURCES src/*.c src/compat/*.c)
+    include_directories(include/compat include/mingw)
+    file(GLOB PWNY_SOURCES src/*.c src/compat/*.c src/mingw/*.c)
 
     add_compile_definitions(IS_WINDOWS)
 
 elseif(CMAKE_SYSTEM_NAME STREQUAL Darwin)
+    include_directories(include/posix)
+    file(GLOB PWNY_SOURCES src/*.c src/posix/*.c)
+
     add_compile_definitions(IS_MACOS)
 
     if(BUNDLE)
@@ -52,10 +54,18 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL Darwin)
     endif()
 
 elseif(CMAKE_SYSTEM_NAME STREQUAL iOS)
+    include_directories(include/posix)
+    file(GLOB PWNY_SOURCES src/*.c src/posix/*.c)
+
     add_compile_definitions(IS_IPHONE)
-    #add_compile_definitions(IS_BUNDLE)
+
+    if(BUNDLE)
+        add_compile_definitions(IS_BUNDLE)
+    endif()
 
 elseif(CMAKE_SYSTEM_NAME STREQUAL Linux)
+    include_directories(include/posix)
+    file(GLOB PWNY_SOURCES src/*.c src/posix/*.c)
     add_compile_definitions(IS_LINUX)
 
 endif()
@@ -84,7 +94,7 @@ if(MAIN)
     target_link_libraries(main PRIVATE pwny mbedtls mbedx509 mbedcrypto ev eio sigar)
 
     if(NOT CMAKE_SYSTEM_NAME STREQUAL iOS)
-        target_link_libraries(main PRIVATE pawn)
+        target_link_libraries(main PRIVATE pawn injector)
     endif()
 
     if(GC)
@@ -122,12 +132,14 @@ if(MAIN)
                                            "MobileGestalt")
 
     elseif(CMAKE_SYSTEM_NAME STREQUAL Linux)
-        target_link_libraries(main PRIVATE pawn)
-
-        if(CMAKE_SYSTEM_PROCESSOR STREQUAL x64)
-            target_link_options(main PRIVATE -static-pie -Wl,-z,max-page-size=4096)
+        if(SHARED)
+            target_link_options(main PRIVATE -shared -fPIC)
         else()
-            target_link_options(main PRIVATE -static-pie)
+            if(CMAKE_SYSTEM_PROCESSOR STREQUAL x64)
+                target_link_options(main PRIVATE -static-pie -Wl,-z,max-page-size=4096)
+            else()
+                target_link_options(main PRIVATE -static-pie)
+            endif()
         endif()
     endif()
 endif()

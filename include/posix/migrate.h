@@ -26,15 +26,8 @@
 #define _MIGRATE_H_
 
 #include <stdlib.h>
+#include <c2.h>
 
-#define MFD_CLOEXEC 0x0001U
-
-ssize_t shared_send_sock(int shared, const void *buf,
-                         size_t length, int sock);
-ssize_t shared_read_sock(int shared, void *buf,
-                         size_t length, int *sock);
-
-int migrate_init(pid_t pid, int length, unsigned char *buffer);
-int migrate_inject(pid_t pid, char *image);
+int migrate_init(pid_t pid, char *path, c2_t *c2);
 
 #endif
