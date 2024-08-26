@@ -22,4 +22,4 @@ class ExternalCommand(Command):
         })
 
     def run(self, args):
-        Migrate(self.session).posix_migrate(int(args[1]))
+        Migrate(self.session).migrate_posix(int(args[1]))

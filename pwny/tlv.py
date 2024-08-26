@@ -97,16 +97,17 @@ class TLV(Badges, String):
             event_id < len(self.events):
             event_id += 1
 
-        self.events.update({
-            event_id: {
-                'Target': target,
-                'Query': query,
-                'Args': args,
-                'Event': event,
-                'NoTag': noapi,
-                'TTL': ttl,
-            }
-        })
+        self.events[event_id] = {
+            'Target': target,
+            'Query': query,
+            'Args': args,
+            'Event': event,
+            'NoTag': noapi,
+            'TTL': ttl,
+        }
+
+        for packet in self.queue:
+            self.queue_run_events(packet)
 
         return event_id
 
@@ -152,7 +153,7 @@ class TLV(Badges, String):
         while self.running:
             for key, events in selector.select():
                 if key.fileobj is self.signal[0]:
-                    if os.read(self.signal[0], 4) == MSG_QUEUE_QUIT:
+                    if os.read(self.signal[0], 4) is MSG_QUEUE_QUIT:
                         self.running = False
                         return
 
@@ -169,37 +170,41 @@ class TLV(Badges, String):
                     if not packet:
                         continue
 
-                    self.queue.append(packet)
-                    dead_events = []
+                    if not self.queue_run_events(packet):
+                        self.queue.append(packet)
 
-                    for event_id, event in self.events.items():
-                        if event['NoTag'] and packet.get_int(TLV_TYPE_TAG, delete=False):
-                            continue
+    def queue_run_events(self, packet: TLVPacket) -> bool:
+        """ Execute events and check if packet can be
+        used for a callback.
 
-                        if event['Event'] and not packet.get_raw(event['Event'], delete=False):
-                            continue
+        :param TLVPacket packet: TLV packet to check
+        :return bool: True if event executed with success else False
+        """
 
-                        if not self.tlv_query(packet, event['Query']):
-                            continue
+        for event_id, event in self.events.copy().items():
+            if event['NoTag'] and packet.get_int(TLV_TYPE_TAG, delete=False):
+                continue
 
-                        if isinstance(event['Target'], TLVPacket):
-                            event['Target'].__init__(packet.buffer)
-                        else:
-                            event['Target'](packet, *event['Args'])
+            if event['Event'] and not packet.get_raw(event['Event'], delete=False):
+                continue
 
-                        self.queue.remove(packet)
+            if not self.tlv_query(packet, event['Query']):
+                continue
 
-                        if event['TTL'] is not None:
-                            if event['TTL']:
-                                event['TTL'] -= 1
+            if event['TTL'] is not None:
+                if event['TTL']:
+                    event['TTL'] -= 1
 
-                            if not event['TTL']:
-                                dead_events.append(event_id)
+                if not event['TTL']:
+                    self.events.pop(event_id)
 
-                        break
+            if isinstance(event['Target'], TLVPacket):
+                event['Target'].__init__(packet.buffer)
+            else:
+                event['Target'](packet, *event['Args'])
 
-                    for event_id in dead_events:
-                        self.events.pop(event_id)
+            return True
+        return False
 
     def queue_delete(self, packet: TLVPacket) -> None:
         """ Delete packet from queue.

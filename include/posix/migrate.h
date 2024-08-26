@@ -28,6 +28,6 @@
 #include <stdlib.h>
 #include <c2.h>
 
-int migrate_init(pid_t pid, char *path, c2_t *c2);
+int migrate_init(pid_t pid, int length, unsigned char *image);
 
 #endif

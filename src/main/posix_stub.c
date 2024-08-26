@@ -131,17 +131,23 @@ void init(void)
 
     unsigned char *image;
 
+    printf("loaded\n");
+
     shared = shared_connect("#IPCSocket");
     if (shared < 0)
     {
         return;
     }
 
+    printf("loaded 2\n");
+
     memset(buffer, 0, 4);
     if (shared_read_sock(shared, buffer, 4, &sock) < 0)
     {
         return;
     }
+
+    printf("loaded %d\n", sock);
 
     flags = fcntl(sock, F_GETFL, 0);
     flags &= ~O_NONBLOCK;
@@ -157,6 +163,7 @@ void init(void)
     }
 
     length = ntohl(length);
+    printf("loaded %d\n", length);
 
     image = mmap(NULL, length, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_PRIVATE | MAP_ANONYMOUS, 0, 0);
     if (image == NULL)

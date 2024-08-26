@@ -216,6 +216,8 @@ void net_client_event_link(int event, void *data)
     pipe = data;
     result = api_craft_tlv_pkt(API_CALL_SUCCESS, NULL);
 
+    log_debug("* Connected!!! %d\n", event);
+
     tlv_pkt_add_u32(result, TLV_TYPE_PIPE_TYPE, NET_CLIENT_PIPE);
     tlv_pkt_add_u32(result, TLV_TYPE_PIPE_ID, pipe->id);
     tlv_pkt_add_u32(result, TLV_TYPE_PIPE_HEARTBEAT, event);

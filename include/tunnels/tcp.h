@@ -229,8 +229,6 @@ void sock_tunnel_exit(tunnel_t *tunnel)
     }
 
     net = tunnel->data;
-
-    net_stop(net);
     net_free(net);
 
     tunnel->active = 0;

