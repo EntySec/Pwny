@@ -38,11 +38,6 @@
 
 #include <arpa/inet.h>
 
-#ifdef GC_INUSE
-#include <gc.h>
-#include <gc/leak_detector.h>
-#endif
-
 group_t *group_create(tlv_pkt_t *tlv_pkt, crypt_t *crypt)
 {
     group_t *group;

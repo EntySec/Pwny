@@ -34,7 +34,7 @@
 
 #include <mbedtls/pk.h>
 
-#ifndef IS_WINDOWS
+#ifndef __windows__
 #include <pwd.h>
 #endif
 
@@ -183,7 +183,7 @@ static tlv_pkt_t *builtin_time(c2_t *c2)
     struct tm local_time;
     time_t time_ctx;
 
-#ifndef IS_WINDOWS
+#ifndef __windows__
     memset(date_time, '\0', 128);
     time_ctx = time(NULL);
 
@@ -242,7 +242,7 @@ static tlv_pkt_t *builtin_whoami(c2_t *c2)
 {
     tlv_pkt_t *result;
 
-#ifndef IS_WINDOWS
+#ifndef __windows__
     struct passwd *pw_entry;
 
     if ((pw_entry = getpwuid(geteuid())))

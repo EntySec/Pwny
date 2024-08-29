@@ -40,11 +40,6 @@
 #include <net_client.h>
 #include <io.h>
 
-#ifdef GC_INUSE
-#include <gc.h>
-#include <gc/leak_detector.h>
-#endif
-
 net_t *net_create(void)
 {
     net_t *net;
@@ -71,7 +66,7 @@ net_t *net_create(void)
 
 int net_nonblock_sock(int sock)
 {
-#ifdef IS_WINDOWS
+#ifdef __windows__
     unsigned long non_block;
 
     non_block = 1;

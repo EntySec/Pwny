@@ -102,7 +102,7 @@
 #define TLV_TYPE_END_DATE   TLV_TYPE_CUSTOM(TLV_TYPE_INT, FS_BASE, API_TYPE + 1)
 
 
-#if defined(IS_MACOS) || defined(IS_IPHONE)
+#if defined(__macintosh__) || defined(__iphone__)
 #include <libkern/OSByteOrder.h>
 #define st_mtim st_mtimespec
 #define st_ctim st_ctimespec
@@ -113,7 +113,7 @@
 #include <endian.h>
 #endif
 
-#ifdef IS_WINDOWS
+#ifdef __windows__
 #ifndef S_ISLNK
 #define	S_ISLNK(mode) (0)
 #endif
@@ -348,7 +348,7 @@ static struct stat_table fs_mkstat(struct stat *stat)
     stat_buffer.ino = htole64(stat->st_ino);
     stat_buffer.size = htole64(stat->st_size);
 
-#ifndef IS_WINDOWS
+#ifndef __windows__
     stat_buffer.mtime = htole64(stat->st_mtim.tv_sec);
     stat_buffer.atime = htole64(stat->st_atim.tv_sec);
     stat_buffer.ctime = htole64(stat->st_ctim.tv_sec);

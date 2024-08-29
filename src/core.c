@@ -42,9 +42,8 @@
 
 #include <tunnels/tunnels.h>
 
-#ifdef GC_INUSE
-#include <gc.h>
-#include <gc/leak_detector.h>
+#ifdef __linux__
+#include <sys/prctl.h>
 #endif
 
 static struct ev_idle eio_idle_watcher;
@@ -113,11 +112,6 @@ void core_read(void *data)
     c2 = data;
     core = c2->data;
 
-#ifdef GC_INUSE
-    log_debug("* We will collect garbage!\n");
-    GC_set_find_leak(1);
-#endif
-
     while (c2_dequeue_tlv(c2, &c2->request) > 0)
     {
         switch (api_process_c2(c2, core->api_calls, core->tabs))
@@ -143,9 +137,6 @@ void core_read(void *data)
                     ev_break(core->loop, EVBREAK_ALL);
                 }
 
-#ifdef GC_INUSE
-                GC_gcollect();
-#endif
                 return;
 
             case API_CALLBACK:
@@ -156,18 +147,11 @@ void core_read(void *data)
                 tlv_pkt_destroy(c2->response);
                 tlv_pkt_destroy(c2->request);
 
-#ifdef GC_INUSE
-                GC_gcollect();
-#endif
-
                 break;
 
             case API_SILENT:
                 log_debug("* Received API_SILENT signal (%d)\n", API_SILENT);
 
-#ifdef GC_INUSE
-                GC_gcollect();
-#endif
                 break;
 
             default:
@@ -250,12 +234,27 @@ void core_setup(core_t *core)
     register_pipe_api_calls(&core->api_calls);
     register_core_tunnels(&core->tunnels);
     register_api_calls(&core->api_calls);
+
     log_debug("* Loaded core\n");
 }
 
 int core_start(core_t *core)
 {
+    char name[5];
     ev_signal sigint_w, sigterm_w;
+
+#ifdef __linux__
+    if (core->flags & CORE_NO_DUMP)
+    {
+        prctl(PR_SET_DUMPABLE, 0, 0, 0);
+    }
+
+    if (core->flags & CORE_NO_NAME)
+    {
+        memset(name, 0, 5);
+        prctl(PR_SET_NAME, name);
+    }
+#endif
 
     ev_signal_init(&sigint_w, core_signal_handler, SIGINT);
     ev_signal_start(core->loop, &sigint_w);

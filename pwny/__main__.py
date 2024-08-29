@@ -23,6 +23,7 @@ SOFTWARE.
 """
 
 import os
+import glob
 
 from typing import Union
 
@@ -38,6 +39,7 @@ class Pwny(object):
         """ Initialize Pwny and select target.
 
         :param str target: target to build for (e.g. aarch64-apple-darwin)
+        or target triplet in glob format (e.g. i?86-*-*)
         :param dict options: options (e.g. key -u, value tcp://127.0.0.1:8888)
         :return None: None
         """
@@ -58,6 +60,8 @@ class Pwny(object):
 
         if option.lower() == 'uri':
             return '-u'
+        elif option.lower() == 'uuid':
+            return '-U'
 
     def add_options(self, binary: bytes) -> bytes:
         """ Add options to binary.
@@ -93,7 +97,10 @@ class Pwny(object):
         """
 
         binary = self.target + '.' + format
+        result = glob.glob(binary)
 
-        if os.path.exists(binary):
-            with open(binary, 'rb') as f:
-                return self.add_options(f.read())
+        if not result:
+            return
+
+        with open(result[0], 'rb') as f:
+            return self.add_options(f.read())

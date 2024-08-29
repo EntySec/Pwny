@@ -37,11 +37,6 @@
 #include <tlv_types.h>
 #include <uthash/uthash.h>
 
-#ifdef GC_INUSE
-#include <gc.h>
-#include <gc/leak_detector.h>
-#endif
-
 api_signal_t api_process_c2(c2_t *c2, api_calls_t *api_calls, tabs_t *tabs)
 {
     int tag;

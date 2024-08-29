@@ -43,11 +43,9 @@ TLV_TYPE_BOOL = 15
 TLV_TYPE_TAG = tlv_custom_type(TLV_TYPE_INT, 0, 1)
 TLV_TYPE_STATUS = tlv_custom_type(TLV_TYPE_INT, 0, 2)
 TLV_TYPE_PID = tlv_custom_type(TLV_TYPE_INT, 0, 3)
-
 TLV_TYPE_TAB_ID = tlv_custom_type(TLV_TYPE_INT, 0, 4)
 
 TLV_TYPE_TAB = tlv_custom_type(TLV_TYPE_BYTES, 0, 1)
-TLV_TYPE_MIGRATE = tlv_custom_type(TLV_TYPE_BYTES, 0, 2)
 
 TLV_TYPE_UUID = tlv_custom_type(TLV_TYPE_STRING, 0, 1)
 TLV_TYPE_FILENAME = tlv_custom_type(TLV_TYPE_STRING, 0, 2)

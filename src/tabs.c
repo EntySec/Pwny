@@ -44,11 +44,6 @@
 
 #include <uthash/uthash.h>
 
-#ifdef GC_INUSE
-#include <gc.h>
-#include <gc/leak_detector.h>
-#endif
-
 extern char **environ;
 
 void tabs_err(void *data)

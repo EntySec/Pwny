@@ -43,11 +43,6 @@
 
 #include <tunnels/tunnels.h>
 
-#ifdef GC_INUSE
-#include <gc.h>
-#include <gc/leak_detector.h>
-#endif
-
 static void tab_signal_handler(struct ev_loop *loop, ev_signal *w, int revents)
 {
     switch (w->signum)

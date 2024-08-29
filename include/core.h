@@ -39,7 +39,11 @@
 
 #define CORE_EV_FLAGS EVFLAG_NOENV | EVBACKEND_SELECT | EVFLAG_FORKCHECK
 
-#define CORE_INJECTED 1 << 0
+#define CORE_INJECTED 1 /* let code know that core was injected */
+#ifdef __linux__
+#define CORE_NO_DUMP  2 /* attempt to make process non dumpable */
+#define CORE_NO_NAME  3 /* attempt to hide process name */
+#endif
 
 typedef struct
 {

@@ -29,7 +29,6 @@ option(DEBUG "Build in debug mode" OFF)
 option(MAIN "Build main executable" OFF)
 option(BUNDLE "Build as bundle (macOS/iOS)" OFF)
 option(SHARED "Build shared object instead" OFF)
-option(GC "Build with GC" OFF)
 
 set(SOURCE src/main/main.c CACHE STRING "File to build as executable")
 
@@ -41,13 +40,13 @@ if(CMAKE_SYSTEM_NAME STREQUAL Windows)
     include_directories(include/compat include/mingw)
     file(GLOB PWNY_SOURCES src/*.c src/compat/*.c src/mingw/*.c)
 
-    add_compile_definitions(IS_WINDOWS)
+    add_compile_definitions(__windows__)
 
 elseif(CMAKE_SYSTEM_NAME STREQUAL Darwin)
     include_directories(include/posix)
     file(GLOB PWNY_SOURCES src/*.c src/posix/*.c)
 
-    add_compile_definitions(IS_MACOS)
+    add_compile_definitions(__macintosh__)
 
     if(BUNDLE)
         add_link_options(-bundle)
@@ -57,7 +56,7 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL iOS)
     include_directories(include/posix)
     file(GLOB PWNY_SOURCES src/*.c src/posix/*.c)
 
-    add_compile_definitions(IS_IPHONE)
+    add_compile_definitions(__iphone__)
 
     if(BUNDLE)
         add_compile_definitions(IS_BUNDLE)
@@ -66,16 +65,8 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL iOS)
 elseif(CMAKE_SYSTEM_NAME STREQUAL Linux)
     include_directories(include/posix)
     file(GLOB PWNY_SOURCES src/*.c src/posix/*.c)
-    add_compile_definitions(IS_LINUX)
+    add_compile_definitions(__linux__)
 
-endif()
-
-if(GC)
-    if(DEBUG)
-        add_compile_definitions(GC_DEBUG GC_INUSE)
-    endif()
-
-    add_compile_options(-DREDIRECT_MALLOC=GC_malloc)
 endif()
 
 add_library(pwny STATIC ${PWNY_SOURCES})
@@ -95,10 +86,6 @@ if(MAIN)
 
     if(NOT CMAKE_SYSTEM_NAME STREQUAL iOS)
         target_link_libraries(main PRIVATE pawn injector)
-    endif()
-
-    if(GC)
-        target_link_libraries(main PRIVATE gc)
     endif()
 
     if(CMAKE_SYSTEM_NAME STREQUAL Windows)

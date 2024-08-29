@@ -46,11 +46,6 @@
 
 #include <uthash/uthash.h>
 
-#ifdef GC_INUSE
-#include <gc.h>
-#include <gc/leak_detector.h>
-#endif
-
 c2_t *c2_create(int id)
 {
     c2_t *c2;

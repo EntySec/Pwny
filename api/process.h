@@ -28,23 +28,15 @@
 #include <sigar.h>
 #include <stdio.h>
 
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <sys/un.h>
-
 #include <api.h>
 #include <c2.h>
 #include <core.h>
 #include <tlv_types.h>
 #include <child.h>
 #include <tlv.h>
-#include <migrate.h>
 #include <pipe.h>
 #include <proc.h>
 #include <log.h>
-
-#include <net_client.h>
-#include <net_server.h>
 
 #define PROCESS_BASE 2
 
@@ -60,14 +52,10 @@
         TLV_TAG_CUSTOM(API_CALL_STATIC, \
                        PROCESS_BASE, \
                        API_CALL + 2)
-#define PROCESS_MIGRATE \
-        TLV_TAG_CUSTOM(API_CALL_STATIC, \
-                       PROCESS_BASE, \
-                       API_CALL + 3)
 #define PROCESS_KILLALL \
         TLV_TAG_CUSTOM(API_CALL_STATIC, \
                        PROCESS_BASE, \
-                       API_CALL + 4)
+                       API_CALL + 3)
 
 #define PROCESS_PIPE \
         TLV_PIPE_CUSTOM(PIPE_STATIC, \
@@ -186,114 +174,6 @@ static tlv_pkt_t *process_get_pid(c2_t *c2)
     tlv_pkt_add_u32(result, TLV_TYPE_PID, sigar_pid_get(core->sigar));
 
     return result;
-}
-
-static void process_load_library(struct eio_req *request)
-{
-    int length;
-    unsigned char *image;
-    struct eio_migrate_table *table;
-    pid_t pid;
-
-    table = request->data;
-    tlv_pkt_get_u32(table->c2->request, TLV_TYPE_PID, &pid);
-
-    if ((length = tlv_pkt_get_bytes(table->c2->request, TLV_TYPE_MIGRATE, &image)) > 0)
-    {
-        if (migrate_init(pid, length, image) == 0)
-        {
-            free(image);
-
-            net_server_stop(table->server);
-            net_server_free(table->server);
-
-            table->c2->response = api_craft_tlv_pkt(API_CALL_QUIT, table->c2->request);
-            c2_enqueue_tlv(table->c2, table->c2->response);
-
-            tlv_pkt_destroy(table->c2->request);
-            tlv_pkt_destroy(table->c2->response);
-
-            return;
-        }
-
-        free(image);
-    }
-
-    net_server_stop(table->server);
-    net_server_free(table->server);
-
-    table->c2->response = api_craft_tlv_pkt(API_CALL_FAIL, table->c2->request);
-    c2_enqueue_tlv(table->c2, table->c2->response);
-
-    tlv_pkt_destroy(table->c2->request);
-    tlv_pkt_destroy(table->c2->response);
-}
-
-static void process_migrate_accept(int event, void *data)
-{
-    int sock;
-    net_t *net;
-    net_t *c2_net;
-    char buf[sizeof(int)];
-
-    struct iovec iov;
-    struct msghdr msg;
-    struct cmsghdr *pcmsghdr;
-
-    char buffer[CMSG_SPACE(sizeof(int))];
-
-    if (event != NET_SERVER_CLIENT)
-    {
-        return;
-    }
-
-    net = data;
-    c2_net = net->link_data;
-    sock = c2_net->io->pipe[0];
-
-    log_debug("* Sending file (%d)\n", sock);
-
-    memset(buf, 0, sizeof(int));
-    iov.iov_base = (void*)buf;
-    iov.iov_len = sizeof(int);
-    msg.msg_name = NULL;
-    msg.msg_namelen = 0;
-    msg.msg_iov = &iov;
-    msg.msg_iovlen = 1;
-    msg.msg_control = buffer;
-    msg.msg_controllen = sizeof(buffer);
-    msg.msg_flags = 0;
-
-    pcmsghdr = CMSG_FIRSTHDR(&msg);
-    pcmsghdr->cmsg_len = CMSG_LEN(sizeof(int));
-    pcmsghdr->cmsg_level = SOL_SOCKET;
-    pcmsghdr->cmsg_type = SCM_RIGHTS;
-
-    *((int*)CMSG_DATA(pcmsghdr)) = sock;
-    sendmsg(net->io->pipe[0], &msg, 0);
-
-    net_free(net);
-}
-
-static tlv_pkt_t *process_migrate(c2_t *c2)
-{
-    struct eio_migrate_table table;
-
-    table.c2 = c2;
-    table.server = net_server_create();
-
-    if (table.server == NULL)
-    {
-        return api_craft_tlv_pkt(API_CALL_FAIL, c2->request);
-    }
-
-    net_server_setup(table.server, c2->loop);
-    net_server_set_links(table.server, NULL, NULL,
-                         process_migrate_accept, c2);
-    net_server_start(table.server, NET_PROTO_UNIX, "#IPCSocket", 0);
-
-    eio_custom(process_load_library, 0, NULL, &table);
-    return NULL;
 }
 
 static void process_child_exit_link(void *data)
@@ -507,7 +387,6 @@ void register_process_api_calls(api_calls_t **api_calls)
     api_call_register(api_calls, PROCESS_LIST, process_list);
     api_call_register(api_calls, PROCESS_KILL, process_kill);
     api_call_register(api_calls, PROCESS_GET_PID, process_get_pid);
-    api_call_register(api_calls, PROCESS_MIGRATE, process_migrate);
     api_call_register(api_calls, PROCESS_KILLALL, process_killall);
 }
 

@@ -35,11 +35,6 @@
 #include <tunnel.h>
 #include <net_client.h>
 
-#ifdef GC_INUSE
-#include <gc.h>
-#include <gc/leak_detector.h>
-#endif
-
 static void tcp_tunnel_write(tunnel_t *tunnel, queue_t *egress)
 {
     net_t *net;

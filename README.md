@@ -101,6 +101,7 @@ These are other `cmake` build options:
 * `SOURCE` - Custom executable source file (default are in `src/main/`).
 * `DEBUG` - Should be `ON` if you want to build Pwny in debug mode.
 * `BUNDLE` - Build as bundle (macOS specific flag, adds `-bundle`)
+* `SHARED` - Build shared object instead.
 
 ## Basic usage
 

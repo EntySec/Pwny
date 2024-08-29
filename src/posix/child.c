@@ -34,10 +34,10 @@
 #include <unistd.h>
 #include <sys/ioctl.h>
 
-#ifndef IS_WINDOWS
+#ifndef __windows__
 #include <termios.h>
 #include <spawn.h>
-#if defined(IS_IPHONE) || defined(IS_MACOS)
+#if defined(__iphone__) || defined(__macintosh__)
 #include <util.h>
 #else
 #include <pty.h>
@@ -52,13 +52,8 @@
 
 #include <uthash/uthash.h>
 
-#ifndef IS_IPHONE
+#ifndef __iphone__
 #include <pawn.h>
-#endif
-
-#ifdef GC_INUSE
-#include <gc.h>
-#include <gc/leak_detector.h>
 #endif
 
 void child_set_links(child_t *child,
@@ -173,11 +168,11 @@ static void child_from_image(child_t *child, unsigned char *image,
     ev_loop_fork(EV_DEFAULT);
     ev_loop_destroy(EV_DEFAULT_UC);
 
-#if IS_LINUX
+#if __linux__
     pawn_exec_fd(image, argv, env);
-#elif IS_WINDOWS
+#elif __windows__
     pawn_exec(image, argv);
-#elif IS_MACOS
+#elif __macintosh__
     pawn_exec_bundle(image, options->length, argv, env);
 #endif
 
@@ -199,7 +194,7 @@ static pid_t child_spawn(char *filename, unsigned char *image,
                          child_options_t *options,
                          child_pipes_t *pipes)
 {
-#ifndef IS_WINDOWS
+#ifndef __windows__
     pid_t pid;
     int posix_stat;
 
