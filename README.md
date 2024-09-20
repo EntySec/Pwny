@@ -1,6 +1,6 @@
 
 <h3 align="left">
-    <img width="45%" src="docs/demo.svg">
+    <img width="70%" src="docs/demo.svg">
 </h3>
 
 *Friendly like a Pony, Mighty like a Knight*
