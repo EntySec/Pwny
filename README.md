@@ -1,5 +1,7 @@
+
 <h3 align="left">
-    <img src="https://github.com/EntySec/Pwny/blob/main/docs/logo.png" alt="logo" height="250px">
+    <img src="docs/logo.png" alt="logo" width="45%" height="45%">
+    <img width="45%" src="docs/demo.svg">
 </h3>
 
 *Friendly like a Pony, Mighty like a Knight*
@@ -14,10 +16,6 @@
 Pwny is an implementation of an advanced payload written in pure C and designed for portability and extensibility.
 
 This repository contains Pwny, which is supposed to work on *macOS*, *Linux*, *Windows* and *iOS*, but can be ported to almost every POSIX system. Pwny is optimized to work with or without [HatSploit Framework](https://github.com/EntySec/HatSploit).
-
-<p align="center">
-  <img width="70%" src="docs/demo.svg">
-</p>
 
 ## Features
 
