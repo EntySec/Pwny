@@ -48,8 +48,8 @@ $(BUILD_LIB)/libinjector.a: $(BUILD)/injector/Makefile
 	$(QUIET) $(LOG) "[Building injector]"
 	$(CHDIR) $(BUILD)/injector/$(SRC_DIR); \
 	    $(ENV) $(MAKE); \
-	    $(COPY) $(TARGET) $(BUILD_LIB)/lib/libinjector.a; \
-	    $(COPY) $(BUILD)/injector/include/injector.h $(BUILD_LIB)/include
+	    $(COPY) libinjector.a $(BUILD_LIB)/libinjector.a; \
+	    $(COPY) $(BUILD)/injector/include/injector.h $(BUILD_INCLUDE)
 	$(QUIET) $(LOG) "[Done building injector]"
 
 injector: $(BUILD_LIB)/libinjector.a

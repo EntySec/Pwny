@@ -105,6 +105,7 @@ class ExternalCommand(Command):
 
             self.session.loot.remove_loot(file)
             self.session.loot.remove_loot(path)
+            self.stop = False
 
         elif args.snap:
             result = self.session.send_command(

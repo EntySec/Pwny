@@ -30,7 +30,7 @@ class ExternalCommand(Command):
         if len(args) >= 3:
             editor = args[2]
         else:
-            editor = self.session.get_env('EDITOR') \
+            editor = self.session.console.get_env('EDITOR') \
                      or os.getenv('EDITOR') \
                      or 'vi'
 

@@ -71,12 +71,6 @@
 
 extern char **environ;
 
-struct eio_migrate_table
-{
-    net_server_t *server;
-    c2_t *c2;
-};
-
 static tlv_pkt_t *process_list(c2_t *c2)
 {
     int iter;

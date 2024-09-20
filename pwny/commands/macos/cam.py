@@ -133,6 +133,7 @@ class ExternalCommand(Command):
             self.session.send_command(tag=CAM_STOP)
             self.session.loot.remove_loot(file)
             self.session.loot.remove_loot(path)
+            self.stop = False
 
         elif args.list:
             result = self.session.send_command(

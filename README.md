@@ -15,6 +15,10 @@ Pwny is an implementation of an advanced payload written in pure C and designed 
 
 This repository contains Pwny, which is supposed to work on *macOS*, *Linux*, *Windows* and *iOS*, but can be ported to almost every POSIX system. Pwny is optimized to work with or without [HatSploit Framework](https://github.com/EntySec/HatSploit).
 
+<p align="center">
+  <img width="70%" src="docs/demo.svg">
+</p>
+
 ## Features
 
 * Portable C code that can be compiled for a big range of targets.

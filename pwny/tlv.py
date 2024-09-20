@@ -51,6 +51,37 @@ from cryptography.hazmat.backends import default_backend
 MSG_QUEUE_QUIT = b'\xca\xfe\xba\xbe'
 
 
+class SignalPipe(object):
+    """ Subclass of pwny module.
+
+    This subclass of pwny module is intended to provide a
+    signal pipe to send signals to select call.
+    """
+
+    def __init__(self) -> None:
+        self.pipe = os.pipe()
+
+        self.read = self.pipe[0]
+        self.write = self.pipe[1]
+
+    def sendmsg(self, msg: bytes) -> int:
+        """ Send message to pipe.
+
+        :param bytes msg: message (signal) 4-bytes
+        :return int: bytes written
+        """
+
+        return os.write(self.write, msg)
+
+    def recvmsg(self) -> bytes:
+        """ Read message from pipe.
+
+        :return bytes: message (signal) 4-bytes
+        """
+
+        return os.read(self.read, 4)
+
+
 class TLV(Badges, String):
     """ Subclass of pwny module.
 
@@ -75,7 +106,7 @@ class TLV(Badges, String):
         self.job = None
 
         self.running = False
-        self.signal = os.pipe()
+        self.signal = SignalPipe()
         self.args = args
 
     def create_event(self, target: Callable[..., Any], query: dict,
@@ -94,7 +125,7 @@ class TLV(Badges, String):
 
         event_id = 0
         while event_id in self.events or \
-            event_id < len(self.events):
+                event_id < len(self.events):
             event_id += 1
 
         self.events[event_id] = {
@@ -120,7 +151,7 @@ class TLV(Badges, String):
         if not self.running:
             return
 
-        os.write(self.signal[1], MSG_QUEUE_QUIT)
+        self.signal.sendmsg(MSG_QUEUE_QUIT)
         self.job.join()
 
     def queue_resume(self) -> None:
@@ -148,12 +179,12 @@ class TLV(Badges, String):
         selector = selectors.SelectSelector()
 
         selector.register(self.client.client, selectors.EVENT_READ)
-        selector.register(self.signal[0], selectors.EVENT_READ)
+        selector.register(self.signal.read, selectors.EVENT_READ)
 
         while self.running:
             for key, events in selector.select():
-                if key.fileobj is self.signal[0]:
-                    if os.read(self.signal[0], 4) is MSG_QUEUE_QUIT:
+                if key.fileobj is self.signal.read:
+                    if self.signal.recvmsg() == MSG_QUEUE_QUIT:
                         self.running = False
                         return
 
