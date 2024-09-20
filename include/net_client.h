@@ -45,6 +45,7 @@ enum NET_PROTO
     NET_PROTO_TCP,
     NET_PROTO_UDP,
     NET_PROTO_FILE,
+    NET_PROTO_UNIX,
 };
 
 typedef struct
@@ -87,6 +88,7 @@ void net_set_src(net_t *net, char *addr, uint16_t port);
 void net_setup(net_t *net, struct ev_loop *loop);
 void net_start(net_t *net);
 
+int net_nonblock_sock(int sock);
 void net_set_delay(net_t *net, float delay);
 void net_timer(struct ev_loop *loop, struct ev_timer *w, int revents);
 void net_set_links(net_t *net,

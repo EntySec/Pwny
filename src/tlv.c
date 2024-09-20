@@ -38,11 +38,6 @@
 #include <log.h>
 #include <queue.h>
 
-#ifdef GC_INUSE
-#include <gc.h>
-#include <gc/leak_detector.h>
-#endif
-
 tlv_pkt_t *tlv_pkt_create(void)
 {
     tlv_pkt_t *tlv_pkt;

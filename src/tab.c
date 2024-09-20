@@ -43,11 +43,6 @@
 
 #include <tunnels/tunnels.h>
 
-#ifdef GC_INUSE
-#include <gc.h>
-#include <gc/leak_detector.h>
-#endif
-
 static void tab_signal_handler(struct ev_loop *loop, ev_signal *w, int revents)
 {
     switch (w->signum)
@@ -162,6 +157,7 @@ void tab_setup(tab_t *tab)
     tab->c2 = NULL;
 
     register_pipe_api_calls(&tab->api_calls);
+    register_tab_api_calls(&tab->api_calls);
     register_tab_tunnels(&tab->tunnels);
 
     c2 = c2_add_uri(&tab->c2, 0, "ipc://", tab->tunnels);

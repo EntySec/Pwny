@@ -18,8 +18,6 @@ class ExternalCommand(Command):
                 'Ivan Nikolskiy (enty8080) - command developer'
             ],
             'Description': "Get working directory.",
-            'Usage': "pwd",
-            'MinArgs': 0
         })
 
     def run(self, _):

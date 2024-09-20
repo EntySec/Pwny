@@ -23,16 +23,29 @@ class ExternalCommand(Command):
                 'Ivan Nikolskiy (enty8080) - command developer'
             ],
             'Description': "Manage volume level.",
-            'Usage': "volume <option> [arguments]",
             'MinArgs': 1,
-            'Options': {
-                'get': ['', 'Get volume level.'],
-                'set': ['[0-10]', 'Set volume level.'],
-            }
+            'Options': [
+                (
+                    ('-g', '--get'),
+                    {
+                        'help': 'Display volume level.',
+                        'action': 'store_true'
+                    }
+                ),
+                (
+                    ('-s', '--set'),
+                    {
+                        'help': 'Set volume level.',
+                        'metavar': '[0-10]',
+                        'type': int,
+                        'choices': range(0, 11)
+                    }
+                )
+            ]
         })
 
     def run(self, args):
-        if args[1] == 'get':
+        if args.get:
             result = self.session.send_command(tag=UI_VOLUME_GET)
 
             if result.get_int(TLV_TYPE_STATUS) != TLV_STATUS_SUCCESS:
@@ -42,11 +55,11 @@ class ExternalCommand(Command):
             self.print_information(f"Volume level: {str(result.get_int(TLV_TYPE_INT))}")
             return
 
-        if args[1] == 'set':
+        if args.set:
             result = self.session.send_command(
                 tag=UI_VOLUME_SET,
                 args={
-                    TLV_TYPE_INT: int(args[2])
+                    TLV_TYPE_INT: args.set
                 }
             )
 

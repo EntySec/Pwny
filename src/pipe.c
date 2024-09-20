@@ -31,11 +31,6 @@
 
 #include <uthash/uthash.h>
 
-#ifdef GC_INUSE
-#include <gc.h>
-#include <gc/leak_detector.h>
-#endif
-
 static tlv_pkt_t *pipe_create(c2_t *c2)
 {
     int id;

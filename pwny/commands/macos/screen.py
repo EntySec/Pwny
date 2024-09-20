@@ -26,13 +26,31 @@ class ExternalCommand(Command):
             'Authors': [
                 'Ivan Nikolskiy (enty8080) - command developer'
             ],
-            'Description': "Stream screen or take snapshot.",
-            'Usage': "screen <option> [arguments]",
+            'Description': "Stream screen or take screenshot.",
             'MinArgs': 1,
-            'Options': {
-                'snap': ['<path>', 'Take a screenshot.'],
-                'stream': ['', 'Stream screen in real time.']
-            }
+            'Options': [
+                (
+                    ('-s', '--snap'),
+                    {
+                        'help': "Take a screenshot from device.",
+                        'action': 'store_true'
+                    }
+                ),
+                (
+                    ('-S', '--stream'),
+                    {
+                        'help': "Stream selected device.",
+                        'action': 'store_true'
+                    }
+                ),
+                (
+                    ('-o', '--output'),
+                    {
+                        'help': "Local file to save screenshot to.",
+                        'metavar': 'FILE'
+                    }
+                )
+            ]
         })
 
         self.stop = False
@@ -60,7 +78,7 @@ class ExternalCommand(Command):
                 self.print_error(f"Failed to write image to {path}!")
 
     def run(self, args):
-        if args[1] == 'stream':
+        if args.stream:
             file = self.session.loot.random_loot('png')
             path = self.session.loot.random_loot('html')
 
@@ -87,8 +105,9 @@ class ExternalCommand(Command):
 
             self.session.loot.remove_loot(file)
             self.session.loot.remove_loot(path)
+            self.stop = False
 
-        elif args[1] == 'snap':
+        elif args.snap:
             result = self.session.send_command(
                 tag=UI_SCREENSHOT,
                 args={
@@ -101,9 +120,12 @@ class ExternalCommand(Command):
                 return
 
             frame = result.get_raw(TLV_TYPE_BYTES)
+            output = args.output or self.session.loot.random_loot('png')
 
             try:
-                with open(args[2], 'wb') as f:
+                with open(output, 'wb') as f:
                     f.write(frame)
+                self.print_success(f"Saved image to {output}!")
+
             except Exception:
-                self.print_error(f"Failed to write image to {args[2]}!")
+                self.print_error(f"Failed to write image to {output}!")

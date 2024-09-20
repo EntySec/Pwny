@@ -23,12 +23,8 @@ class ExternalCommand(Command):
                 'Ivan Nikolskiy (enty8080) - command developer'
             ],
             'Description': "Open URL or app.",
-            'Usage': "open <option> <arguments>",
+            'Usage': "open [app|url] <url|bundle_id>",
             'MinArgs': 2,
-            'Options': {
-                'url': ['<url>', 'Open URL in default browser.'],
-                'app': ['<bundle_id>', 'Open app by bundle id.'],
-            }
         })
 
     def run(self, args):
@@ -55,3 +51,6 @@ class ExternalCommand(Command):
             if result.get_int(TLV_TYPE_STATUS) != TLV_STATUS_SUCCESS:
                 self.print_error("Failed to open app!")
                 return
+
+        else:
+            return True

@@ -25,12 +25,8 @@ class ExternalCommand(Command):
                 'Ivan Nikolskiy (enty8080) - command developer'
             ],
             'Description': "Read or write clipboard.",
-            'Usage': "clipboard <option>",
+            'Usage': "clipboard [read|write]",
             'MinArgs': 1,
-            'Options': {
-                'read': ['', 'Read from clipboard.'],
-                'write': ['', 'Write to clipboard.']
-            }
         })
 
     def run(self, args):
@@ -54,3 +50,6 @@ class ExternalCommand(Command):
                     TLV_TYPE_STRING: buffer
                 }
             )
+
+        else:
+            return True

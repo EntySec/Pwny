@@ -27,7 +27,7 @@ include make/Makefile.common
 ifneq (,$(findstring iphone,$(TARGET)))
 all: setup libev libeio mbedtls sigar
 else
-all: setup libev libeio mbedtls sigar libpawn bdwgc
+all: setup injector libev libeio mbedtls sigar libpawn
 endif
 
 setup:
@@ -45,4 +45,4 @@ include make/Makefile.libeio
 include make/Makefile.mbedtls
 include make/Makefile.sigar
 include make/Makefile.libpawn
-include make/Makefile.bdwgc
+include make/Makefile.injector

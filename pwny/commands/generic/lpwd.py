@@ -17,8 +17,6 @@ class ExternalCommand(Command):
                 'Ivan Nikolskiy (enty8080) - command developer'
             ],
             'Description': "Get local working directory.",
-            'Usage': "lpwd",
-            'MinArgs': 0
         })
 
     def run(self, _):

@@ -27,16 +27,35 @@ class ExternalCommand(Command):
                 'Ivan Nikolskiy (enty8080) - command developer'
             ],
             'Description': "Use built-in camera.",
-            'Usage': "cam <option> [arguments]",
             'MinArgs': 1,
-            'Options': {
-                'list': ['', 'List all camera devices.'],
-                'snap': ['<id> <path>', 'Take a snapshot using device.'],
-            }
+            'Options': [
+                (
+                    ('-l', '--list'),
+                    {
+                        'help': "List available camera devices.",
+                        'action': 'store_true'
+                    }
+                ),
+                (
+                    ('-s', '--snap'),
+                    {
+                        'help': "Take a snapshot from device.",
+                        'metavar': 'ID',
+                        'type': int
+                    }
+                ),
+                (
+                    ('-o', '--output'),
+                    {
+                        'help': "Local file to save snapshot to.",
+                        'metavar': 'FILE'
+                    }
+                )
+            ]
         })
 
     def run(self, args):
-        if args[1] == 'list':
+        if args.list:
             result = self.session.send_command(
                 tag=CAM_LIST
             )
@@ -50,16 +69,16 @@ class ExternalCommand(Command):
 
                 device = result.get_string(TLV_TYPE_STRING)
 
-        elif argv[1] == 'snap':
+        elif args.snap is not None:
             result = self.session.send_command(
                 tag=CAM_START,
                 args={
-                    CAM_ID: int(args[2]),
+                    CAM_ID: args.snap,
                 }
             )
 
             if result.get_int(TLV_TYPE_STATUS) != TLV_STATUS_SUCCESS:
-                self.print_error(f"Failed to open device #{args[2]}!")
+                self.print_error(f"Failed to open device #{str(args.snap)}!")
                 return
 
             result = self.session.send_command(
@@ -67,16 +86,19 @@ class ExternalCommand(Command):
             )
 
             if result.get_int(TLV_TYPE_STATUS) != TLV_STATUS_SUCCESS:
-                self.print_error(f"Failed to read device #{args[2]}!")
+                self.print_error(f"Failed to read device #{str(args.snap)}!")
                 self.session.send_command(tag=CAM_STOP)
                 return
 
             frame = result.get_raw(TLV_TYPE_BYTES)
+            output = args.output or self.session.loot.random_loot('png')
 
             try:
-                with open(args[3], 'wb') as f:
+                with open(output, 'wb') as f:
                     f.write(frame)
+                self.print_success(f"Saved image to {output}!")
+
             except Exception:
-                self.print_error(f"Failed to write image to {args[3]}!")
+                self.print_error(f"Failed to write image to {output}!")
 
             self.session.send_command(tag=CAM_STOP)

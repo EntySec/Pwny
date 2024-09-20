@@ -32,11 +32,6 @@
 
 #include <uthash/utlist.h>
 
-#ifdef GC_INUSE
-#include <gc.h>
-#include <gc/leak_detector.h>
-#endif
-
 static void queue_data_free(queue_data_t *data)
 {
     if (data->buffer != NULL)

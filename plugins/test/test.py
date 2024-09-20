@@ -6,7 +6,7 @@ Current source: https://github.com/EntySec/HatSploit
 from pwny.api import *
 from pwny.types import *
 
-from hatsploit.lib.plugin import Plugin
+from hatsploit.lib.core.plugin import Plugin
 
 TEST_TAG = tlv_custom_tag(API_CALL_DYNAMIC, TAB_BASE, API_CALL)
 
@@ -30,7 +30,7 @@ class HatSploitPlugin(Plugin):
             }
         }
 
-    def test(self, argc, argv):
+    def test(self, _):
         result = self.session.send_command(
             tag=TEST_TAG,
             plugin=self.plugin

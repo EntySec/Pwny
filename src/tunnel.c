@@ -27,11 +27,6 @@
 #include <tunnel.h>
 #include <log.h>
 
-#ifdef GC_INUSE
-#include <gc.h>
-#include <gc/leak_detector.h>
-#endif
-
 void register_tunnel(tunnels_t **tunnels, char *proto,
                      tunnel_callbacks_t callbacks)
 {

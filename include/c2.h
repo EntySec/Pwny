@@ -43,7 +43,7 @@
 
 #include <uthash/uthash.h>
 
-#ifndef IS_WINDOWS
+#ifndef __windows__
 #include <netinet/in.h>
 #else
 #include <winsock2.h>

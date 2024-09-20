@@ -18,24 +18,41 @@ class ExternalCommand(Command):
                 'Ivan Nikolskiy (enty8080) - command developer'
             ],
             'Description': "Manage collected loot.",
-            'Usage': "loot <option> [arguments]",
             'MinArgs': 1,
-            'Options': {
-                '-l': ['', 'List all collected loot.'],
-                '-r': ['<name>', 'Remove collected loot.'],
-                '-w': ['', 'Wipe all collected loot.']
-            }
+            'Options': [
+                (
+                    ('-l', '--list'),
+                    {
+                        'help': "List all collected loot.",
+                        'action': 'store_true'
+                    }
+                ),
+                (
+                    ('-r', '--remove'),
+                    {
+                        'help': "Remove collected loot by name.",
+                        'metavar': 'NAME'
+                    }
+                ),
+                (
+                    ('-w', '--wipe'),
+                    {
+                        'help': "Wipe all collected loot.",
+                        'action': 'store_true'
+                    }
+                )
+            ]
         })
 
     def run(self, args):
-        if args[1] == '-r':
-            self.session.loot.remove_loot(args[2])
+        if args.remove:
+            self.session.loot.remove_loot(args.remove)
 
-        elif args[1] == '-w':
+        elif args.wipe == '-w':
             for loot in self.session.loot.list_loot():
                 self.session.loot.remove_loot(loot[0])
 
-        elif args[1] == '-l':
+        elif args.list == '-l':
             loot_data = self.session.loot.list_loot()
 
             if not loot_data:

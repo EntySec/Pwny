@@ -38,11 +38,6 @@
 
 #include <arpa/inet.h>
 
-#ifdef GC_INUSE
-#include <gc.h>
-#include <gc/leak_detector.h>
-#endif
-
 group_t *group_create(tlv_pkt_t *tlv_pkt, crypt_t *crypt)
 {
     group_t *group;
@@ -107,7 +102,7 @@ ssize_t group_tlv_dequeue(queue_t *queue, tlv_pkt_t **tlv_pkt, crypt_t *crypt)
 
     if (queue->bytes < TLV_HEADER + length)
     {
-        log_debug("* Failed to read TLV packet (corruption?)\n");
+        log_debug("* Not all packet received (%d / %d)\n", queue->bytes, TLV_HEADER + length);
         return -1;
     }
 

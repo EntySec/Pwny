@@ -1,0 +1,55 @@
+#
+# MIT License
+#
+# Copyright (c) 2020-2024 EntySec
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+#
+
+INJECTOR_VERSION = 1.0.0
+INJECTOR_TARGET = libinjector.a
+
+ifeq (,$(findstring mingw,$(TARGET)))
+    ifeq (,$(findstring darwin,$(TARGET)))
+	    SRC_DIR = src/linux
+    else
+        SRC_DIR = src/macos
+    endif
+else
+    SRC_DIR = src/windows
+    INJECTOR_TARGET = injector-static.lib
+endif
+
+$(BUILD)/injector/Makefile:
+	$(QUIET) $(LOG) "[Unpacking injector]"
+	$(CHDIR) $(BUILD); \
+	    $(TAR) zxf $(DEPS)/injector-$(INJECTOR_VERSION).tar.gz; \
+	    $(MOVE) injector-$(INJECTOR_VERSION) injector; \
+	    $(CHDIR) injector
+	$(QUIET) $(LOG) "[Done unpacking injector]"
+
+$(BUILD_LIB)/libinjector.a: $(BUILD)/injector/Makefile
+	$(QUIET) $(LOG) "[Building injector]"
+	$(CHDIR) $(BUILD)/injector/$(SRC_DIR); \
+	    $(ENV) $(MAKE); \
+	    $(COPY) libinjector.a $(BUILD_LIB)/libinjector.a; \
+	    $(COPY) $(BUILD)/injector/include/injector.h $(BUILD_INCLUDE)
+	$(QUIET) $(LOG) "[Done building injector]"
+
+injector: $(BUILD_LIB)/libinjector.a

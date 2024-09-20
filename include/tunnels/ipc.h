@@ -35,11 +35,6 @@
 #include <tunnel.h>
 #include <net_client.h>
 
-#ifdef GC_INUSE
-#include <gc.h>
-#include <gc/leak_detector.h>
-#endif
-
 static void ipc_tunnel_write(tunnel_t *tunnel, queue_t *egress)
 {
     size_t size;
@@ -106,10 +101,10 @@ int ipc_tunnel_init(tunnel_t *tunnel)
         return -1;
     }
 
-    net_add_pipes(net, STDIN_FILENO, STDOUT_FILENO);
     net_set_links(net, ipc_tunnel_read,
                   NULL, NULL, tunnel);
     net_setup(net, tunnel->loop);
+    net_add_pipes(net, STDIN_FILENO, STDOUT_FILENO);
 
     tunnel->data = net;
 

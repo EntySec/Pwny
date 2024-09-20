@@ -32,8 +32,8 @@ from pex.arch import *
 from pex.platform import *
 
 from pwny.plugins import Plugins
-from pwny.migrate import Migrate
 from pwny.tips import Tips
+from pwny.banners import Banners
 
 from contextlib import redirect_stdout
 
@@ -361,6 +361,7 @@ Running as %blue$user%end on %line$dir%end
             tag=BUILTIN_QUIT
         )
         self.session.terminated = True
+        self.session.close()
 
         raise EOFError
 
@@ -491,5 +492,7 @@ Running as %blue$user%end on %line$dir%end
         if self.motd:
             self.print_empty(self.motd)
 
+        Banners(self.session).print_random_banner()
         Tips(self.session).print_random_tip()
+
         self.loop()

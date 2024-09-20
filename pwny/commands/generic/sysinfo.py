@@ -8,7 +8,8 @@ from itertools import zip_longest
 from pex.platform import (
     OS_LINUX,
     OS_MACOS,
-    OS_IPHONE
+    OS_IPHONE,
+    OS_WINDOWS
 )
 
 from pex.string import String
@@ -17,6 +18,35 @@ from pwny.api import *
 from pwny.types import *
 
 from badges.cmd import Command
+
+DISTRO_LOGO = {
+    'kali': r"""               +++++++++
+                         ++++
+             ++++++++++++++    +
+     ++++++++                  +
+                    +++++++     +       + +
+                ++++             ++         +
+         +++++++                +++++++++++   +
+      ++++                    ++           ++++ +
+                             ++                +++
+                            ++                   ++
+                            ++                      +
+                             ++
+                              +++
+                                ++++                      
+                                    ++++++++++++
+                                              ++  ++
+                                                ++   +
+                                                  +   +
+                                                   +   +
+                                                    +
+                                                     +
+""",
+}
+
+DISTRO_COLOR = {
+    'kali': '%blue',
+}
 
 OS_LOGO = {
     OS_LINUX: r"""     cOKxc
@@ -50,10 +80,30 @@ OS_LOGO = {
 ⠀⠀⠀⠀⠀⠀⠀⠈⠙⠦⣭⣐⠉⠴⢂⡤⠀⠐⠀⠒⠒⢀⡀⠀⠄⠁⡠⠀⢸⠀
 ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠙⠲⢤⣀⣀⠉⠁⠀⠀⠀⠒⠒⠒⠉⠀⢀⡾⠀
 ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠉⠉⠛⠲⠦⠤⠤⠤⠤⠴⠞⠋⠀⠀
+""",
+    OS_WINDOWS: r"""                           ....iilll
+                 ....iilllllllllllll
+     ....iillll  lllllllllllllllllll
+ iillllllllllll  lllllllllllllllllll
+ llllllllllllll  lllllllllllllllllll
+ llllllllllllll  lllllllllllllllllll
+ llllllllllllll  lllllllllllllllllll
+ llllllllllllll  lllllllllllllllllll
+ llllllllllllll  lllllllllllllllllll
+ 
+ llllllllllllll  lllllllllllllllllll
+ llllllllllllll  lllllllllllllllllll
+ llllllllllllll  lllllllllllllllllll
+ llllllllllllll  lllllllllllllllllll
+ llllllllllllll  lllllllllllllllllll
+ `^^^^^^lllllll  lllllllllllllllllll
+       ````^^^^  ^^lllllllllllllllll
+                      ````^^^^^^llll
 """
 }
 
 OS_COLOR = {
+    OS_WINDOWS: '%blue',
     OS_LINUX: '%yellow',
     OS_MACOS: '%dark',
     OS_IPHONE: '%blue',
@@ -69,8 +119,6 @@ class ExternalCommand(Command, String):
                 'Ivan Nikolskiy (enty8080) - command developer'
             ],
             'Description': "Get session system properties.",
-            'Usage': "sysinfo",
-            'MinArgs': 0
         })
 
     def run(self, _):

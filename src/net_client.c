@@ -40,11 +40,6 @@
 #include <net_client.h>
 #include <io.h>
 
-#ifdef GC_INUSE
-#include <gc.h>
-#include <gc/leak_detector.h>
-#endif
-
 net_t *net_create(void)
 {
     net_t *net;
@@ -71,7 +66,7 @@ net_t *net_create(void)
 
 int net_nonblock_sock(int sock)
 {
-#ifdef IS_WINDOWS
+#ifdef __windows__
     unsigned long non_block;
 
     non_block = 1;
@@ -326,6 +321,7 @@ void net_start(net_t *net)
     {
         ev_timer_stop(net->loop, &net->timer);
         ev_timer_init(&net->timer, net_timer, 0, net->delay);
+        log_debug("Delay: %f\n", net->delay);
         net->timer.data = net;
         ev_timer_start(net->loop, &net->timer);
     }
@@ -403,6 +399,7 @@ void net_add_pipes(net_t *net, int in_pipe, int out_pipe)
               in_pipe, out_pipe);
 
     io_add_pipes(net->io, in_pipe, out_pipe);
+    io_start(net->io);
 
     net->proto = NET_PROTO_FILE;
     net->status = NET_STATUS_OPEN;
@@ -443,8 +440,11 @@ int net_add_sock(net_t *net, int sock, int proto)
     net->port = strdup(port);
     net->proto = proto;
     net->status = NET_STATUS_OPEN;
+    net_nonblock_sock(sock);
 
     io_add_pipes(net->io, sock, sock);
+    io_start(net->io);
+
     return 0;
 }
 

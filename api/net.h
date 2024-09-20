@@ -198,6 +198,7 @@ tlv_pkt_t *net_restart_tunnel(c2_t *c2)
         }
 
         curr_c2->tunnel->delay = (float)delay;
+        log_debug("* Delay: %f | %s\n", curr_c2->tunnel->delay, curr_c2->tunnel->uri);
         curr_c2->tunnel->keep_alive = keep_alive;
 
         tunnel_start(curr_c2->tunnel);
@@ -214,6 +215,8 @@ void net_client_event_link(int event, void *data)
 
     pipe = data;
     result = api_craft_tlv_pkt(API_CALL_SUCCESS, NULL);
+
+    log_debug("* Connected!!! %d\n", event);
 
     tlv_pkt_add_u32(result, TLV_TYPE_PIPE_TYPE, NET_CLIENT_PIPE);
     tlv_pkt_add_u32(result, TLV_TYPE_PIPE_ID, pipe->id);

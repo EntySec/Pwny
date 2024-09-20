@@ -17,7 +17,7 @@ class ExternalCommand(Command):
                 'Ivan Nikolskiy (enty8080) - command developer'
             ],
             'Description': "Change local working directory.",
-            'Usage': "lcd",
+            'Usage': "lcd <path>",
             'MinArgs': 1
         })
 

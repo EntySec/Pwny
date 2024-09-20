@@ -28,8 +28,6 @@ class ExternalCommand(Command):
                 'Ivan Nikolskiy (enty8080) - command developer'
             ],
             'Description': "Manage location services.",
-            'Usage': "locate",
-            'MinArgs': 0,
         })
 
     def run(self, _):

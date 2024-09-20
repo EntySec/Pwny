@@ -18,8 +18,6 @@ class ExternalCommand(Command):
                 'Ivan Nikolskiy (enty8080) - command developer'
             ],
             'Description': "Get current username.",
-            'Usage': "whoami",
-            'MinArgs': 0
         })
 
     def run(self, _):

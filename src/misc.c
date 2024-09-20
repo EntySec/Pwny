@@ -31,11 +31,6 @@
 
 #include <misc.h>
 
-#ifdef GC_INUSE
-#include <gc.h>
-#include <gc/leak_detector.h>
-#endif
-
 static uint64_t xor_shift_128_plus(uint64_t *seed)
 {
     uint64_t seed1;

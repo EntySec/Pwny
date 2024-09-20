@@ -26,6 +26,7 @@
 #define _PROCESS_H_
 
 #include <sigar.h>
+#include <stdio.h>
 
 #include <api.h>
 #include <c2.h>
@@ -33,7 +34,6 @@
 #include <tlv_types.h>
 #include <child.h>
 #include <tlv.h>
-#include <migrate.h>
 #include <pipe.h>
 #include <proc.h>
 #include <log.h>
@@ -52,14 +52,10 @@
         TLV_TAG_CUSTOM(API_CALL_STATIC, \
                        PROCESS_BASE, \
                        API_CALL + 2)
-#define PROCESS_MIGRATE \
-        TLV_TAG_CUSTOM(API_CALL_STATIC, \
-                       PROCESS_BASE, \
-                       API_CALL + 3)
 #define PROCESS_KILLALL \
         TLV_TAG_CUSTOM(API_CALL_STATIC, \
                        PROCESS_BASE, \
-                       API_CALL + 4)
+                       API_CALL + 3)
 
 #define PROCESS_PIPE \
         TLV_PIPE_CUSTOM(PIPE_STATIC, \
@@ -172,26 +168,6 @@ static tlv_pkt_t *process_get_pid(c2_t *c2)
     tlv_pkt_add_u32(result, TLV_TYPE_PID, sigar_pid_get(core->sigar));
 
     return result;
-}
-
-static tlv_pkt_t *process_migrate(c2_t *c2)
-{
-    int migrate_size;
-    unsigned char *migrate;
-    pid_t migrate_pid;
-
-    tlv_pkt_get_u32(c2->request, TLV_TYPE_PID, &migrate_pid);
-
-    if ((migrate_size = tlv_pkt_get_bytes(c2->request, TLV_TYPE_MIGRATE, &migrate)) > 0)
-    {
-        if (migrate_init(migrate_pid, migrate_size, migrate) == 0)
-        {
-            free(migrate);
-            return api_craft_tlv_pkt(API_CALL_QUIT, c2->request);
-        }
-    }
-
-    return api_craft_tlv_pkt(API_CALL_FAIL, c2->request);
 }
 
 static void process_child_exit_link(void *data)
@@ -405,7 +381,6 @@ void register_process_api_calls(api_calls_t **api_calls)
     api_call_register(api_calls, PROCESS_LIST, process_list);
     api_call_register(api_calls, PROCESS_KILL, process_kill);
     api_call_register(api_calls, PROCESS_GET_PID, process_get_pid);
-    api_call_register(api_calls, PROCESS_MIGRATE, process_migrate);
     api_call_register(api_calls, PROCESS_KILLALL, process_killall);
 }
 

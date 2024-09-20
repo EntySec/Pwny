@@ -22,8 +22,6 @@ class ExternalCommand(Command):
                 'Ivan Nikolskiy (enty8080) - command developer'
             ],
             'Description': "List all installed apps.",
-            'Usage': "apps",
-            'MinArgs': 0,
         })
 
     def run(self, _):

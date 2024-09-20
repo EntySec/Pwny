@@ -32,11 +32,6 @@
 #include <mbedtls/entropy.h>
 #include <mbedtls/pk.h>
 
-#ifdef GC_INUSE
-#include <gc.h>
-#include <gc/leak_detector.h>
-#endif
-
 #include <log.h>
 #include <crypt.h>
 

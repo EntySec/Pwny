@@ -31,11 +31,6 @@
 #include <misc.h>
 #include <log.h>
 
-#ifdef GC_INUSE
-#include <gc.h>
-#include <gc/leak_detector.h>
-#endif
-
 static void parse_argv(int argc, char *argv[], core_t *core)
 {
     int step;
@@ -146,6 +141,7 @@ int main(int argc, char *argv[])
 
     if (strcmp(argv[0], "p") == 0)
     {
+        core->flags |= CORE_INJECTED;
         sock = (int)((long *)argv)[1];
 
         if (asprintf(&uri, "sock://%d", sock) > 0)
@@ -156,6 +152,10 @@ int main(int argc, char *argv[])
     }
     else
     {
+#ifdef __linux__
+        core->flags |= CORE_NO_DUMP;
+        core->flags |= CORE_NO_NAME;
+#endif
         parse_argv(argc, argv, core);
     }
 

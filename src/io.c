@@ -33,11 +33,6 @@
 #include <link.h>
 #include <queue.h>
 
-#ifdef GC_INUSE
-#include <gc.h>
-#include <gc/leak_detector.h>
-#endif
-
 io_t *io_create(void)
 {
     io_t *io;

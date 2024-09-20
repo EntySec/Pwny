@@ -1,5 +1,6 @@
+
 <h3 align="left">
-    <img src="https://github.com/EntySec/Pwny/blob/main/docs/logo.png" alt="logo" height="250px">
+    <img width="70%" src="docs/demo.svg">
 </h3>
 
 *Friendly like a Pony, Mighty like a Knight*
@@ -101,6 +102,7 @@ These are other `cmake` build options:
 * `SOURCE` - Custom executable source file (default are in `src/main/`).
 * `DEBUG` - Should be `ON` if you want to build Pwny in debug mode.
 * `BUNDLE` - Build as bundle (macOS specific flag, adds `-bundle`)
+* `SHARED` - Build shared object instead.
 
 ## Basic usage
 

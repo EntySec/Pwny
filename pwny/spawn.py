@@ -39,9 +39,9 @@ from hatsploit.lib.core.session import Session
 from typing import Union
 from badges import Badges
 
-FLAG_FORK = 0 << 0
-FLAG_NO_FORK = 1 << 0
-FLAG_FAKE_PTY = 1 << 1
+FLAG_FORK = 1
+FLAG_NO_FORK = 2
+FLAG_FAKE_PTY = 4
 
 
 class Spawn(Badges, String):
@@ -107,7 +107,9 @@ class Spawn(Badges, String):
                     if not line:
                         pass
 
-                    self.pipes.write_pipe(PROCESS_PIPE, pipe_id, (line + '\n').encode())
+                    self.pipes.write_pipe(
+                        PROCESS_PIPE, pipe_id,
+                        (line + '\n').encode())
                 except EOFError:
                     pass
 
@@ -191,11 +193,14 @@ class Spawn(Badges, String):
             self.change_dir(path)
             return True
 
+        flags = 0
+        flags |= FLAG_NO_FORK
+
         try:
             pipe_id = self.pipes.create_pipe(
                 pipe_type=PROCESS_PIPE,
                 args={
-                    TLV_TYPE_INT: FLAG_NO_FORK,
+                    TLV_TYPE_INT: flags,
                     TLV_TYPE_FILENAME: path,
                     PROCESS_TYPE_PROCESS_ARGV: ' '.join(args)
                 },

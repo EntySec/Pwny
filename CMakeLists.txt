@@ -27,8 +27,8 @@ project(libpwny VERSION 1.0.0)
 
 option(DEBUG "Build in debug mode" OFF)
 option(MAIN "Build main executable" OFF)
-option(BUNDLE "Build as bundle (macOS)" OFF)
-option(GC "Build with GC" OFF)
+option(BUNDLE "Build as bundle (macOS/iOS)" OFF)
+option(SHARED "Build shared object instead" OFF)
 
 set(SOURCE src/main/main.c CACHE STRING "File to build as executable")
 
@@ -36,36 +36,37 @@ if (DEBUG)
     add_compile_definitions(DEBUG)
 endif()
 
-file(GLOB PWNY_SOURCES src/*.c)
-
 if(CMAKE_SYSTEM_NAME STREQUAL Windows)
-    include_directories(include/compat)
-    file(GLOB PWNY_SOURCES src/*.c src/compat/*.c)
+    include_directories(include/compat include/mingw)
+    file(GLOB PWNY_SOURCES src/*.c src/compat/*.c src/mingw/*.c)
 
-    add_compile_definitions(IS_WINDOWS)
+    add_compile_definitions(__windows__)
 
 elseif(CMAKE_SYSTEM_NAME STREQUAL Darwin)
-    add_compile_definitions(IS_MACOS)
+    include_directories(include/posix)
+    file(GLOB PWNY_SOURCES src/*.c src/posix/*.c)
+
+    add_compile_definitions(__macintosh__)
 
     if(BUNDLE)
         add_link_options(-bundle)
     endif()
 
 elseif(CMAKE_SYSTEM_NAME STREQUAL iOS)
-    add_compile_definitions(IS_IPHONE)
-    #add_compile_definitions(IS_BUNDLE)
+    include_directories(include/posix)
+    file(GLOB PWNY_SOURCES src/*.c src/posix/*.c)
 
-elseif(CMAKE_SYSTEM_NAME STREQUAL Linux)
-    add_compile_definitions(IS_LINUX)
+    add_compile_definitions(__iphone__)
 
-endif()
-
-if(GC)
-    if(DEBUG)
-        add_compile_definitions(GC_DEBUG GC_INUSE)
+    if(BUNDLE)
+        add_compile_definitions(IS_BUNDLE)
     endif()
 
-    add_compile_options(-DREDIRECT_MALLOC=GC_malloc)
+elseif(CMAKE_SYSTEM_NAME STREQUAL Linux)
+    include_directories(include/posix)
+    file(GLOB PWNY_SOURCES src/*.c src/posix/*.c)
+    add_compile_definitions(__linux__)
+
 endif()
 
 add_library(pwny STATIC ${PWNY_SOURCES})
@@ -84,11 +85,7 @@ if(MAIN)
     target_link_libraries(main PRIVATE pwny mbedtls mbedx509 mbedcrypto ev eio sigar)
 
     if(NOT CMAKE_SYSTEM_NAME STREQUAL iOS)
-        target_link_libraries(main PRIVATE pawn)
-    endif()
-
-    if(GC)
-        target_link_libraries(main PRIVATE gc)
+        target_link_libraries(main PRIVATE pawn injector)
     endif()
 
     if(CMAKE_SYSTEM_NAME STREQUAL Windows)
@@ -122,9 +119,15 @@ if(MAIN)
                                            "MobileGestalt")
 
     elseif(CMAKE_SYSTEM_NAME STREQUAL Linux)
-        target_link_libraries(main PRIVATE injector pawn)
-        target_compile_options(main PRIVATE -static -no-pie
-                                            -Wl,-Ttext-section=0x1000000)
+        if(SHARED)
+            target_link_options(main PRIVATE -shared -fPIC)
+        else()
+            if(CMAKE_SYSTEM_PROCESSOR STREQUAL x64)
+                target_link_options(main PRIVATE -static-pie -Wl,-z,max-page-size=4096)
+            else()
+                target_link_options(main PRIVATE -static-pie)
+            endif()
+        endif()
     endif()
 endif()
 

@@ -31,7 +31,7 @@
 #include <fs.h>
 #include <net.h>
 
-#ifdef IS_IPHONE
+#ifdef __iphone__
 #include <ios/cam.h>
 #include <ios/ui.h>
 #include <ios/player.h>
@@ -39,9 +39,13 @@
 #include <ios/gather.h>
 #endif
 
-#ifdef IS_MACOS
+#ifdef __macintosh__
 #include <macos/cam.h>
 #include <macos/ui.h>
+#endif
+
+#ifdef __linux__
+#include <linux/migrate.h>
 #endif
 
 void register_api_calls(api_calls_t **api_calls)
@@ -51,7 +55,7 @@ void register_api_calls(api_calls_t **api_calls)
     register_fs_api_calls(api_calls);
     register_net_api_calls(api_calls);
 
-#ifdef IS_IPHONE
+#ifdef __iphone__
     register_cam_api_calls(api_calls);
     register_ui_api_calls(api_calls);
     register_player_api_calls(api_calls);
@@ -59,9 +63,13 @@ void register_api_calls(api_calls_t **api_calls)
     register_gather_api_calls(api_calls);
 #endif
 
-#ifdef IS_MACOS
+#ifdef __macintosh__
     register_cam_api_calls(api_calls);
     register_ui_api_calls(api_calls);
+#endif
+
+#ifdef __linux__
+    register_migrate_api_calls(api_calls);
 #endif
 }
 
@@ -71,7 +79,7 @@ void register_api_pipes(pipes_t **pipes)
     register_process_api_pipes(pipes);
     register_net_api_pipes(pipes);
 
-#ifdef IS_IPHONE
+#ifdef __iphone__
     register_player_api_pipes(pipes);
 #endif
 }
