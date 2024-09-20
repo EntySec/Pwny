@@ -1,6 +1,5 @@
 
 <h3 align="left">
-    <img src="docs/logo.png" alt="logo" width="45%" height="45%">
     <img width="45%" src="docs/demo.svg">
 </h3>
 
