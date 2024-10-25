@@ -205,7 +205,7 @@ class ExternalCommand(Command):
 
             rule = (
                 f"{args.lhost or '0.0.0.0'}:{str(args.lport) or str(args.rport)}"
-                f"->{args.rhost}:{str(args.rport)}"
+                f" -> {args.rhost}:{str(args.rport)}"
             )
 
             self.rules.update({
