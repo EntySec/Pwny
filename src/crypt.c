@@ -159,6 +159,55 @@ void crypt_set_key(crypt_t *crypt, unsigned char *key)
     }
 }
 
+size_t crypt_pkcs_decrypt(unsigned char *data, size_t length, unsigned char *pkey,
+                          size_t pkey_length, unsigned char *result)
+{
+    int status;
+
+    mbedtls_pk_context pk;
+    mbedtls_ctr_drbg_context ctr_drbg;
+    mbedtls_entropy_context entropy;
+
+    size_t result_size;
+    result_size = 0;
+
+    mbedtls_entropy_init(&entropy);
+    mbedtls_ctr_drbg_init(&ctr_drbg);
+    mbedtls_pk_init(&pk);
+
+    status = mbedtls_pk_parse_key(&pk, pkey, pkey_length, NULL, 0,
+                                  mbedtls_ctr_drbg_random, NULL);
+
+    if (status != 0)
+    {
+        log_debug("* Failed to parse private key (%d)\n", status);
+        goto finalize;
+    }
+
+    status = mbedtls_ctr_drbg_seed(&ctr_drbg, mbedtls_entropy_func,
+                                   &entropy, NULL, 0);
+    if (status != 0)
+    {
+        log_debug("* Failed to seed PRNG (%d)\n", status);
+        goto finalize;
+    }
+
+    status = mbedtls_pk_decrypt(&pk, data, length, result, &result_size,
+                                sizeof(result), mbedtls_ctr_drbg_random, &ctr_drbg);
+    if (status != 0)
+    {
+        log_debug("* Failed to decrypt key with PKCS (%d)\n", status);
+        goto finalize;
+    }
+
+finalize:
+    mbedtls_ctr_drbg_free(&ctr_drbg);
+    mbedtls_entropy_free(&entropy);
+    mbedtls_pk_free(&pk);
+
+    return result_size;
+}
+
 size_t crypt_pkcs_encrypt(unsigned char *data, size_t length, unsigned char *pkey,
                           size_t pkey_length, unsigned char *result)
 {
