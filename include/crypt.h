@@ -65,6 +65,8 @@ ssize_t crypt_generate_key(crypt_t *crypt, unsigned char **key);
 
 size_t crypt_pkcs_encrypt(unsigned char *data, size_t length, unsigned char *pkey,
                           size_t pkey_length, unsigned char *result);
+size_t crypt_pkcs_decrypt(unsigned char *data, size_t length, unsigned char *pkey,
+                          size_t pkey_length, unsigned char *result);
 
 ssize_t crypt_aes_encrypt(crypt_t *crypt, unsigned char *data,
                           size_t length, unsigned char **result);
