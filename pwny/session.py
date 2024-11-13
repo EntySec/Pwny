@@ -25,6 +25,7 @@ SOFTWARE.
 import os
 import socket
 import pathlib
+import threading
 
 from alive_progress import alive_bar
 
@@ -65,7 +66,6 @@ class PwnySession(Session, FS, OpenSSL):
 
         self.pwny_data = self.pwny + 'data/'
         self.pwny_tabs = self.pwny + 'tabs/'
-        self.pwny_tibs = self.pwny + 'tibs/'
         self.pwny_loot = f'{pathlib.Path.home()}/.pwny/'
 
         self.pwny_plugins = self.pwny + 'plugins/'
@@ -138,27 +138,29 @@ class PwnySession(Session, FS, OpenSSL):
             'Arch': arch
         })
 
-    def secure(self) -> bool:
+    def secure(self, algo: int = ALGO_AES256_CBC) -> bool:
         """ Establish secure TLS communication.
 
+        :param int algo: encryption algorithm to use
         :return bool: True if success else False
         """
 
         if self.channel.secure:
             self.print_process("Initializing re-exchange of keys...")
 
-        self.print_process("Generating RSA keys...")
+        self.print_process("Generating RSA keys (1/2)")
         key = self.generate_key()
 
         priv_key = self.dump_key(key)
         pub_key = self.dump_public_key(key)
 
-        self.print_process("Exchanging RSA keys for TLS...")
+        self.print_process("Exchanging RSA keys (2/2)")
 
         result = self.send_command(
             tag=BUILTIN_SECURE,
             args={
                 BUILTIN_TYPE_PUBLIC_KEY: pub_key,
+                TLV_TYPE_INT: algo
             }
         )
 
@@ -182,9 +184,11 @@ class PwnySession(Session, FS, OpenSSL):
             padding.PKCS1v15()
         )
 
-        self.print_success("Communication secured with TLS!")
+        self.print_success(f"Session secured with {ALGO[algo]}!")
+
         self.channel.secure = True
         self.channel.key = sym_key_plain
+        self.channel.algo = algo
 
         return True
 

@@ -285,10 +285,12 @@ static void builtin_enable_security(struct eio_req *request)
     tlv_pkt_destroy(c2->request);
     tlv_pkt_destroy(c2->response);
 
-    crypt_set_key(c2->crypt, c2->crypt->next_key);
+    crypt_set_algo(c2->crypt, c2->crypt->next_algo);
+    crypt_set_key(c2->crypt, c2->crypt->next_key, c2->crypt->next_iv);
     crypt_set_secure(c2->crypt, STAT_SECURE);
 
     free(c2->crypt->next_key);
+    free(c2->crypt->next_iv);
 }
 
 static void builtin_disable_security(struct eio_req *request)
@@ -319,6 +321,7 @@ static tlv_pkt_t *builtin_secure(c2_t *c2)
 {
     size_t length;
 
+    int algo;
     int pkey_length;
     int key_length;
 
@@ -331,9 +334,11 @@ static tlv_pkt_t *builtin_secure(c2_t *c2)
     }
     pkey_length++;
 
-    crypt_set_algo(c2->crypt, ALGO_AES256_CBC);
+    tlv_pkt_get_u32(c2->request, TLV_TYPE_INT, &algo);
+    c2->crypt->next_algo = algo;
 
-    if ((key_length = crypt_generate_key(c2->crypt, &c2->crypt->next_key)) < 0)
+    if ((key_length = crypt_generate_key(algo, &c2->crypt->next_key,
+                                         &c2->crypt->next_iv)) < 0)
     {
         goto fail;
     }
@@ -344,6 +349,9 @@ static tlv_pkt_t *builtin_secure(c2_t *c2)
 
     if (length <= 0)
     {
+        free(c2->crypt->next_key);
+        free(c2->crypt->next_iv);
+
         goto fail;
     }
 

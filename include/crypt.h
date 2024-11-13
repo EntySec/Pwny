@@ -31,10 +31,14 @@
 #define AES256_KEY_SIZE   32
 #define AES256_IV_SIZE    16
 
+#define CHACHA20_KEY_SIZE 32
+#define CHACHA20_IV_SIZE  12
+
 enum CRYPT_ALGO
 {
     ALGO_NONE,
     ALGO_AES256_CBC,
+    ALGO_CHACHA20,
 };
 
 enum CRYPT_MODE
@@ -53,20 +57,32 @@ typedef struct
 {
     unsigned char *iv;
     unsigned char *key;
+
+    /* These methods are used to store next key and IV
+     * so if secure negotiation is re-established
+     * we won't lose session */
+
+    unsigned char *next_iv;
     unsigned char *next_key;
 
     enum CRYPT_ALGO algo;
+    enum CRYPT_ALGO next_algo;
     enum CRYPT_STAT secure;
 } crypt_t;
 
 crypt_t *crypt_create(void);
 
-ssize_t crypt_generate_key(crypt_t *crypt, unsigned char **key);
+ssize_t crypt_generate_key(enum CRYPT_ALGO algo, unsigned char **key, unsigned char **iv);
 
-size_t crypt_pkcs_encrypt(unsigned char *data, size_t length, unsigned char *pkey,
-                          size_t pkey_length, unsigned char *result);
 size_t crypt_pkcs_decrypt(unsigned char *data, size_t length, unsigned char *pkey,
                           size_t pkey_length, unsigned char *result);
+size_t crypt_pkcs_encrypt(unsigned char *data, size_t length, unsigned char *pkey,
+                          size_t pkey_length, unsigned char *result);
+
+ssize_t crypt_chacha20_encrypt(crypt_t *crypt, unsigned char *data,
+                               size_t length, unsigned char **result);
+ssize_t crypt_chacha20_decrypt(crypt_t *crypt, unsigned char *data,
+                               size_t length, unsigned char **result);
 
 ssize_t crypt_aes_encrypt(crypt_t *crypt, unsigned char *data,
                           size_t length, unsigned char **result);
@@ -76,7 +92,7 @@ ssize_t crypt_aes_decrypt(crypt_t *crypt, unsigned char *data,
 ssize_t crypt_process(crypt_t *crypt, unsigned char *data, size_t length,
                       unsigned char **result, enum CRYPT_MODE mode);
 
-void crypt_set_key(crypt_t *crypt, unsigned char *key);
+void crypt_set_key(crypt_t *crypt, unsigned char *key, unsigned char *iv);
 void crypt_set_secure(crypt_t *crypt, enum CRYPT_STAT secure);
 void crypt_set_algo(crypt_t *crypt, enum CRYPT_ALGO algo);
 

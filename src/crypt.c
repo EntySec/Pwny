@@ -28,6 +28,7 @@
 #include <stddef.h>
 
 #include <mbedtls/aes.h>
+#include <mbedtls/chacha20.h>
 #include <mbedtls/ctr_drbg.h>
 #include <mbedtls/entropy.h>
 #include <mbedtls/pk.h>
@@ -70,17 +71,19 @@ crypt_t *crypt_create(void)
 
     crypt->secure = STAT_NOT_SECURE;
     crypt->algo = ALGO_NONE;
-
     crypt->key = NULL;
     crypt->iv = NULL;
 
     return crypt;
 }
 
-ssize_t crypt_generate_key(crypt_t *crypt, unsigned char **key)
+ssize_t crypt_generate_key(enum CRYPT_ALGO algo, unsigned char **key, unsigned char **iv)
 {
     ssize_t length;
     int status;
+
+    size_t key_size;
+    size_t iv_size;
 
     mbedtls_ctr_drbg_context ctr_drbg;
     mbedtls_entropy_context entropy;
@@ -89,74 +92,118 @@ ssize_t crypt_generate_key(crypt_t *crypt, unsigned char **key)
     mbedtls_ctr_drbg_init(&ctr_drbg);
 
     status = 0;
-    length = -1;
 
-    switch(crypt->algo)
+    switch (algo)
     {
+        case ALGO_CHACHA20:
+            log_debug("* Generating key for ALGO_CHACHA20 (%d)\n",
+                      ALGO_CHACHA20);
+            key_size = CHACHA20_KEY_SIZE;
+            iv_size = CHACHA20_IV_SIZE;
+
+            break;
         case ALGO_AES256_CBC:
             log_debug("* Generating key for ALGO_AES256_CBC (%d)\n",
                       ALGO_AES256_CBC);
-            length = AES256_KEY_SIZE;
-
-            status = mbedtls_ctr_drbg_seed(&ctr_drbg, mbedtls_entropy_func,
-                                           &entropy, NULL, 0);
-            if (status != 0)
-            {
-                log_debug("* Failed to seed PRNG for ALGO_AES256_CBC (%d)\n",
-                          status);
-                goto finalize;
-            }
-
-            *key = calloc(length, 1);
-
-            if (*key == NULL)
-            {
-                log_debug("* Failed to allocate memory for ALGO_AES256_CBC (%d)\n",
-                          ALGO_AES256_CBC);
-                goto finalize;
-            }
-
-            status = mbedtls_ctr_drbg_random(&ctr_drbg, *key,
-                                             length);
-            if (status != 0)
-            {
-                log_debug("* Failed to generate key for ALGO_AES256_CBC (%d)\n",
-                          status);
-                free(*key);
-                goto finalize;
-            }
+            key_size = AES256_KEY_SIZE;
+            iv_size = AES256_IV_SIZE;
 
             break;
         case ALGO_NONE:
             log_debug("* No ALGO selected, skipping init\n");
-            break;
+            return -1;
         default:
-            break;
+            return -1;
     }
+
+    status = mbedtls_ctr_drbg_seed(&ctr_drbg, mbedtls_entropy_func,
+                                   &entropy, NULL, 0);
+    if (status != 0)
+    {
+        log_debug("* Failed to seed PRNG (%d)\n", status);
+        goto finalize;
+    }
+
+    *iv = calloc(iv_size, 1);
+
+    if (*iv == NULL)
+    {
+        log_debug("* Failed to allocate memory for IV\n");
+        goto finalize;
+    }
+
+    *key = calloc(key_size, 1);
+
+    if (*key == NULL)
+    {
+        log_debug("* Failed to allocate memory for key\n");
+        free(*iv);
+
+        goto finalize;
+    }
+
+    status = mbedtls_ctr_drbg_random(&ctr_drbg, *key, key_size);
+    if (status != 0)
+    {
+        log_debug("* Failed to generate key (%d)\n", status);
+        goto fail;
+    }
+
+    status = mbedtls_ctr_drbg_random(&ctr_drbg, *iv, iv_size);
+    if (status != 0)
+    {
+        log_debug("* Failed to generate IV (%d)\n", status);
+        goto fail;
+    }
+
+    goto finalize;
+
+fail:
+    free(*iv);
+    free(*key);
 
 finalize:
     mbedtls_entropy_free(&entropy);
     mbedtls_ctr_drbg_free(&ctr_drbg);
 
-    return length;
+    return key_size;
 }
 
-void crypt_set_key(crypt_t *crypt, unsigned char *key)
+void crypt_set_key(crypt_t *crypt, unsigned char *key, unsigned char *iv)
 {
+    size_t key_size;
+    size_t iv_size;
+
     switch (crypt->algo)
     {
+        case ALGO_CHACHA20:
+            key_size = CHACHA20_KEY_SIZE;
+            iv_size = CHACHA20_IV_SIZE;
+
+            break;
         case ALGO_AES256_CBC:
-            if (!crypt->key)
-            {
-                crypt->key = calloc(AES256_KEY_SIZE, 1);
-            }
-            memcpy(crypt->key, key, AES256_KEY_SIZE);
+            key_size = AES256_KEY_SIZE;
+            iv_size = AES256_IV_SIZE;
+
             break;
         case ALGO_NONE:
-            break;
+            return;
         default:
-            break;
+            return;
     }
+
+    if (!crypt->key)
+    {
+        crypt->key = calloc(key_size, 1);
+    }
+
+    if (!crypt->iv)
+    {
+        crypt->iv = calloc(iv_size, 1);
+    }
+
+    memcpy(crypt->iv, iv, iv_size);
+    memcpy(crypt->key, key, key_size);
 }
 
 size_t crypt_pkcs_decrypt(unsigned char *data, size_t length, unsigned char *pkey,
@@ -175,8 +222,7 @@ size_t crypt_pkcs_decrypt(unsigned char *data, size_t length, unsigned char *pke
     mbedtls_ctr_drbg_init(&ctr_drbg);
     mbedtls_pk_init(&pk);
 
-    status = mbedtls_pk_parse_key(&pk, pkey, pkey_length, NULL, 0,
-                                  mbedtls_ctr_drbg_random, NULL);
+    status = mbedtls_pk_parse_key(&pk, pkey, pkey_length, NULL, 0);
 
     if (status != 0)
     {
@@ -219,7 +265,6 @@ size_t crypt_pkcs_encrypt(unsigned char *data, size_t length, unsigned char *pke
     mbedtls_entropy_context entropy;
 
     size_t result_size;
-
     result_size = 0;
 
     mbedtls_entropy_init(&entropy);
@@ -261,14 +306,87 @@ finalize:
     return result_size;
 }
 
+ssize_t crypt_chacha20_encrypt(crypt_t *crypt, unsigned char *data,
+                               size_t length, unsigned char **result)
+{
+    int status;
+    unsigned char iv[CHACHA20_IV_SIZE];
+
+    mbedtls_chacha20_context chacha20;
+    mbedtls_ctr_drbg_context ctr_drbg;
+    mbedtls_entropy_context entropy;
+
+    mbedtls_entropy_init(&entropy);
+    mbedtls_ctr_drbg_init(&ctr_drbg);
+
+    mbedtls_chacha20_init(&chacha20);
+    mbedtls_chacha20_setkey(&chacha20, crypt->key);
+
+    status = mbedtls_ctr_drbg_seed(&ctr_drbg, mbedtls_entropy_func,
+                                   &entropy, NULL, 0);
+    if (status != 0)
+    {
+        log_debug("* Failed to seed PRNG (%d)\n", status);
+        goto fail;
+    }
+
+    status = mbedtls_ctr_drbg_random(&ctr_drbg, iv, CHACHA20_IV_SIZE);
+    if (status != 0)
+    {
+        log_debug("* Failed to generate IV (%d)\n", status);
+        goto fail;
+    }
+
+    crypt_set_key(crypt, crypt->key, iv);
+    status = mbedtls_chacha20_starts(&chacha20, crypt->iv, 0);
+
+    if (status != 0)
+    {
+        log_debug("* Failed to initialize crypt context (%d)\n", status);
+        goto fail;
+    }
+
+    *result = calloc(CHACHA20_IV_SIZE + length, 1);
+    if (*result == NULL)
+    {
+        log_debug("* Failed to allocate memory for result\n");
+        goto fail;
+    }
+
+    mbedtls_chacha20_update(&chacha20, length, data, *result + CHACHA20_IV_SIZE);
+    memcpy(*result, crypt->iv, CHACHA20_IV_SIZE);
+
+    length += CHACHA20_IV_SIZE;
+
+    mbedtls_ctr_drbg_free(&ctr_drbg);
+    mbedtls_entropy_free(&entropy);
+    mbedtls_chacha20_free(&chacha20);
+
+    log_debug("* IV:\n");
+    log_hexdump(crypt->iv, AES256_IV_SIZE);
+
+    return length;
+
+fail:
+    mbedtls_ctr_drbg_free(&ctr_drbg);
+    mbedtls_entropy_free(&entropy);
+    mbedtls_chacha20_free(&chacha20);
+
+    return -1;
+}
+
 ssize_t crypt_aes_encrypt(crypt_t *crypt, unsigned char *data,
                           size_t length, unsigned char **result)
 {
     int status;
     mbedtls_aes_context aes;
+
     unsigned char *padded;
     unsigned char *encrypted;
+
     unsigned char iv[AES256_IV_SIZE];
+
+    memcpy(iv, crypt->iv, AES256_IV_SIZE);
 
     if (length % 16 != 0)
     {
@@ -287,6 +405,7 @@ ssize_t crypt_aes_encrypt(crypt_t *crypt, unsigned char *data,
     if (length <= 0)
     {
         log_debug("* Length is too small to encrypt (%d)\n", length);
+        free(padded);
         return -1;
     }
 
@@ -294,10 +413,9 @@ ssize_t crypt_aes_encrypt(crypt_t *crypt, unsigned char *data,
     if (*result == NULL)
     {
         log_debug("* Failed to allocate memory for result\n");
+        free(padded);
         return -1;
     }
-
-    memcpy(iv, crypt->iv, AES256_IV_SIZE);
 
     mbedtls_aes_init(&aes);
     mbedtls_aes_setkey_enc(&aes, crypt->key, 256);
@@ -311,11 +429,51 @@ ssize_t crypt_aes_encrypt(crypt_t *crypt, unsigned char *data,
     {
         log_debug("* Failed to encrypt with ALGO_AES256_CBC (%d)\n",
                   status);
+        free(*result);
         return -1;
     }
 
+    log_debug("* IV:\n");
+    log_hexdump(iv, AES256_IV_SIZE);
+
     memcpy(*result, iv, AES256_IV_SIZE);
     length += AES256_IV_SIZE;
+
+    return length;
+}
+
+ssize_t crypt_chacha20_decrypt(crypt_t *crypt, unsigned char *data,
+                               size_t length, unsigned char **result)
+{
+    int status;
+    unsigned char iv[CHACHA20_IV_SIZE];
+
+    mbedtls_chacha20_context chacha20;
+    length -= CHACHA20_IV_SIZE;
+    memcpy(iv, data, CHACHA20_IV_SIZE);
+
+    *result = malloc(length);
+
+    if (*result == NULL)
+    {
+        log_debug("* Failed to allocate space for result\n");
+        return -1;
+    }
+
+    mbedtls_chacha20_init(&chacha20);
+    mbedtls_chacha20_setkey(&chacha20, crypt->key);
+
+    status = mbedtls_chacha20_starts(&chacha20, iv, 0);
+
+    if (status != 0)
+    {
+        log_debug("* Failed to initialize crypto context (%d)\n", status);
+        mbedtls_chacha20_free(&chacha20);
+        return -1;
+    }
+
+    mbedtls_chacha20_update(&chacha20, length, data + CHACHA20_IV_SIZE, *result);
+    mbedtls_chacha20_free(&chacha20);
 
     return length;
 }
@@ -350,21 +508,10 @@ ssize_t crypt_aes_decrypt(crypt_t *crypt, unsigned char *data,
     {
         log_debug("* Failed to decrypt with ALGO_AES256_CBC (%d)\n",
                   status);
+        free(*result);
         return -1;
     }
 
-    if (!crypt->iv)
-    {
-        crypt->iv = calloc(AES256_IV_SIZE, 1);
-    }
-
-    if (crypt->iv == NULL)
-    {
-        log_debug("* Failed to move IV to global crypto context\n");
-        return -1;
-    }
-
-    memcpy(crypt->iv, iv, AES256_IV_SIZE);
     return length;
 }
 
@@ -384,6 +531,21 @@ ssize_t crypt_process(crypt_t *crypt, unsigned char *data, size_t length,
 
     switch (crypt->algo)
     {
+        case ALGO_CHACHA20:
+            log_debug("* Processing data with ALGO_CHACHA20 (%d)\n",
+                      ALGO_CHACHA20);
+            switch (mode)
+            {
+                case CRYPT_DECRYPT:
+                    result_length = crypt_chacha20_decrypt(crypt, data, length, result);
+                    break;
+                case CRYPT_ENCRYPT:
+                    result_length = crypt_chacha20_encrypt(crypt, data, length, result);
+                    break;
+                default:
+                    break;
+            }
+            break;
         case ALGO_AES256_CBC:
             log_debug("* Processing data with ALGO_AES256_CBC (%d)\n",
                       ALGO_AES256_CBC);

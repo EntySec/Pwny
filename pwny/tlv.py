@@ -46,6 +46,7 @@ from cryptography.hazmat.primitives.ciphers import (
     algorithms,
     modes
 )
+from Crypto.Cipher import ChaCha20
 from cryptography.hazmat.backends import default_backend
 
 MSG_QUEUE_QUIT = b'\xca\xfe\xba\xbe'
@@ -100,6 +101,7 @@ class TLV(Badges, String):
         self.client = client
         self.key = None
         self.secure = False
+        self.algo = None
 
         self.queue = []
         self.events = {}
@@ -303,16 +305,26 @@ class TLV(Badges, String):
         """
 
         if not self.key:
-            raise RuntimeError("No AES key set, unable to encrypt!")
+            raise RuntimeError("No key set, unable to encrypt!")
 
-        iv = os.urandom(16)
         data = packet.buffer
 
-        cipher = Cipher(algorithms.AES(self.key), modes.CBC(iv), backend=default_backend)
-        encryptor = cipher.encryptor()
+        if self.algo == ALGO_AES256_CBC:
+            iv = os.urandom(16)
 
-        padded_data = data + (16 - len(data) % 16) * bytes([16 - len(data) % 16])
-        return iv + encryptor.update(padded_data) + encryptor.finalize()
+            cipher = Cipher(algorithms.AES(self.key), modes.CBC(iv), backend=default_backend)
+            encryptor = cipher.encryptor()
+
+            padded_data = data + (16 - len(data) % 16) * bytes([16 - len(data) % 16])
+            return iv + encryptor.update(padded_data) + encryptor.finalize()
+
+        if self.algo == ALGO_CHACHA20:
+            iv = os.urandom(12)
+
+            cipher = ChaCha20.new(key=self.key, nonce=iv)
+            return iv + cipher.encrypt(data)
+
+        return data
 
     def decrypt(self, data: bytes) -> TLVPacket:
         """ Decrypt TLV packet with AES CBC 256-bit.
@@ -321,14 +333,27 @@ class TLV(Badges, String):
         :return TLVPacket: decrypted TLV packet
         """
 
-        iv = data[:16]
-        data = data[16:]
+        if not self.key:
+            raise RuntimeError("No key set, unable to decrypt!")
 
-        cipher = Cipher(algorithms.AES(self.key), modes.CBC(iv), backend=default_backend)
-        decryptor = cipher.decryptor()
+        if self.algo == ALGO_AES256_CBC:
+            iv = data[:16]
+            data = data[16:]
 
-        padded_data = decryptor.update(data) + decryptor.finalize()
-        return TLVPacket(padded_data)
+            cipher = Cipher(algorithms.AES(self.key), modes.CBC(iv), backend=default_backend)
+            decryptor = cipher.decryptor()
+
+            padded_data = decryptor.update(data) + decryptor.finalize()
+            return TLVPacket(padded_data)
+
+        if self.algo == ALGO_CHACHA20:
+            iv = data[:12]
+            data = data[12:]
+
+            cipher = ChaCha20.new(key=self.key, nonce=iv)
+            return TLVPacket(cipher.decrypt(data))
+
+        return TLVPacket(data)
 
     def read(self, error: bool = False, verbose: bool = False,
              block: bool = True) -> Union[TLVPacket, None]:
