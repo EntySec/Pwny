@@ -3,6 +3,8 @@ This plugin requires HatSploit: https://hatsploit.netlify.app
 Current source: https://github.com/EntySec/HatSploit
 """
 
+from badges.cmd import Command
+
 from pwny.api import *
 from pwny.types import *
 
@@ -22,13 +24,12 @@ class HatSploitPlugin(Plugin):
             'Description': ""
         })
 
-        self.commands = {
-            'test': {
-                'Description': "test",
-                'Usage': "test",
-                'MinArgs': 0
-            }
-        }
+        self.commands = [
+            Command({
+                'Name': "test",
+                'Description': "Return string from session.",
+            })
+        ]
 
     def test(self, _):
         result = self.session.send_command(

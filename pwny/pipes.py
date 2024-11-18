@@ -110,23 +110,27 @@ class Pipes(object):
         if pipe_id not in pipes[pipe_type]:
             raise RuntimeError(f"No such pipe with ID {str(pipe_id)}!")
 
-    def heartbeat_pipe(self, pipe_type: int, pipe_id: int, plugin: Optional[int] = None) -> bool:
+    def heartbeat_pipe(self, pipe_type: int, pipe_id: int, args: dict = {},
+                       plugin: Optional[int] = None) -> bool:
         """ Check pipe is alive or not.
 
         :param int pipe_type: type of pipe
         :param int pipe_id: pipe ID
+        :param dict args: additional args
         :param Optional[int] plugin: plugin ID if refer to plugin
         :return bool: True if alive else False
         """
 
         self.check_pipe(pipe_type, pipe_id, plugin)
 
+        args.update({
+            PIPE_TYPE_TYPE: pipe_type,
+            PIPE_TYPE_ID: pipe_id,
+        })
+
         tlv = self.session.send_command(
             tag=PIPE_HEARTBEAT,
-            args={
-                PIPE_TYPE_TYPE: pipe_type,
-                PIPE_TYPE_ID: pipe_id,
-            },
+            args=args,
             plugin=plugin
         )
 
@@ -281,7 +285,8 @@ class Pipes(object):
 
         tlv = self.session.send_command(
             tag=PIPE_CREATE,
-            args=args
+            args=args,
+            plugin=plugin
         )
 
         if tlv.get_int(TLV_TYPE_STATUS) == TLV_STATUS_FAIL:
@@ -319,7 +324,8 @@ class Pipes(object):
 
         tlv = self.session.send_command(
             tag=PIPE_DESTROY,
-            args=args
+            args=args,
+            plugin=plugin
         )
 
         if tlv.get_int(TLV_TYPE_STATUS) == TLV_STATUS_FAIL:

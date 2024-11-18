@@ -28,13 +28,13 @@
 #define TLV_FILE_CHUNK 1024
 
 #define TLV_TAG_CUSTOM(pool, base, call) \
-                        (pool + base * 1000) + call
+                        ((pool + base * 1000) + call)
 
 #define TLV_PIPE_CUSTOM(pool, base, type) \
-                        (pool + base * 1000) + type
+                        ((pool + base * 1000) + type)
 
 #define TLV_TYPE_CUSTOM(parent, base, child) \
-                        (parent * 1000 + base * 100)  + child
+                        ((parent * 1000 + base * 100) + child)
 
 #define TLV_TYPE_CHAR   1
 #define TLV_TYPE_SHORT  2

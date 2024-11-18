@@ -101,7 +101,6 @@
 #define TLV_TYPE_START_DATE TLV_TYPE_CUSTOM(TLV_TYPE_INT, FS_BASE, API_TYPE)
 #define TLV_TYPE_END_DATE   TLV_TYPE_CUSTOM(TLV_TYPE_INT, FS_BASE, API_TYPE + 1)
 
-
 #if defined(__macintosh__) || defined(__iphone__)
 #include <libkern/OSByteOrder.h>
 #define st_mtim st_mtimespec

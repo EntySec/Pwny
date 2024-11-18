@@ -46,11 +46,12 @@ static tlv_pkt_t *test(c2_t *c2)
 int main(void)
 {
     tab_t *tab;
+
     tab = tab_create();
+    tab_setup(tab);
 
     tab_register_call(tab, TEST, test);
 
-    tab_setup(tab);
     tab_start(tab);
     tab_destroy(tab);
 

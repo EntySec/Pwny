@@ -245,14 +245,12 @@ Running as %blue$user%end on %line$dir%end
         self.plugins.load_plugin(args[1])
 
         plugin = self.plugins.loaded_plugins[args[1]]
-        commands = {}
 
         for command in plugin.commands:
-            commands[command] = plugin.commands[command]
-            commands[command]['Method'] = getattr(plugin, command)
-            commands[command]['Category'] = plugin.info['Plugin']
+            command.info['Method'] = getattr(plugin, command.info['Name'])
+            command.info['Category'] = plugin.info['Plugin']
 
-        self.add_external(commands)
+        self.add_external(plugin.commands)
 
     def do_unload(self, args: list) -> None:
         """ Unload plugin by name.
@@ -267,9 +265,7 @@ Running as %blue$user%end on %line$dir%end
 
         plugin = self.plugins.loaded_plugins[args[1]]
 
-        for command in plugin.commands:
-            self.delete_external(command)
-
+        self.delete_external(plugin.commands)
         self.plugins.unload_plugin(args[1])
 
     def do_exec(self, args: list) -> None:

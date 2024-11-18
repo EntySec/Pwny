@@ -104,6 +104,11 @@ These are other `cmake` build options:
 * `BUNDLE` - Build as bundle (macOS specific flag, adds `-bundle`)
 * `SHARED` - Build shared object instead.
 
+**Quick scripts:**
+
+* `cross.sh` - Install Linux cross-compilers to `/etc/cross/`.
+* `build-linux.sh` - Build Pwny for all Linux targets and deploy to `pwny/templates/`.
+
 ## Basic usage
 
 To use Pwny and build payloads you should import it to your source.
