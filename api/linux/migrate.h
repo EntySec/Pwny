@@ -173,7 +173,7 @@ static void migrate_load_library(struct eio_req *request)
 
     if ((length = tlv_pkt_get_bytes(c2->request, TLV_TYPE_BYTES, &image)) > 0)
     {
-        if (migrate_init(pid, length, image, flags) == 0)
+        if (migrate_inject_library(pid, length, image, flags) == 0)
         {
             free(image);
 
@@ -184,7 +184,7 @@ static void migrate_load_library(struct eio_req *request)
         free(image);
     }
 
-    c2->response = api_craft_tlv_pkt(API_CALL_FAIL, table->c2->request);
+    c2->response = api_craft_tlv_pkt(API_CALL_FAIL, c2->request);
 
 finalize:
     c2_enqueue_tlv(c2, c2->response);
