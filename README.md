@@ -52,7 +52,6 @@ You can find list of supported `TARGET` values for different platforms.
     <summary>Linux</summary><br>
     <code>aarch64-linux-musl</code><br>
     <code>armv5l-linux-musleabi</code><br>
-    <code>armv5b-linux-musleabi</code><br>
     <code>i486-linux-musl</code><br>
     <code>x86_64-linux-musl</code><br>
     <code>powerpc-linux-muslsf</code><br>
