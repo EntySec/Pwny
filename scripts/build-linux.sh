@@ -55,7 +55,6 @@ function build_all ()
 {
     build_target aarch64-linux-musl
     build_target armv5l-linux-musleabi
-    build_target armv5b-linux-musleabi
     build_target i486-linux-musl
     build_target x86_64-linux-musl
     build_target powerpc-linux-muslsf
