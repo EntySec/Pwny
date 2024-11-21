@@ -46,7 +46,7 @@ function build_target ()
     fi
 
     cp build/main pwny/templates/$1.exe
-    elf2bin build/main pwny/templates/$1.bin
+    elf2bin build/main pwny/templates/$1.bin &>/dev/null
 
     echo "[Done building Pwny ($1)]"
 }
