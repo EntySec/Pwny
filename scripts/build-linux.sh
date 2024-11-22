@@ -45,10 +45,13 @@ function build_target ()
         exit 1
     fi
 
+    echo "[Done building Pwny ($1)]"
+    echo "[Deploying Pwny ($1)]"
+
     cp build/main pwny/templates/$1.exe
     elf2bin build/main pwny/templates/$1.bin &>/dev/null
 
-    echo "[Done building Pwny ($1)]"
+    echo "[Done deploying Pwny ($1)]"
 }
 
 function build_all ()
