@@ -60,6 +60,7 @@ static ssize_t crypt_apply_padding(unsigned char *data, size_t length,
 
 crypt_t *crypt_create(void)
 {
+    int status;
     crypt_t *crypt;
 
     crypt = calloc(1, sizeof(*crypt));
@@ -74,22 +75,33 @@ crypt_t *crypt_create(void)
     crypt->key = NULL;
     crypt->iv = NULL;
 
+    mbedtls_entropy_init(&crypt->entropy);
+    mbedtls_ctr_drbg_init(&crypt->ctr_drbg);
+
+    status = mbedtls_ctr_drbg_seed(&crypt->ctr_drbg, mbedtls_entropy_func,
+                                   &crypt->entropy, NULL, 0);
+    if (status != 0)
+    {
+        log_debug("* Failed to seed PRNG (%d)\n", status);
+        free(crypt);
+
+        mbedtls_entropy_free(&crypt->entropy);
+        mbedtls_ctr_drbg_free(&crypt->ctr_drbg);
+
+        return NULL;
+    }
+
     return crypt;
 }
 
-ssize_t crypt_generate_key(enum CRYPT_ALGO algo, unsigned char **key, unsigned char **iv)
+ssize_t crypt_generate_key(crypt_t *crypt, enum CRYPT_ALGO algo,
+                           unsigned char **key, unsigned char **iv)
 {
     ssize_t length;
     int status;
 
     size_t key_size;
     size_t iv_size;
-
-    mbedtls_ctr_drbg_context ctr_drbg;
-    mbedtls_entropy_context entropy;
-
-    mbedtls_entropy_init(&entropy);
-    mbedtls_ctr_drbg_init(&ctr_drbg);
 
     status = 0;
 
@@ -116,20 +128,12 @@ ssize_t crypt_generate_key(enum CRYPT_ALGO algo, unsigned char **key, unsigned c
             return -1;
     }
 
-    status = mbedtls_ctr_drbg_seed(&ctr_drbg, mbedtls_entropy_func,
-                                   &entropy, NULL, 0);
-    if (status != 0)
-    {
-        log_debug("* Failed to seed PRNG (%d)\n", status);
-        goto finalize;
-    }
-
     *iv = calloc(iv_size, 1);
 
     if (*iv == NULL)
     {
         log_debug("* Failed to allocate memory for IV\n");
-        goto finalize;
+        return key_size;
     }
 
     *key = calloc(key_size, 1);
@@ -139,32 +143,28 @@ ssize_t crypt_generate_key(enum CRYPT_ALGO algo, unsigned char **key, unsigned c
         log_debug("* Failed to allocate memory for key\n");
         free(*iv);
 
-        goto finalize;
+        return key_size;
     }
 
-    status = mbedtls_ctr_drbg_random(&ctr_drbg, *key, key_size);
+    status = mbedtls_ctr_drbg_random(&crypt->ctr_drbg, *key, key_size);
     if (status != 0)
     {
         log_debug("* Failed to generate key (%d)\n", status);
         goto fail;
     }
 
-    status = mbedtls_ctr_drbg_random(&ctr_drbg, *iv, iv_size);
+    status = mbedtls_ctr_drbg_random(&crypt->ctr_drbg, *iv, iv_size);
     if (status != 0)
     {
         log_debug("* Failed to generate IV (%d)\n", status);
         goto fail;
     }
 
-    goto finalize;
+    return key_size;
 
 fail:
     free(*iv);
     free(*key);
-
-finalize:
-    mbedtls_entropy_free(&entropy);
-    mbedtls_ctr_drbg_free(&ctr_drbg);
 
     return key_size;
 }
@@ -206,22 +206,16 @@ void crypt_set_key(crypt_t *crypt, unsigned char *key, unsigned char *iv)
     memcpy(crypt->key, key, key_size);
 }
 
-size_t crypt_pkcs_decrypt(unsigned char *data, size_t length, unsigned char *pkey,
+size_t crypt_pkcs_decrypt(crypt_t *crypt, unsigned char *data, size_t length, unsigned char *pkey,
                           size_t pkey_length, unsigned char *result)
 {
     int status;
-
     mbedtls_pk_context pk;
-    mbedtls_ctr_drbg_context ctr_drbg;
-    mbedtls_entropy_context entropy;
 
     size_t result_size;
     result_size = 0;
 
-    mbedtls_entropy_init(&entropy);
-    mbedtls_ctr_drbg_init(&ctr_drbg);
     mbedtls_pk_init(&pk);
-
     status = mbedtls_pk_parse_key(&pk, pkey, pkey_length, NULL, 0);
 
     if (status != 0)
@@ -230,16 +224,9 @@ size_t crypt_pkcs_decrypt(unsigned char *data, size_t length, unsigned char *pke
         goto finalize;
     }
 
-    status = mbedtls_ctr_drbg_seed(&ctr_drbg, mbedtls_entropy_func,
-                                   &entropy, NULL, 0);
-    if (status != 0)
-    {
-        log_debug("* Failed to seed PRNG (%d)\n", status);
-        goto finalize;
-    }
-
     status = mbedtls_pk_decrypt(&pk, data, length, result, &result_size,
-                                sizeof(result), mbedtls_ctr_drbg_random, &ctr_drbg);
+                                sizeof(result), mbedtls_ctr_drbg_random,
+                                &crypt->ctr_drbg);
     if (status != 0)
     {
         log_debug("* Failed to decrypt key with PKCS (%d)\n", status);
@@ -247,30 +234,22 @@ size_t crypt_pkcs_decrypt(unsigned char *data, size_t length, unsigned char *pke
     }
 
 finalize:
-    mbedtls_ctr_drbg_free(&ctr_drbg);
-    mbedtls_entropy_free(&entropy);
     mbedtls_pk_free(&pk);
-
     return result_size;
 }
 
-size_t crypt_pkcs_encrypt(unsigned char *data, size_t length, unsigned char *pkey,
+size_t crypt_pkcs_encrypt(crypt_t *crypt, unsigned char *data, size_t length, unsigned char *pkey,
                           size_t pkey_length, unsigned char *result)
 {
     int status;
     unsigned char buffer[MBEDTLS_MPI_MAX_SIZE];
 
     mbedtls_pk_context pk;
-    mbedtls_ctr_drbg_context ctr_drbg;
-    mbedtls_entropy_context entropy;
 
     size_t result_size;
     result_size = 0;
 
-    mbedtls_entropy_init(&entropy);
-    mbedtls_ctr_drbg_init(&ctr_drbg);
     mbedtls_pk_init(&pk);
-
     status = mbedtls_pk_parse_public_key(&pk, pkey, pkey_length);
 
     if (status != 0)
@@ -279,17 +258,10 @@ size_t crypt_pkcs_encrypt(unsigned char *data, size_t length, unsigned char *pke
         goto finalize;
     }
 
-    status = mbedtls_ctr_drbg_seed(&ctr_drbg, mbedtls_entropy_func,
-                                   &entropy, NULL, 0);
-    if (status != 0)
-    {
-        log_debug("* Failed to seed PRNG (%d)\n", status);
-        goto finalize;
-    }
-
     memset(buffer, '\0', MBEDTLS_MPI_MAX_SIZE);
     status = mbedtls_pk_encrypt(&pk, data, length, buffer, &result_size,
-                                sizeof(buffer), mbedtls_ctr_drbg_random, &ctr_drbg);
+                                sizeof(buffer), mbedtls_ctr_drbg_random,
+                                &crypt->ctr_drbg);
     if (status != 0)
     {
         log_debug("* Failed to encrypt key with PKCS (%d)\n", status);
@@ -299,10 +271,7 @@ size_t crypt_pkcs_encrypt(unsigned char *data, size_t length, unsigned char *pke
     memcpy(result, buffer, result_size);
 
 finalize:
-    mbedtls_ctr_drbg_free(&ctr_drbg);
-    mbedtls_entropy_free(&entropy);
     mbedtls_pk_free(&pk);
-
     return result_size;
 }
 
@@ -313,24 +282,12 @@ ssize_t crypt_chacha20_encrypt(crypt_t *crypt, unsigned char *data,
     unsigned char iv[CHACHA20_IV_SIZE];
 
     mbedtls_chacha20_context chacha20;
-    mbedtls_ctr_drbg_context ctr_drbg;
-    mbedtls_entropy_context entropy;
-
-    mbedtls_entropy_init(&entropy);
-    mbedtls_ctr_drbg_init(&ctr_drbg);
 
     mbedtls_chacha20_init(&chacha20);
     mbedtls_chacha20_setkey(&chacha20, crypt->key);
 
-    status = mbedtls_ctr_drbg_seed(&ctr_drbg, mbedtls_entropy_func,
-                                   &entropy, NULL, 0);
-    if (status != 0)
-    {
-        log_debug("* Failed to seed PRNG (%d)\n", status);
-        goto fail;
-    }
+    status = mbedtls_ctr_drbg_random(&crypt->ctr_drbg, iv, CHACHA20_IV_SIZE);
 
-    status = mbedtls_ctr_drbg_random(&ctr_drbg, iv, CHACHA20_IV_SIZE);
     if (status != 0)
     {
         log_debug("* Failed to generate IV (%d)\n", status);
@@ -358,8 +315,6 @@ ssize_t crypt_chacha20_encrypt(crypt_t *crypt, unsigned char *data,
 
     length += CHACHA20_IV_SIZE;
 
-    mbedtls_ctr_drbg_free(&ctr_drbg);
-    mbedtls_entropy_free(&entropy);
     mbedtls_chacha20_free(&chacha20);
 
     log_debug("* IV:\n");
@@ -368,10 +323,7 @@ ssize_t crypt_chacha20_encrypt(crypt_t *crypt, unsigned char *data,
     return length;
 
 fail:
-    mbedtls_ctr_drbg_free(&ctr_drbg);
-    mbedtls_entropy_free(&entropy);
     mbedtls_chacha20_free(&chacha20);
-
     return -1;
 }
 
@@ -594,6 +546,9 @@ void crypt_free(crypt_t *crypt)
     {
         free(crypt->iv);
     }
+
+    mbedtls_entropy_free(&crypt->entropy);
+    mbedtls_ctr_drbg_free(&crypt->ctr_drbg);
 
     free(crypt);
 }

@@ -337,14 +337,14 @@ static tlv_pkt_t *builtin_secure(c2_t *c2)
     tlv_pkt_get_u32(c2->request, TLV_TYPE_INT, &algo);
     c2->crypt->next_algo = algo;
 
-    if ((key_length = crypt_generate_key(algo, &c2->crypt->next_key,
+    if ((key_length = crypt_generate_key(c2->crypt, algo, &c2->crypt->next_key,
                                          &c2->crypt->next_iv)) < 0)
     {
         goto fail;
     }
 
     memset(buffer, '\0', MBEDTLS_MPI_MAX_SIZE);
-    length = crypt_pkcs_encrypt(c2->crypt->next_key, key_length, (unsigned char *)pkey,
+    length = crypt_pkcs_encrypt(c2->crypt, c2->crypt->next_key, key_length, (unsigned char *)pkey,
                                 pkey_length, buffer);
 
     if (length <= 0)

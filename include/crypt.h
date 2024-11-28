@@ -27,6 +27,9 @@
 
 #include <stddef.h>
 
+#include <mbedtls/ctr_drbg.h>
+#include <mbedtls/entropy.h>
+
 #define AES256_BLOCK_SIZE 16
 #define AES256_KEY_SIZE   32
 #define AES256_IV_SIZE    16
@@ -68,15 +71,19 @@ typedef struct
     enum CRYPT_ALGO algo;
     enum CRYPT_ALGO next_algo;
     enum CRYPT_STAT secure;
+
+    mbedtls_ctr_drbg_context ctr_drbg;
+    mbedtls_entropy_context entropy;
 } crypt_t;
 
 crypt_t *crypt_create(void);
 
-ssize_t crypt_generate_key(enum CRYPT_ALGO algo, unsigned char **key, unsigned char **iv);
+ssize_t crypt_generate_key(crypt_t *crypt, enum CRYPT_ALGO algo, unsigned char **key,
+                           unsigned char **iv);
 
-size_t crypt_pkcs_decrypt(unsigned char *data, size_t length, unsigned char *pkey,
+size_t crypt_pkcs_decrypt(crypt_t *crypt, unsigned char *data, size_t length, unsigned char *pkey,
                           size_t pkey_length, unsigned char *result);
-size_t crypt_pkcs_encrypt(unsigned char *data, size_t length, unsigned char *pkey,
+size_t crypt_pkcs_encrypt(crypt_t *crypt, unsigned char *data, size_t length, unsigned char *pkey,
                           size_t pkey_length, unsigned char *result);
 
 ssize_t crypt_chacha20_encrypt(crypt_t *crypt, unsigned char *data,
