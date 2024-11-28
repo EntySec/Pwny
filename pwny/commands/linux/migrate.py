@@ -4,7 +4,7 @@ Current source: https://github.com/EntySec/HatSploit
 """
 
 from pwny.api import *
-from pwnt.types import *
+from pwny.types import *
 
 from badges.cmd import Command
 
