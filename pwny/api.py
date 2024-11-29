@@ -24,7 +24,7 @@ ALGO_AES256_CBC = 1
 ALGO_CHACHA20 = 2
 
 ALGO = {
-    ALGO_NONE: 'No TLS enabled (!)',
+    ALGO_NONE: 'No encryption enabled (!)',
     ALGO_AES256_CBC: 'AES256-CBC',
     ALGO_CHACHA20: 'ChaCha20',
 }
