@@ -69,10 +69,10 @@ Where `TEST` is a function TLV tag and `test` is a function.
 
 Here is how Pwny loads TAB (plugin):
 
-**1.** Receive TAB (plugin) executable from C2.
-**2.** Copy TAB and create a child process.
-**3.** Execute TAB inside the child process.
-**4.** Establish IPC (Inter Process Communication) using file descriptors.
+1. Receive TAB (plugin) executable from C2.
+2. Copy TAB and create a child process.
+3. Execute TAB inside the child process.
+4. Establish IPC (Inter Process Communication) using file descriptors.
 
 ![diagram](/docs/tabs.png)
 
