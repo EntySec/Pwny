@@ -81,6 +81,14 @@ Running as %blue$user%end on %line$dir%end
         self.plugins = Plugins()
 
         self.search = {
+            OS_UNIX: [
+                '/usr/local/sbin',
+                '/usr/local/bin',
+                '/usr/sbin',
+                '/usr/bin',
+                '/sbin',
+                '/bin'
+            ],
             OS_LINUX: [
                 '/usr/local/sbin',
                 '/usr/local/bin',
