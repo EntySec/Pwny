@@ -22,10 +22,10 @@ class HatSploitPayload(Payload, Handler):
             'Authors': [
                 "Ivan Nikolskiy (enty8080) - payload developer",
             ],
-            'Description': (
-                "This payload creates an interactive reverse Pwny shell for Linux "
-                "with MIPS little-endian architecture."
-            ),
+            'Description': """
+                This payload creates an interactive reverse Pwny shell for Linux
+                with MIPS little-endian architecture.
+            """,
             'Arch': ARCH_MIPSLE,
             'Platform': OS_LINUX,
             'Session': PwnySession,
