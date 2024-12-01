@@ -97,7 +97,7 @@ class PwnySession(Session, FS, OpenSSL):
                 True,
             ]
         )
-        self.channel.queue_resume()
+        self.channel.resume()
 
         tlv = self.send_command(BUILTIN_UUID)
         self.uuid = tlv.get_string(TLV_TYPE_UUID)
@@ -212,7 +212,7 @@ class PwnySession(Session, FS, OpenSSL):
         :return None: None
         """
 
-        self.channel.queue_interrupt()
+        self.channel.interrupt()
         self.channel.client.close()
         self.reason = TERM_CLOSED
         self.terminated = True
@@ -434,4 +434,6 @@ class PwnySession(Session, FS, OpenSSL):
         if not self.console:
             raise RuntimeError("Not yet ready for interaction!")
 
+        self.resume()
         self.console.pwny_console()
+        self.interrupt()
