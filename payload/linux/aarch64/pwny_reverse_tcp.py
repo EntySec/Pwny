@@ -22,10 +22,10 @@ class HatSploitPayload(Payload, Handler):
             'Authors': [
                 "Ivan Nikolskiy (enty8080) - payload developer",
             ],
-            'Description': (
-                "This payload creates an interactive reverse Pwny shell for Linux "
-                "with AARCH64 architecture."
-            ),
+            'Description': """
+                This payload creates an interactive reverse Pwny shell for Linux
+                with AARCH64 architecture.
+            """,
             'Arch': ARCH_AARCH64,
             'Platform': OS_LINUX,
             'Session': PwnySession,
