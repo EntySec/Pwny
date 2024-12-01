@@ -97,7 +97,7 @@ class PwnySession(Session, FS, OpenSSL):
                 True,
             ]
         )
-        self.channel.resume()
+        self.resume()
 
         tlv = self.send_command(BUILTIN_UUID)
         self.uuid = tlv.get_string(TLV_TYPE_UUID)
@@ -212,7 +212,7 @@ class PwnySession(Session, FS, OpenSSL):
         :return None: None
         """
 
-        self.channel.interrupt()
+        self.interrupt()
         self.channel.client.close()
         self.reason = TERM_CLOSED
         self.terminated = True
