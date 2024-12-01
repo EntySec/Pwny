@@ -45,15 +45,15 @@ int main(void)
 {
     tab_t *tab;
 
-	tab = tab_create();
-
-	/* Your TAB API calls registration */
-
+    tab = tab_create();
     tab_setup(tab);
-	tab_start(tab);
-	tab_destroy(tab);
 
-    return 1;
+    /* Your TAB API calls registration */
+
+    tab_start(tab);
+    tab_destroy(tab);
+
+    return 0;
 }
 ```
 
@@ -74,7 +74,7 @@ Here is how Pwny loads TAB (plugin):
 **3.** Execute TAB inside the child process.
 **4.** Establish IPC (Inter Process Communication) using file descriptors.
 
-![diagram](https://github.com/EntySec/Pwny/tree/main/docs/tabs.png)
+![diagram](/docs/tabs.png)
 
 On the C2 side, either `BUILTIN_ADD_TAB_DISK` being called or `BUILTIN_ADD_TAB_BUFFER`.
 
