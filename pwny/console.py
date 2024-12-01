@@ -72,6 +72,8 @@ class Console(Cmd, FS):
 
         self.scheme = prompt
         self.prompt = prompt
+        self.banner = True
+        self.tip = True
 
         self.motd = f"""%end
 Pwny interactive shell %greenv{self.version}%end
@@ -142,6 +144,24 @@ Running as %blue$user%end on %line$dir%end
             return
 
         self.env[name.upper()] = str(value)
+
+    def set_banner(self, display: bool) -> None:
+        """ Display or hide Pwny banner.
+
+        :param bool display: True to display else False
+        :return None: None
+        """
+
+        self.banner = display
+
+    def set_tip(self, display: bool) -> None:
+        """ Display or hide Pwny tip.
+
+        :param bool display: True to display else False
+        :return None: None
+        """
+
+        self.tip = display
 
     def set_prompt(self, prompt: str) -> None:
         """ Set prompt.
@@ -496,7 +516,10 @@ Running as %blue$user%end on %line$dir%end
         if self.motd:
             self.print_empty(self.motd)
 
-        Banners(self.session).print_random_banner()
-        Tips(self.session).print_random_tip()
+        if self.banner:
+            Banners(self.session).print_random_banner()
+
+        if self.tip:
+            Tips(self.session).print_random_tip()
 
         self.loop()
