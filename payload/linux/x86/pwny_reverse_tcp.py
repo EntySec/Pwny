@@ -24,7 +24,7 @@ class HatSploitPayload(Payload, Handler):
             ],
             'Description': """
                 This payload creates an interactive reverse Pwny shell for Linux
-                with x86 architecture."
+                with x86 architecture.
             """,
             'Arch': ARCH_X86,
             'Platform': OS_LINUX,
