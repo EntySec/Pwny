@@ -1,6 +1,7 @@
 from pwny.types import *
 
 TERM_CLOSED = 'closed by console'
+TERM_DEAD = 'dead'
 TERM_UNKNOWN = 'unknown'
 
 PIPE_INTERACTIVE = 1 << 0
