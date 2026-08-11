@@ -1,0 +1,21 @@
+%comment
+%comment MIT License
+%comment
+%comment Copyright (c) 2020-2026 EntySec
+%comment
+
+%end
+%green    ___   ___   ___   ___   ___   ___   ___ %end
+%green   |___|=|___|=|___|=|___|=|___|=|___|=|___|%end
+%green   | P | | W | | N | | E | | D | | ! | | ! |%end
+%green   |___|=|___|=|___|=|___|=|___|=|___|=|___|%end
+%end
+  %dark   score:%end  %bold9001%end
+  %dark   combo:%end  %redroot x3%end
+  %dark   lives:%end  %yellow<3 <3 <3%end
+
+%cyan       _.-----._ %end
+%cyan      / \%end%red * * *%end %cyan/ \%end    %bold"Game over, man.%end
+%cyan     |   '---'   |%end   %bold Game over."%end
+%cyan      \_________/%end
+%end

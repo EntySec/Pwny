@@ -1,0 +1,21 @@
+%comment
+%comment MIT License
+%comment
+%comment Copyright (c) 2020-2026 EntySec
+%comment
+
+%end
+%dark  ________________________________________________%end
+%dark |%end %cyan user@target $%end cat /etc/shadow            %dark|%end
+%dark |%end %red Permission denied%end                         %dark|%end
+%dark |%end %cyan user@target $%end sudo !!                    %dark|%end
+%dark |%end %red user is not in the sudoers file.%end          %dark|%end
+%dark |%end %red This incident will be reported.%end           %dark|%end
+%dark |%end %cyan user@target $%end %yellowpwny --hierarchical%end      %dark|%end
+%dark |%end %green root@target #%end %boldI am inevitable.%end           %dark|%end
+%dark |%end                                              %dark|%end
+%dark |%end  %purple          /\_/\%end                          %dark|%end
+%dark |%end  %purple         ( o.o )%end  %dark<-- this is pwny%end   %dark|%end
+%dark |%end  %purple          > ^ <%end                           %dark|%end
+%dark |________________________________________________|%end
+%end

@@ -1,0 +1,23 @@
+%comment
+%comment MIT License
+%comment
+%comment Copyright (c) 2020-2026 EntySec
+%comment
+
+%end
+%red   ______  _    _  _   _  __   __%end
+%red  |  __ \ \ \  / /| \ | | \ \ / /%end
+%red  | |__) | \ \/ / |  \| |  \   / %end
+%red  |  ___/   \  /  | . ` |   | |  %end
+%red  | |       / /   | |\  |   | |  %end
+%red  |_|      /_/    |_| \_|   |_|  %end
+%end
+  %green +------+--------+---------+%end
+  %green | arch |%end %boldx86_64%end  %green|%end %cyan ready  %end%green|%end
+  %green | evas |%end %boldnone  %end  %green|%end %yellow why tho%end%green|%end
+  %green | sess |%end %bold  1   %end  %green|%end %green stable %end%green|%end
+  %green +------+--------+---------+%end
+%end
+  %dark "If it works, don't patch it."%end
+  %dark  -- Every sysadmin, probably%end
+%end

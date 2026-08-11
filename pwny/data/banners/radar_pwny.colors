@@ -1,0 +1,22 @@
+%comment
+%comment MIT License
+%comment
+%comment Copyright (c) 2020-2026 EntySec
+%comment
+
+%end
+%red  [!]%end %boldINCOMING TRANSMISSION%end %red[!]%end
+%dark  -.-. --- -.. .   .-. . -.-%end
+
+  %cyan                   .%end
+  %cyan                  / \%end
+  %cyan                 / | \%end
+  %cyan  .-------------'  |  '-------------.%end
+  %cyan  |   %end%dark.:| %bold  P W N Y  %end%dark|:.%end%cyan               |%end
+  %cyan  '-.            |            .-'%end
+  %cyan     '-.         |         .-'%end
+  %cyan        '--------+---------'%end
+
+%dark  TARGET ACQUIRED%end
+%dark  ESTABLISHING PERSISTENCE...%end %green[OK]%end
+%end

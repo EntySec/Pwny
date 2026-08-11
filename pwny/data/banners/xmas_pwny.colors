@@ -1,0 +1,18 @@
+%comment
+%comment MIT License
+%comment
+%comment Copyright (c) 2020-2026 EntySec
+%comment
+
+%end
+%purple    *   *%end
+%purple     *  %yellow* *%end
+%purple   *   %yellow/   \%end
+%purple      %yellow/ pwn \%end      %bold"I didn't choose the shell life,%end
+%purple     %yellow/  you  \%end     %bold the shell life chose me."%end
+%purple    %yellow/_________\%end
+%purple    %red|  |||||||  |%end        %darkHost:%end %cyan{target}%end
+%purple    %red|  |||||||  |%end        %darkPID: %end %cyan{pid}%end
+%purple    %red|  |||||||  |%end        %darkStatus:%end %green0wned%end
+%purple    %red|___________|%end
+%end

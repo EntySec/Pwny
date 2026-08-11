@@ -1,0 +1,22 @@
+%comment
+%comment MIT License
+%comment
+%comment Copyright (c) 2020-2026 EntySec
+%comment
+
+%end
+%green  ________________________________________%end
+%green |%end %bold$ sudo rm -rf /their/security%end         %green|%end
+%green |%end                                      %green|%end
+%green |%end %cyan[*]%end Migrating into your heart...   %green|%end
+%green |%end %cyan[*]%end 0 exploits, 0 payloads,        %green|%end
+%green |%end %cyan   %end 1 tiny horse.                   %green|%end
+%green |%end %cyan[+]%end Session opened!                 %green|%end
+%green |%end                                      %green|%end
+%green |%end       %red  _______%end                    %green|%end
+%green |%end       %red | %boldPwny%end%red  |%end                   %green|%end
+%green |%end       %red |_______|%end                   %green|%end
+%green |%end       %red   || ||%end                     %green|%end
+%green |%end       %red  _|| ||_%end                    %green|%end
+%green |________________________________________|%end
+%end

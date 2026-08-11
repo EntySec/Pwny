@@ -1,0 +1,85 @@
+
+#
+# MIT License
+#
+# Copyright (c) 2020-2026 EntySec
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+#
+
+CURL_VERSION = 7.71.1
+CURL_DEPS = $(BUILD_LIB)/libz.a
+
+ifneq (,$(findstring mingw,$(BUILD)))
+    CURL_OPTS = --without-ssl --with-winssl
+	CURL_CPPFLAGS = CPPFLAGS="$(CPPFLAGS) -DHAVE_IOCTLSOCKET_FIONBIO=1"
+else
+    CURL_DEPS += $(BUILD_LIB)/libmbedtls.a
+    CURL_OPTS = --without-ssl --with-mbedtls=$(BUILD)
+	CURL_CPPFLAGS =
+endif
+
+$(BUILD)/curl/configure:
+	$(QUIET) $(LOG) "[Unpacking curl]"
+	$(CHDIR) $(BUILD); \
+	    $(TAR) zxf $(DEPS)/curl-$(CURL_VERSION).tar.gz; \
+	    $(MOVE) curl-$(CURL_VERSION) curl
+	$(QUIET) $(LOG) "[Done unpacking curl]"
+
+$(BUILD)/curl/Makefile: $(BUILD)/curl/configure
+	$(QUIET) $(LOG) "[Configuring curl]"
+	$(CHDIR) $(BUILD)/curl; \
+	    $(CONFIG); \
+	    $(ENV) $(CURL_CPPFLAGS) ./$(CONFIGURE) \
+	    $(CURL_OPTS) \
+	    --without-libpsl \
+	    --without-nghttp2 \
+		--enable-optimize \
+		--disable-dict  \
+		--disable-gopher  \
+		--disable-ftp  \
+		--without-libidn2 \
+		--disable-imap  \
+		--disable-ldap  \
+		--disable-ldaps  \
+		--disable-pop3  \
+		--disable-proxy  \
+		--disable-rtsp  \
+		--disable-smb  \
+		--disable-smtp  \
+		--disable-telnet  \
+		--disable-tftp  \
+		--without-libidn  \
+		--without-librtmp  \
+		--without-libssh2  \
+		--without-brotli \
+		--disable-shared \
+		--without-ca-bundle --without-ca-path \
+		--enable-threaded-resolver \
+		ac_cv_header_sys_poll_h=no
+	$(QUIET) $(LOG) "[Done configuring curl]"
+
+$(BUILD_LIB)/libcurl.a: $(BUILD)/curl/Makefile
+	$(QUIET) $(LOG) "[Building curl]"
+	$(CHDIR) $(BUILD)/curl; \
+	    $(ENV) $(MAKE) lib; \
+	    $(MAKE_INSTALL)
+	$(QUIET) $(LOG) "[Done building curl]"
+
+curl: $(BUILD_LIB)/libcurl.a

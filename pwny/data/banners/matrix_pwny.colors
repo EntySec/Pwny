@@ -1,0 +1,19 @@
+%comment
+%comment MIT License
+%comment
+%comment Copyright (c) 2020-2026 EntySec
+%comment
+
+%end
+%dark    01001000 01000001%end
+%dark    01000011 01001011%end    %cyan    .---.%end
+%dark    01000101 01000100%end    %cyan   / . . \%end
+%dark        %red^^^^%end             %cyan  |  %red>%end   |%end
+%dark      %red/    \%end            %cyan  |  %red---%end |%end
+%dark     %red| PWNY |%end           %cyan   \ ___/%end
+%dark      %red\____/%end            %cyan    |___|%end
+
+%bold "We do what we must%end
+%bold  because we can."%end
+%dark   -- GLaDOS, probably%end
+%end

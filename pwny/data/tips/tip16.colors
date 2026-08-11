@@ -1,0 +1,10 @@
+
+%comment
+%comment MIT License
+%comment
+%comment Copyright (c) 2020-2026 EntySec
+%comment
+
+%end
+Use %greenfind%end to search for files on the target by name or pattern
+%end

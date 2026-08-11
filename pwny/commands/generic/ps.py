@@ -1,0 +1,44 @@
+"""
+This command requires HatSploit: https://hatsploit.com
+Current source: https://github.com/EntySec/HatSploit
+"""
+
+from pwny.api import *
+from pwny.types import *
+
+from badges.cmd import Command
+
+
+class ExternalCommand(Command):
+    def __init__(self):
+        super().__init__({
+            'Category': "gather",
+            'Name': "ps",
+            'Authors': [
+                'Ivan Nikolskiy (enty8080) - command developer'
+            ],
+            'Description': "Get list of processes.",
+        })
+
+    def run(self, _):
+        result = self.session.send_command(tag=PROCESS_LIST)
+
+        if result.get_int(TLV_TYPE_STATUS) != TLV_STATUS_SUCCESS:
+            self.print_error("Failed to fetch process list!")
+            return
+
+        process = result.get_tlv(TLV_TYPE_GROUP)
+        headers = ('PID', 'CPU', 'Name', 'Path')
+        data = []
+
+        while process:
+            data.append((
+                process.get_int(TLV_TYPE_PID),
+                process.get_string(PROCESS_TYPE_PID_CPU) or '-',
+                process.get_string(PROCESS_TYPE_PID_NAME) or '-',
+                process.get_string(PROCESS_TYPE_PID_PATH) or '-'
+            ))
+
+            process = result.get_tlv(TLV_TYPE_GROUP)
+
+        self.print_table('Process List', headers, *sorted(data))

@@ -1,0 +1,29 @@
+%comment
+%comment MIT License
+%comment
+%comment Copyright (c) 2020-2026 EntySec
+%comment
+
+%end
+%green       %bold<<%end%green Pwny Mission Control %bold>>%end
+
+%dark T-minus 10...%end reverting firewall rules
+%dark T-minus  5...%end privilege escalation armed
+%dark T-minus  1...%end %yellow deploying payload%end
+%end
+%red        ^%end
+%red       / \%end
+%red      / | \%end
+%red     /  |  \%end
+%red    /   |   \%end
+%red   /%yellow ____|____ %end%red\%end
+%yellow   | PWNY  1  |%end
+%yellow   | ~~~~~~~~ |%end
+%yellow   |__________|%end
+%red    \ %end %red||  || %end %red/%end
+%yellow     *%end%red ||  || %end%yellow*%end
+%yellow    ***%end%red||  ||%end%yellow***%end
+%yellow   *****%end%red|    |%end%yellow*****%end
+%end
+%bold    We have liftoff!%end
+%end

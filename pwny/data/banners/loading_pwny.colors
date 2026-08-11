@@ -1,0 +1,22 @@
+%comment
+%comment MIT License
+%comment
+%comment Copyright (c) 2020-2026 EntySec
+%comment
+
+%end
+  %cyan[%end%bold LOADING PWNY %end%cyan]%end  %green|||||||||||||||||||||%end%dark|||||%end  %bold80%%%end
+
+  %dark...actually, we're already in.%end
+  %dark   The progress bar was just for vibes.%end
+
+%yellow        .-------.%end
+%yellow       / .-----. \%end
+%yellow      | |  %green0  0%end  %yellow| |%end
+%yellow      | |   %red><%end   %yellow| |%end      %boldPwny%end %dark—%end %redstealth mode%end
+%yellow       \ '-----' /%end       %dark"You can't grep me."%end
+%yellow        '-------'%end
+%yellow       /||||||||||\%end
+%yellow      / |||||||||| \%end
+%yellow      '-----------'%end
+%end
